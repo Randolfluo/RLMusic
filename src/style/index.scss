@@ -1,0 +1,31 @@
+// 通过 vite.config.js 全局注入到每个组件
+// 主题色， 可以在其他vue文件直接使用的
+$mainColor: #72111e;
+$mainSecondaryColor: #f55e551f;
+
+// 响应式布局       
+// 定义一个名为 changeWidth 的 mixin，带默认参数 $padding
+//并根据屏幕尺寸动态调整页面的左右内边距（Padding），从而适配不同设备。
+@mixin changeWidth($padding:10vw) {
+    .n-layout-header {
+        padding: 0 $padding;
+    }
+
+    .n-layout-content {
+        .main {
+            padding: 24px $padding 54px $padding;
+
+            .player {
+                padding: 0 $padding;
+            }
+        }
+    }
+}
+
+@include changeWidth;
+
+/* 小于1200px时 */
+// 实现“移动端/小屏适配”
+@media (max-width: 1200px) {
+    @include changeWidth($padding:5vw);
+}

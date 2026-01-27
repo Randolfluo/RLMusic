@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, loadEnv} from "vite";
+import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
@@ -9,8 +9,10 @@ import type { ConfigEnv } from "vite";
 
 
 // https://vite.dev/config/
-export default ({ mode }: ConfigEnv) =>
-  defineConfig({
+export default ({ mode }: ConfigEnv) => {
+  const VITE_MUSIC_API = loadEnv(mode, process.cwd()).VITE_MUSIC_API;
+  console.log("VITE_MUSIC_API:", VITE_MUSIC_API); // 在终端输出环境变量，方便调试
+  return defineConfig({
     plugins: [
       vue(),
       AutoImport({
@@ -75,7 +77,7 @@ export default ({ mode }: ConfigEnv) =>
       host: true,     // 如果需要外部访问，可以添加 host
       proxy: {  // API 代理配置
         "/api": {
-          target: loadEnv(mode, process.cwd()).VITE_MUSIC_API,  // 从环境变量读取API地址
+          target: VITE_MUSIC_API,  // 从环境变量读取API地址
           changeOrigin: true,  // 改变请求源
           rewrite: (path) => path.replace(/^\/api/, "")  // 重写路径
         }
@@ -88,7 +90,7 @@ export default ({ mode }: ConfigEnv) =>
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: '@import "src/style/index.scss";',  // 全局 SCSS 导入
+          additionalData: '@use "@/style/index.scss" as *;',  // 全局 SCSS 导入
         }
       }
     },
@@ -107,3 +109,4 @@ export default ({ mode }: ConfigEnv) =>
       sourcemap: false,  // 不生成 sourcemap
     }
   })
+}

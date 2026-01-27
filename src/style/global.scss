@@ -1,0 +1,105 @@
+* {
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+// Font
+html,
+body,
+#app {
+  -webkit-font-smoothing: subpixel-antialiased;
+  // 优先使用系统安装的鸿蒙字体或常见系统字体
+  font-family: "HarmonyOS Sans", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+}
+
+//嵌套 (Nesting):
+//这是 SCSS 最常用的特性，让 CSS 结构更清晰，匹配 HTML 结构。
+// Dialog
+.s-dialog {
+  border-radius: 8px;
+  .n-dialog__close {
+    margin: 16px 26px 0 0;
+  }
+
+  .n-dialog__title {
+    transform: translateX(-8px);
+    font-size: 18px;
+    // font-weight: bold;
+
+    i {
+      font-size: 24px;
+      // transform: translateY(-1px);
+    }
+  }
+}
+
+// Modal
+// 示例：.s-modal 同时具有 .close 类时
+
+.s-modal {
+  width: 60vw;
+  max-width: 700px;
+  min-width: min(24rem, 100vw);
+  border-radius: 8px;
+  &.close {    // 编译为 .s-modal.close
+    .n-card-header {
+      .n-base-close {
+        display: none;
+      }
+    }
+  }
+  .n-card-header {
+    .n-card-header__main {
+      // font-weight: bold;
+      font-size: 18px;
+    }
+  }
+  .n-scrollbar {
+    max-height: 60vh;
+    font-size: 16px;
+    line-height: 32px;
+  }
+}
+
+// Nscrollbar
+.n-scrollbar {
+  .n-scrollbar-rail {
+    right: 0 !important;
+  }
+}
+
+// Dropdown
+.n-dropdown-menu {
+  border-radius: 8px !important;
+}
+
+// Tab
+.main-tab {
+  .n-tabs-tab {
+    &.n-tabs-tab--active {
+      font-weight: bold !important;
+      transition: all 0.3s;
+    }
+  }
+}
+
+// Notification
+.n-notification {
+  border-radius: 8px !important;
+}
+
+// Nalert
+.n-alert {
+  border-radius: 8px !important;
+}
+
+// 文本超出隐藏
+.text-hidden {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  word-break: break-all;
+}

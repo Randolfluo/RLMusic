@@ -1,0 +1,76 @@
+import { defineStore } from "pinia";
+import { NIcon } from "naive-ui";
+import { h } from "vue";
+import { WbSunnyFilled, DarkModeFilled } from "@vicons/material";
+
+export const useSettingDataStore = defineStore("settingData", {
+  state: () => {
+    return {
+      // 全局主题
+      theme: "light",
+      themeAuto: true,
+      // 搜索历史
+      searchHistory: true,
+      // 轮播图显示
+      bannerShow: true,
+      // 自动签到
+      autoSignIn: true,
+      // 列表点击方式
+      listClickMode: "dblclick",
+      // 播放器样式
+      playerStyle: "cover",
+      // 底栏歌词显示
+      bottomLyricShow: true,
+      // 是否显示歌词翻译
+      showTransl: true,
+      // 歌曲音质
+      songLevel: "exhigh",
+      // 歌词位置
+      lyricsPosition: "left",
+      // 歌词滚动位置
+      lyricsBlock: "center",
+      // 歌词大小
+      lyricsFontSize: 2.8,
+      // 歌词模糊
+      lyricsBlur: false,
+      // 音乐频谱
+      musicFrequency: false,
+      // 鼠标移入歌词区域暂停滚动
+      lrcMousePause: true,
+    };
+  },
+  getters: {
+    // 获取明暗模式
+    getSiteTheme(state) {
+      return state.theme;
+    },
+    // 获取是否开启翻译
+    getShowTransl(state) {
+      return state.showTransl;
+    },
+  },
+  actions: {
+    // 切换明暗模式
+    setSiteTheme(value: string) {
+      const isLightMode = value === "light";
+      const message = isLightMode ? "已切换至浅色模式" : "已切换至深色模式";
+      const icon = isLightMode ? WbSunnyFilled : DarkModeFilled;
+      this.theme = value;
+      $message.info(message, {
+        icon: () => h(NIcon, null, { default: () => h(icon) }),
+      });
+    },
+    // 更改翻译开启选项
+    setShowTransl(value: boolean) {
+      this.showTransl = value;
+    },
+  },
+  // 开启数据持久化
+  persist: [
+    {
+      storage: localStorage,
+    },
+  ],
+});
+
+
