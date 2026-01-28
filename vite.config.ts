@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
+import electron from "vite-plugin-electron/simple";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
@@ -15,6 +16,16 @@ export default ({ mode }: ConfigEnv) => {
   return defineConfig({
     plugins: [
       vue(),
+      electron({
+        main: {
+          entry: "electron/main.ts",
+        },
+        preload: {
+          input: "electron/preload.ts",
+        },
+        // Optional: Use Node.js API in the Renderer-process
+        renderer: {},
+      }),
       AutoImport({
         imports: [
           "vue",  // 自动导入 Vue 的 API（ref, reactive, computed 等）
