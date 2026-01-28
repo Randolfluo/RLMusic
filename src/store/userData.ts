@@ -9,11 +9,15 @@ export const useUserDataStore = defineStore("userData", {
         nickname: "",
         userId: 0,
       },
+      userOtherData: {},
     };
   },
   getters: {
     getUserData(state) {
       return state.userData;
+    },
+    getUserOtherData(state) {
+      return state.userOtherData;
     },
   },
   actions: {
@@ -24,10 +28,14 @@ export const useUserDataStore = defineStore("userData", {
         nickname: "",
         userId: 0,
       };
+      this.userOtherData = {};
     },
     setUserData(data: any) {
         this.userData = data;
         this.userLogin = true;
+    },
+    setUserOtherData(data: any = {}) {
+        this.userOtherData = data;
     }
   },
   persist: {

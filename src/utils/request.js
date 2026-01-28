@@ -1,66 +1,78 @@
 import axios from "axios";
 
-switch (process.env.NODE_ENV) {
-  case "production":
-    axios.defaults.baseURL = import.meta.env.VITE_MUSIC_API;
-    break;
-  case "development":
-    axios.defaults.baseURL = "/api";
-    break;
-  default:
-    axios.defaults.baseURL = import.meta.env.VITE_MUSIC_API;
-    break;
-}
+// 创建 axios 实例
+const service = axios.create({
+  baseURL: "/api", // 基础路径，通过 vite 代理转发
+  timeout: 30000, // 请求超时时间
+  withCredentials: true, // 跨域请求时发送 cookies
+});
 
-axios.defaults.timeout = 30000;
-axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
-axios.defaults.withCredentials = true;
-
-// 请求拦截
-axios.interceptors.request.use(
-  (request) => {
-    if (!request.hiddenBar) $loadingBar.start();
-    return request;
+// 请求拦截器
+service.interceptors.request.use(
+  (config) => {
+    // 如果没有配置 hiddenBar，则显示加载条
+    if (!config.hiddenBar && window.$loadingBar) {
+      window.$loadingBar.start();
+    }
+    return config;
   },
   (error) => {
-    $loadingBar.error();
-    console.error("请求失败，请稍后重试");
-    return Promise.reject(error);
-  }
-);
-
-// 响应拦截
-axios.interceptors.response.use(
-  (response) => {
-    $loadingBar.finish();
-    return response.data;
-  },
-  (error) => {
-    $loadingBar.error();
-    if (error.response) {
-      const data = error.response.data;
-      switch (error.response.status) {
-        case 401:
-          console.error("您未登录");
-          break;
-        case 301:
-          console.error("请求发生重定向");
-          break;
-        case 404:
-          console.error("请求资源不存在");
-          break;
-        case 500:
-          console.error("内部服务器错误");
-          break;
-        default:
-          console.error(data.message ? data.message : "请求失败，请稍后重试");
-          break;
-      }
-    } else {
-      console.error("请求失败，请稍后重试");
+    if (window.$loadingBar) {
+      window.$loadingBar.error();
     }
     return Promise.reject(error);
   }
 );
 
-export default axios;
+// 响应拦截器
+service.interceptors.response.use(
+  (response) => {
+    // 关闭加载条
+    if (!response.config.hiddenBar && window.$loadingBar) {
+      window.$loadingBar.finish();
+    }
+    return response.data;
+  },
+  (error) => {
+    if (window.$loadingBar) {
+      window.$loadingBar.error();
+    }
+    
+    // 处理错误信息
+    let message = "请求失败";
+    if (error.response) {
+      switch (error.response.status) {
+        case 301:
+          message = "需登录";
+          break;
+        case 400:
+          message = "请求错误";
+          break;
+        case 401:
+          message = "未授权，请登录";
+          break;
+        case 403:
+          message = "拒绝访问";
+          break;
+        case 404:
+          message = "请求地址出错";
+          break;
+        case 500:
+          message = "服务器内部错误";
+          break;
+        default:
+          message = `连接错误 ${error.response.status}`;
+      }
+    } else {
+        message = error.message;
+    }
+
+    if (window.$message) {
+        window.$message.error(message);
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default service;
