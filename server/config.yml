@@ -1,0 +1,28 @@
+Server:
+  Mode: debug # debug | release
+  Port: :3000
+  DbType: "sqlite" # mongoDb | sqlite
+  DbAutoMigrate: true # 是否自动迁移数据库表结构 (表结构没变可以不迁移, 提高启动速度)
+  DbLogMode: "error" # 日志级别 silent, error, warn, info, 默认 info
+
+Log:
+  Level: "debug" # debug | info | warn | error
+  Format: "text" # text | json
+  Directory: "log"
+  
+JWT:
+  Secret: "123456"
+  Expire: 24 # hour
+  Issuer: "123456"
+  
+Sqlite:
+  Dsn: "data.db"
+  
+Session:
+  Name: "randolfluo"
+  Salt: "salt123"
+  MaxAge: 600 # second
+
+BasicPath:
+  FilePath: 'C:\Users\lrj32\Desktop\music player'
+  FileName: 'localmusicplayerFoleder'

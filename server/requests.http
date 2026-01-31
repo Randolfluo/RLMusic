@@ -1,0 +1,101 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+### 1. 用户注册
+# 如果遇到 "数据库操作异常 (9004)" 或 "User exist"，说明用户已存在，请直接运行第 2 步 "用户登录"
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}",
+    "email": "{{email}}"
+}
+
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+### 3. 获取用户信息 (需要登录后获取Token)
+# 变量说明: {{login.response.body.data.token}} 是从名为 "login" 的请求响应中提取的
+
+# 此处假设有一个需要认证的接口，例如获取当前用户信息
+# GET {{baseUrl}}/user/info
+# Authorization: Bearer {{login.response.body.data.token}}
+
+### 4. 注销用户 (需要登录后获取Token)
+DELETE {{baseUrl}}/user
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 5. 初始化基础文件夹 (不需要认证)
+POST {{baseUrl}}/file/initFolder
+Content-Type: {{contentType}}
+
+### 6. 初始化用户目录 (需要登录后获取Token)
+POST {{baseUrl}}/file/initUserFolder
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.data.token}}
+
+{
+    "username": "{{username}}"
+}
+
+### 7. 获取系统设置 (需要登录后获取Token)
+GET {{baseUrl}}/system/settings
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 8. 扫描用户音乐 (需要登录)
+# !!! 必须先运行上面的 "2. 用户登录" 请求，获取到 Token 后才能运行此请求 !!!
+POST {{baseUrl}}/song/scan
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 9. 获取歌曲列表 (需要登录)
+GET {{baseUrl}}/song/list?page=1&pageSize=10
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 10. 获取歌曲封面 (需要登录，替换 ID)
+GET {{baseUrl}}/song/cover/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 11. 播放歌曲 (需要登录，替换 ID)
+GET {{baseUrl}}/song/stream/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 12. 管理员登录
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "admin",
+    "password": "123456"
+}
+
+### 13. 更新系统配置 (仅管理员)
+POST {{baseUrl}}/system/config
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminLogin.response.body.data.token}}
+
+{
+    "filepath": 'C:\Users\lrj32\Desktop\music player\localmusicplayerFoleder'
+}
+
+### 14. 获取歌单列表 (需要登录)
+GET {{baseUrl}}/song/playlists
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 15. 退出登录 (需要登录)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{login.response.body.data.token}}
+
+
