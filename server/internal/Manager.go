@@ -47,6 +47,7 @@ func registerBaseHandler(r *gin.Engine) {
 	file := base.Group("/file")
 	{
 		file.POST("/initFolder", fileAuthAPI.InitFolder)
+		file.GET("/avatar/:filename", userAuthAPI.GetAvatar)
 	}
 }
 
@@ -64,7 +65,9 @@ func registerAuthHandler(r *gin.Engine) {
 	// 用户相关
 	user := auth.Group("/user")
 	{
-		user.DELETE("", userAuthAPI.DeleteUser) // 注销用户
+		user.DELETE("", userAuthAPI.DeleteUser)        // 注销用户
+		user.GET("/info", userAuthAPI.GetUserInfo)     // 获取用户信息
+		user.POST("/avatar", userAuthAPI.UploadAvatar) // 上传头像
 	}
 
 	// 初始化用户文件夹
@@ -80,14 +83,7 @@ func registerAuthHandler(r *gin.Engine) {
 		song.GET("/list", songAuthAPI.GetPlayList)
 		song.GET("/playlists", songAuthAPI.GetPlaylists) // 获取歌单列表
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
-		song.GET("/cover/:id", songAuthAPI.GetSongCover)
-	}
-
-	// 基础资源（无需认证）
-	// 注意：实际生产可能需要更严格的权限控制，或者使用 separate 路由组
-	public := r.Group(apiBasePath + "/public")
-	{
-		public.GET("/cover/:id", songAuthAPI.GetMetaCover)
+		// song.GET("/cover/:id", songAuthAPI.GetSongCover) // 已移除
 	}
 
 	// 系统相关

@@ -26,12 +26,6 @@ Content-Type: {{contentType}}
     "password": "{{password}}"
 }
 
-### 3. 获取用户信息 (需要登录后获取Token)
-# 变量说明: {{login.response.body.data.token}} 是从名为 "login" 的请求响应中提取的
-
-# 此处假设有一个需要认证的接口，例如获取当前用户信息
-# GET {{baseUrl}}/user/info
-# Authorization: Bearer {{login.response.body.data.token}}
 
 ### 4. 注销用户 (需要登录后获取Token)
 DELETE {{baseUrl}}/user
@@ -59,13 +53,13 @@ Authorization: Bearer {{login.response.body.data.token}}
 POST {{baseUrl}}/song/scan
 Authorization: Bearer {{login.response.body.data.token}}
 
+
+
 ### 9. 获取歌曲列表 (需要登录)
 GET {{baseUrl}}/song/list?page=1&pageSize=10
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 10. 获取歌曲封面 (需要登录，替换 ID)
-GET {{baseUrl}}/song/cover/1
-Authorization: Bearer {{login.response.body.data.token}}
+
 
 ### 11. 播放歌曲 (需要登录，替换 ID)
 GET {{baseUrl}}/song/stream/1
@@ -97,5 +91,17 @@ Authorization: Bearer {{login.response.body.data.token}}
 ### 15. 退出登录 (需要登录)
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{login.response.body.data.token}}
+
+### 16. 上传用户头像 (需要登录)
+POST {{baseUrl}}/user/avatar
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; name="file"; filename="favicon.png"
+Content-Type: image/png
+
+< ../public/images/logo/favicon.png
+--MyBoundary--
 
 

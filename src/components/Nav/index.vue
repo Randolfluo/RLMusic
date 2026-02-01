@@ -11,14 +11,14 @@
       </div>
     </div>
     <div class="center">
-      <router-link class="link" to="/">首页</router-link>
+      <router-link class="link" to="/">发现</router-link>
       <n-dropdown
         trigger="hover"
         size="large"
         :options="discoverOptions"
         @select="menuSelect"
       >
-        <router-link class="link" to="/discover">发现</router-link>
+        <router-link class="link" to="/discover">分类</router-link>
       </n-dropdown>
       <n-dropdown
         trigger="hover"
@@ -52,7 +52,7 @@
           "
           :img-props="{ class: 'avatarImg' }"
           fallback-src="/images/ico/user-filling.svg"
-          @click="showDropdown = !showDropdown"
+          @click="handleAvatarClick"
         />
       </n-dropdown>
       <!-- 关于本站 -->
@@ -89,9 +89,17 @@ const showDropdown = ref(false);
 const closeDropdown = (event) => {
   // 解决点击头像无法关闭
   if (event.target.className == "avatarImg") {
-    showDropdown.value = true;
+    // handled in avatar click
   } else {
     showDropdown.value = false;
+  }
+};
+
+const handleAvatarClick = () => {
+  if (!user.userLogin) {
+    router.push("/login");
+  } else {
+    showDropdown.value = !showDropdown.value;
   }
 };
 
@@ -134,20 +142,7 @@ const userDataRender = () => {
             {
               default: () =>
                 user.userLogin
-                  ? Object.keys(user.getUserOtherData).length
-                    ? h(
-                        NProgress,
-                        {
-                          height: 4,
-                          type: "line",
-                          percentage: user.getUserOtherData.level.progress * 100,
-                          color: "#f55e55",
-                        },
-                        {
-                          default: () => "Lv." + user.getUserOtherData.level.level,
-                        }
-                      )
-                    : "等级信息获取失败"
+                  ? user.getUserData.email  // 显示邮箱
                   : "登录后享受完整功能",
             }
           ),
@@ -160,41 +155,30 @@ const userDataRender = () => {
 // 下拉框数据
 const discoverOptions = ref([
   {
-    label: "歌单123",
+    label: "歌单",
     key: "/discover/playlists",
   },
   {
-    label: "排行榜123",
-    key: "/discover/toplists",
-  },
-  {
-    label: "歌手123",
+    label: "歌手",
     key: "/discover/artists",
   },
+  {
+    label: "专辑",
+    key: "/discover/albums",
+  },
 ]);
-const userOptions = ref(
-  user.userLogin
-    ? [
-        {
-          label: "我的歌单",
-          key: "/user/playlists",
-        },
-        {
-          label: "收藏的歌单",
-          key: "/user/like",
-        },
-        {
-          label: "收藏的歌手",
-          key: "/user/artists",
-        },
-        {
-          label: "音乐云盘",
-          key: "/user/cloud",
-        },
-      ]
-    : []
-);
-const dropdownOptions = ref([
+const userOptions = computed(() => [
+  {
+    label: "统计",
+    key: "/user/playlists",
+  },
+  {
+    label: "上传",
+    key: "/user/like",
+  },
+
+]);
+const dropdownOptions = computed(() => [
   {
     key: "header",
     type: "render",

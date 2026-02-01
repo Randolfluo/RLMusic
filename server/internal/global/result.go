@@ -72,6 +72,7 @@ var (
 	ErrTokenWrong    = RegisterResult(1203, "TOKEN 不正确,请重新登陆")
 	ErrTokenType     = RegisterResult(1204, "TOKEN 格式错误,请重新登陆")
 	ErrTokenCreate   = RegisterResult(1205, "TOKEN 生成失败")
+	ErrTokenEmpty    = RegisterResult(1206, "TOKEN 为空")
 )
 
 // 用户相关响应码
@@ -85,11 +86,4 @@ var (
 // 文件/资源相关
 var (
 	ErrFileNotExist = RegisterResult(1101, "文件/资源不存在")
-)
-
-// TODO相关响应码
-var (
-	ErrTodoListGet = RegisterResult(1301, "获取TODO列表失败")
-	ErrNoTodoList  = RegisterResult(1302, "暂无TODO")
-	ErrTodoListSet = RegisterResult(1303, "更新TODO失败")
 )

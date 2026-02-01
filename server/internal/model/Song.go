@@ -1,22 +1,15 @@
 package model
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 )
 
 // Song 歌曲模型
 type Song struct {
-	ID        int        `gorm:"primaryKey;auto_increment"`
-	CreatedAt *time.Time `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	DeletedAt *time.Time `gorm:"index" json:"deleted_at,omitempty"` // 软删除
-
+	ID int `gorm:"primaryKey;auto_increment"`
 	// 权限控制
-	OwnerID    *int   `gorm:"index" json:"owner_id"`                                                      // 上传者/所有者ID
-	Owner      User   `gorm:"foreignKey:OwnerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联用户
-	Permission string // public/private/group
+	OwnerID    *int   `gorm:"index" json:"owner_id"` // 上传者/所有者ID
+	Permission string // public/private
 
 	// 基础信息
 	Title string `gorm:"type:varchar(255);index" json:"title"` // 歌名
@@ -27,9 +20,6 @@ type Song struct {
 
 	AlbumID *int  `gorm:"index" json:"album_id"`                                                      // 关联专辑ID
 	Album   Album `gorm:"foreignKey:AlbumID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联专辑模型
-
-	CoverImageID *int       `gorm:"index" json:"cover_image_id"`                                                     // 关联封面ID (单曲封面)
-	CoverImage   CoverImage `gorm:"foreignKey:CoverImageID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联封面模型
 
 	TrackNum int    `json:"track_num"`                    // 轨道号
 	DiscNum  int    `json:"disc_num"`                     // 碟号
@@ -54,8 +44,14 @@ type Song struct {
 // FindSongByPath 根据路径查找歌曲
 func FindSongByPath(db *gorm.DB, path string) (*Song, error) {
 	var song Song
-	err := db.Where("file_path = ?", path).First(&song).Error
-	return &song, err
+	// 使用 Find 并限制数量，避免 First 查不到时打印错误日志
+	if err := db.Where("file_path = ?", path).Limit(1).Find(&song).Error; err != nil {
+		return nil, err
+	}
+	if song.ID == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &song, nil
 }
 
 // SaveSong 保存或更新歌曲
@@ -72,13 +68,6 @@ func SaveSong(db *gorm.DB, song *Song) (bool, error) {
 func GetSongByID(db *gorm.DB, id string) (*Song, error) {
 	var song Song
 	err := db.First(&song, id).Error
-	return &song, err
-}
-
-// GetSongWithCover 根据ID获取歌曲及封面
-func GetSongWithCover(db *gorm.DB, id string) (*Song, error) {
-	var song Song
-	err := db.Preload("CoverImage").First(&song, id).Error
 	return &song, err
 }
 
@@ -99,7 +88,7 @@ func GetSongsList(db *gorm.DB, userID int, page, pageSize int) ([]Song, int64, e
 	}
 
 	offset := (page - 1) * pageSize
-	if err := query.Order("created_at desc").Offset(offset).Limit(pageSize).Find(&songs).Error; err != nil {
+	if err := query.Order("id desc").Offset(offset).Limit(pageSize).Find(&songs).Error; err != nil {
 		return nil, 0, err
 	}
 

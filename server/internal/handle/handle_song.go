@@ -1,15 +1,12 @@
 package handle
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 	g "server/internal/global"
 	"server/internal/model"
+	"server/internal/utils/audio"
 	"strconv"
 	"strings"
 
@@ -34,17 +31,15 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 
 	// 定义要扫描的子文件夹及其对应的公开权限
 	// public: 公开
-	// group: 暂时设为非公开 (或对应特定业务逻辑)
 	// private: 私有
 	folders := map[string]string{
 		"public":  "public",
-		"group":   "group",
 		"private": "private",
 	}
 
 	// 支持的音频扩展名
 	supportedExts := map[string]bool{
-		".mp3": true, ".flac": true, ".wav": true, ".ogg": true, ".m4a": true,
+		".flac": true, //".wav": true, ".ogg": true, ".m4a": true,
 	}
 
 	addedCount := 0
@@ -82,8 +77,6 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			defer f.Close()
 
 			var songTitle, songArtist, songAlbum string
-			var coverData []byte
-			var coverMime string
 			var year string
 			var trackNum, discNum int
 
@@ -98,10 +91,6 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				trackNum, _ = m.Track()
 				discNum, _ = m.Disc()
 
-				if pic := m.Picture(); pic != nil {
-					coverData = pic.Data
-					coverMime = pic.MIMEType
-				}
 			} else {
 				slog.Warn("Failed to read metadata tags, using filename", "path", path, "error", err)
 			}
@@ -110,37 +99,33 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			if songTitle == "" {
 				songTitle = strings.TrimSuffix(info.Name(), ext)
 			}
-			if songArtist == "" {
-				songArtist = "Unknown Artist"
-			}
-			if songAlbum == "" {
-				songAlbum = "Unknown Album"
-			}
+			// 如果数据为空，对应数据库值也为空 (不设置默认 Unknown)
 
 			// 1. 处理 Artist
-			artist, err := model.FindOrCreateArtist(db, songArtist)
-			if err != nil {
-				slog.Error("Failed to create/find Artist", "name", songArtist, "error", err)
-				return nil
+			var artistID *int
+			if songArtist != "" {
+				artist, err := model.FindOrCreateArtist(db, songArtist)
+				if err != nil {
+					slog.Error("Failed to create/find Artist", "name", songArtist, "error", err)
+					return nil
+				}
+				artistID = &artist.ID
 			}
 
 			// 2. 处理 Cover
-			var coverID *int
-			if len(coverData) > 0 {
-				// 计算 hash 去重
-				hash := sha256.Sum256(coverData)
-				checksum := hex.EncodeToString(hash[:])
-
-				if cid, err := model.FindOrCreateCover(db, coverData, coverMime, checksum); err == nil {
-					coverID = cid
-				}
-			}
+			// 移除封面处理逻辑，因为 CoverImage 模型已被删除
+			// var coverID *int
+			// ...
 
 			// 3. 处理 Album
-			album, err := model.FindOrCreateAlbum(db, songAlbum, artist.ID, coverID)
-			if err != nil {
-				slog.Error("Failed to create/find Album", "title", songAlbum, "error", err)
-				return nil
+			var albumID *int
+			if songAlbum != "" {
+				album, err := model.FindOrCreateAlbum(db, songAlbum, artistID)
+				if err != nil {
+					slog.Error("Failed to create/find Album", "title", songAlbum, "error", err)
+					return nil
+				}
+				albumID = &album.ID
 			}
 
 			// 4. 处理 Song
@@ -152,9 +137,10 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 
 			// 准备数据
 			song.Title = songTitle
-			song.ArtistID = &artist.ID
-			song.AlbumID = &album.ID
-			song.CoverImageID = coverID
+			song.ArtistID = artistID
+			song.AlbumID = albumID
+			// song.CoverImageID = coverID // 已删除
+
 			song.TrackNum = trackNum
 			song.DiscNum = discNum
 			song.Year = year
@@ -163,6 +149,20 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			song.FileName = info.Name()
 			song.FileSize = info.Size()
 			song.Format = strings.TrimPrefix(ext, ".")
+
+			// 读取音频参数 (目前仅支持 FLAC)
+			if ext == ".flac" {
+				if props, err := audio.ParseFlacProps(path); err == nil {
+					song.Duration = props.Duration
+					song.SampleRate = props.SampleRate
+					song.BitDepth = props.BitDepth
+					song.Channels = props.Channels
+					song.BitRate = props.BitRate
+				} else {
+					slog.Warn("Failed to parse FLAC props", "path", path, "error", err)
+				}
+			}
+
 			// 权限信息 (如果是新歌，或者覆盖更新)
 			song.OwnerID = &user.ID
 			song.Permission = permission
@@ -180,7 +180,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			}
 
 			// 自动添加到对应权限的歌单
-			playlistName := strings.Title(permission) // Public, Private, Group
+			playlistName := strings.Title(permission) // Public, Private
 			playlist, err := model.FindOrCreatePlaylist(db, user.ID, playlistName, permission)
 			if err != nil {
 				slog.Error("Failed to create/find Playlist", "name", playlistName, "error", err)
@@ -198,7 +198,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			slog.Error("Walk folder failed", "path", targetDir, "error", err)
 		}
 	}
-
+	slog.Info("Music scan completed", "user", user.Username, "added", addedCount, "updated", updatedCount)
 	ReturnSuccess(c, gin.H{
 		"added":   addedCount,
 		"updated": updatedCount,
@@ -235,27 +235,8 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 	c.File(song.FilePath)
 }
 
-// GetSongCover 获取封面图片
-func (*SongAuth) GetSongCover(c *gin.Context) {
-	idStr := c.Param("id")
-	db := GetDB(c)
-
-	song, err := model.GetSongWithCover(db, idStr)
-	if err != nil {
-		ReturnError(c, g.ErrDbOp, "歌曲不存在")
-		return
-	}
-
-	// 简单的权限检查 (封面通常比较宽容，或者跟随歌曲权限)
-	// if !song.IsPublic && ...
-
-	if song.CoverImageID == nil || len(song.CoverImage.Data) == 0 {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	c.Data(http.StatusOK, song.CoverImage.MimeType, song.CoverImage.Data)
-}
+// GetSongCover 获取封面图片 (已移除)
+// func (*SongAuth) GetSongCover(c *gin.Context) { ... }
 
 // GetPlayList 获取播放列表 (示例：获取所有歌曲)
 func (*SongAuth) GetPlayList(c *gin.Context) {
@@ -279,37 +260,6 @@ func (*SongAuth) GetPlayList(c *gin.Context) {
 		"page":     page,
 		"pageSize": pageSize,
 	})
-}
-
-// GetMetaCover 获取封面图片 (直接通过封面ID)
-func (*SongAuth) GetMetaCover(c *gin.Context) {
-	idStr := c.Param("id")
-	id, _ := strconv.Atoi(idStr)
-	db := GetDB(c)
-
-	cover, err := model.GetCover(db, id)
-	if err != nil {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	if len(cover.Data) == 0 {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	// 设置缓存控制
-	c.Header("Cache-Control", "public, max-age=31536000") // 缓存1年，因为 checksum 应该不变
-	c.Header("ETag", fmt.Sprintf(`"%s"`, cover.Checksum))
-
-	if match := c.GetHeader("If-None-Match"); match != "" {
-		if strings.Contains(match, cover.Checksum) {
-			c.Status(http.StatusNotModified)
-			return
-		}
-	}
-
-	c.Data(http.StatusOK, cover.MimeType, cover.Data)
 }
 
 // GetPlaylists 获取所有歌单 (包括自己的和公开的)

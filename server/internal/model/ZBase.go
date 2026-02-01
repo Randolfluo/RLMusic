@@ -10,7 +10,6 @@ func MakeMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&User{},
 		&SystemSetting{},
-		&CoverImage{},
 		&Artist{},
 		&Album{},
 		&Song{},

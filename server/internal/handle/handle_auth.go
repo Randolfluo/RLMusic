@@ -2,11 +2,16 @@ package handle
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
 	g "server/internal/global"
 	"server/internal/model"
 	"server/internal/utils/encrypt"
 	"server/internal/utils/jwt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,12 +29,14 @@ type LoginVO struct {
 	ID        int        `json:"id"`
 	LastLogin *time.Time `json:"last_login"`
 	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	Avatar    string     `json:"avatar"`
 	Token     string     `json:"token"`
 }
 
 type RegisterReq struct {
 	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required,min=4,max=20"`
+	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required"`
 	// EmailCaptcha string `json:"emailCaptcha" binding:"required"`
 }
@@ -54,6 +61,13 @@ func (*UserAuth) Register(c *gin.Context) {
 		ReturnError(c, g.ErrRequest, err)
 		return
 	}
+
+	// 校验密码长度 (解密后)
+	if len(req.Password) < 4 || len(req.Password) > 20 {
+		ReturnError(c, g.ErrRequest, errors.New("密码长度必须在4-20位之间"))
+		return
+	}
+
 	db := GetDB(c)
 
 	// 检查用户是否已存在
@@ -133,6 +147,8 @@ func (*UserAuth) Login(c *gin.Context) {
 	ReturnSuccess(c, LoginVO{
 		ID:        user.ID,
 		Username:  user.Username,
+		Email:     user.Email,
+		Avatar:    user.Avatar,
 		LastLogin: user.LastLogin,
 		Token:     token,
 	})
@@ -156,4 +172,127 @@ func (*UserAuth) DeleteUser(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, nil)
+}
+
+type UserInfoVO struct {
+	ID            int        `json:"id"`
+	Username      string     `json:"username"`
+	Email         string     `json:"email"`
+	Avatar        string     `json:"avatar"`
+	LastLogin     *time.Time `json:"last_login"`
+	TotalSongs    int64      `json:"total_songs"`
+	TotalAlbums   int64      `json:"total_albums"`
+	TotalArtists  int64      `json:"total_artists"`
+	TotalDuration int64      `json:"total_duration"`
+	FavoriteSong  string     `json:"favorite_song"`
+}
+
+// GetUserInfo 获取当前登录用户的详细信息
+func (*UserAuth) GetUserInfo(c *gin.Context) {
+	// 从Context中获取当前用户（由中间件设置）
+	currentUser := GetCurrentUser(c)
+	if currentUser == nil {
+		ReturnError(c, g.ErrTokenEmpty, nil)
+		return
+	}
+
+	// 重新从数据库查一遍，确保信息是最新的
+	db := GetDB(c)
+	user, err := model.GetUserAuthInfoByName(db, currentUser.Username)
+	if err != nil {
+		ReturnError(c, g.ErrUserNotExist, err)
+		return
+	}
+
+	ReturnSuccess(c, UserInfoVO{
+		ID:            user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		Avatar:        user.Avatar,
+		LastLogin:     user.LastLogin,
+		TotalSongs:    user.TotalSongs,
+		TotalAlbums:   user.TotalAlbums,
+		TotalArtists:  user.TotalArtists,
+		TotalDuration: user.TotalDuration,
+		FavoriteSong:  user.FavoriteSong,
+	})
+}
+
+// UploadAvatar 上传用户头像
+func (*UserAuth) UploadAvatar(c *gin.Context) {
+	currentUser := GetCurrentUser(c)
+	if currentUser == nil {
+		ReturnError(c, g.ErrTokenEmpty, nil)
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	// 验证文件扩展名
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
+	if !allowExts[ext] {
+		ReturnError(c, g.ErrRequest, errors.New("file type not allowed"))
+		return
+	}
+
+	// 准备存储目录
+	conf := g.GetConfig().BasicPath
+	baseDir := filepath.Join(conf.FilePath, conf.FileName, "avatar")
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 生成文件名: user_id_timestamp.ext
+	filename := fmt.Sprintf("user_%d_%d%s", currentUser.ID, time.Now().Unix(), ext)
+	savePath := filepath.Join(baseDir, filename)
+
+	// 保存文件
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 相对 web 路径 (注意: 这里返回的路径需要和下面注册的路由匹配)
+	// 假设路由注册为 /file/avatar/:filename (无需认证读取)
+	// 这里我们暂定为 /api/file/avatar/:filename
+	webPath := "/api/file/avatar/" + filename
+
+	db := GetDB(c)
+	if err := model.UpdateUserAvatar(db, currentUser.ID, webPath); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, webPath)
+}
+
+// GetAvatar 获取用户头像
+func (*UserAuth) GetAvatar(c *gin.Context) {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	// 安全检查
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	conf := g.GetConfig().BasicPath
+	filePath := filepath.Join(conf.FilePath, conf.FileName, "avatar", filename)
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.File(filePath)
 }

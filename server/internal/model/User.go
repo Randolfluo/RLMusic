@@ -13,10 +13,17 @@ type User struct {
 	UpdatedAt *time.Time
 
 	Username string `gorm:"type:varchar(50);unique"`
-	Password string `gorm:"type:varchar(100)"` // bcrypt加密后的密码长度最大为60
+	Password string `gorm:"type:varchar(100)" json:"-"` // bcrypt加密后的密码长度最大为60
 	Email    string `gorm:"type:varchar(255)"`
 
 	UserGroup string `gorm:"type:varchar(50);default:'user'" json:"user_group"` // 用户组: admin, user, guest
+
+	Avatar        string `gorm:"type:varchar(255)"` // 头像
+	TotalSongs    int64  `gorm:"default:0"`         // 总歌曲数
+	TotalAlbums   int64  `gorm:"default:0"`         // 总专辑数
+	TotalArtists  int64  `gorm:"default:0"`         // 总歌手数
+	TotalDuration int64  `gorm:"default:0"`         // 总听歌时长
+	FavoriteSong  string `gorm:"type:varchar(255)"` // 最喜爱的歌曲
 
 	LastLogin    *time.Time
 	IsDelete     bool
@@ -28,14 +35,26 @@ type User struct {
 // GetUserAuthInfoByName 根据用户名获取用户信息
 func GetUserAuthInfoByName(db *gorm.DB, name string) (*User, error) {
 	var user User
-	err := db.Where("username = ? AND is_delete = ?", name, false).First(&user).Error
-	return &user, err
+	// 使用 Limit(1).Find 避免 gorm.First 的 "record not found" 错误日志
+	if err := db.Where("username = ? AND is_delete = ?", name, false).Limit(1).Find(&user).Error; err != nil {
+		return nil, err
+	}
+	if user.ID == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	// slog.Info("GetUserAuthInfoByName", "username", name, "found", true)
+	return &user, nil
 }
 
 // UpdateUserLoginInfo 更新用户登录信息
 func UpdateUserLoginInfo(db *gorm.DB, id int) error {
 	now := time.Now()
 	return db.Model(&User{}).Where("id = ? AND is_delete = ?", id, false).Update("last_login", now).Error
+}
+
+// UpdateUserAvatar 更新用户头像
+func UpdateUserAvatar(db *gorm.DB, id int, avatarPath string) error {
+	return db.Model(&User{}).Where("id = ?", id).Update("avatar", avatarPath).Error
 }
 
 // CreateUser 创建新用户
@@ -78,8 +97,14 @@ func DeleteUser(db *gorm.DB, id int) error {
 // 用于处理历史遗留的未释放用户名的软删除记录
 func RenameSoftDeletedUser(db *gorm.DB, username string) error {
 	var oldUser User
-	if err := db.Unscoped().Where("username = ?", username).First(&oldUser).Error; err == nil {
+	// 使用 Limit(1).Find 避免 gorm.First 的错误日志
+	if err := db.Unscoped().Where("username = ?", username).Limit(1).Find(&oldUser).Error; err != nil {
+		return err
+	}
+
+	if oldUser.ID != 0 {
 		timestamp := time.Now().Unix()
+		// slog.Info("Renaming soft deleted user", "old_username", username, "id", oldUser.ID)
 		// newUsername 已被移除，直接使用 gorm 表达式在数据库侧进行拼接
 		return db.Model(&oldUser).Update("username", gorm.Expr("username || '_del_' || ?", timestamp)).Error
 	}

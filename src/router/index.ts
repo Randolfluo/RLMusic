@@ -14,6 +14,14 @@ router.beforeEach((to, _from, next) => {
   $loadingBar.start();    // 开始加载进度条
   // 判断是否需要登录
   if (to.meta.needLogin) {
+    if (user.userLogin) {
+      next();
+    } else {
+      $message.error("请登录账号后使用");
+      next("/login");
+    }
+    // Remove the old getLoginState check which caused 404 or 500 error when not logged in
+    /*
     getLoginState()
       .then((res) => {
         if (res.data?.profile && user.userLogin) {
@@ -38,6 +46,7 @@ router.beforeEach((to, _from, next) => {
         next("/500");
         return false;
       });
+      */
   } else {
     if (!Object.keys(user.getUserOtherData).length) user.setUserOtherData();
     next();

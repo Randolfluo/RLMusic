@@ -5,6 +5,19 @@ import axios from "@/utils/request";
  */
 
 /**
+ * 获取用户信息 (自家后端)
+ */
+export const getUserInfo = () => {
+    return axios({
+        method: "GET",
+        url: "/user/info",
+        params: {
+            timestamp: new Date().getTime(),
+        },
+    });
+};
+
+/**
  * 获取用户等级信息
  */
 export const getUserLevel = () => {

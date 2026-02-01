@@ -7,6 +7,32 @@ const routes: any = [
     name: "home",
     component: Home,
   },
+  {
+    path: "/login",
+    name: "login",
+    meta: {
+      title: "登录",
+    },
+    component: () => import("@/views/Login/LoginView.vue"),
+  },
+  {
+    path: "/user",
+    name: "user",
+    meta: {
+      title: "用户中心",
+      needLogin: true,
+    },
+    component: () => import("@/views/User/index.vue"),
+  },
+  // 全局设置设置
+  {
+    path: "/setting",
+    name: "setting",
+    meta: {
+      title: "全局设置",
+    },
+    component: () => import("@/views/Setting/SettingView.vue"),
+  },
  // 403
   {
     path: "/403",
@@ -34,6 +60,7 @@ const routes: any = [
     },
     component: () => import("@/views/State/404.vue"),
   },
+
   {
     path: "/:pathMatch(.*)",
     redirect: "/404",

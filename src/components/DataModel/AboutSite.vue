@@ -10,14 +10,14 @@
   >
     <div class="copyright">
       <div class="desc">
-        <n-text class="name">SPlayer</n-text>
+        <n-text class="name">{{ packageJson.name }}</n-text>
         <n-text class="version" :depth="3">
           v&nbsp;{{ packageJson.version }}
         </n-text>
       </div>
       <n-blockquote>
         <n-text class="power">
-          Copyright&nbsp;©&nbsp;2020 - {{ new Date().getFullYear() }}
+          Copyright&nbsp;©&nbsp;2026 - {{ new Date().getFullYear() }}
           <n-a
             :href="packageJson.home"
             target="_blank"

@@ -8,6 +8,7 @@ export const useUserDataStore = defineStore("userData", {
         avatarUrl: "",
         nickname: "",
         userId: 0,
+        email: "",
       },
       userOtherData: {},
     };
@@ -27,6 +28,7 @@ export const useUserDataStore = defineStore("userData", {
         avatarUrl: "",
         nickname: "",
         userId: 0,
+        email: "",
       };
       this.userOtherData = {};
     },
