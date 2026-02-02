@@ -7,11 +7,13 @@ import (
 	g "server/internal/global"
 	"server/internal/model"
 	"server/internal/utils/audio"
+	"server/internal/utils/imgtool"
 	"strconv"
 	"strings"
 
 	"github.com/dhowden/tag"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type SongAuth struct{}
@@ -29,14 +31,6 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 	// 获取用户根目录: basicPath/username
 	userPath := filepath.Join(basePath.FilePath, basePath.FileName, user.Username)
 
-	// 定义要扫描的子文件夹及其对应的公开权限
-	// public: 公开
-	// private: 私有
-	folders := map[string]string{
-		"public":  "public",
-		"private": "private",
-	}
-
 	// 支持的音频扩展名
 	supportedExts := map[string]bool{
 		".flac": true, //".wav": true, ".ogg": true, ".m4a": true,
@@ -45,15 +39,41 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 	addedCount := 0
 	updatedCount := 0
 
-	for subDir, permission := range folders {
-		targetDir := filepath.Join(userPath, subDir)
+	// 读取用户目录下的一级子目录
+	entries, err := os.ReadDir(userPath)
+	if err != nil {
+		// 如果目录不存在，可能只是用户还没传文件，不报错
+		if os.IsNotExist(err) {
+			ReturnSuccess(c, gin.H{"message": "目录为空"})
+			return
+		}
+		slog.Error("Failed to read user directory", "path", userPath, "error", err)
+		ReturnError(c, g.Err, "读取目录失败")
+		return
+	}
 
-		// 检查目录是否存在，不存在则跳过
-		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
-			continue
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue // 忽略根目录下的文件
 		}
 
-		err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+		subDirName := entry.Name()
+		targetDir := filepath.Join(userPath, subDirName)
+
+		// 确定权限: "public" 文件夹为公开，其他默认为私有
+		permission := "private"
+		if subDirName == "public" {
+			permission = "public"
+		}
+
+		// 查找或创建歌单 (歌单名 = 文件夹名)
+		currentPlaylist, err := model.FindOrCreatePlaylist(db, user.ID, subDirName, permission)
+		if err != nil {
+			slog.Error("Failed to create/find Playlist", "name", subDirName, "error", err)
+			continue // 歌单创建失败，跳过该文件夹的扫描? 或者继续扫描但不加歌单? 这里选择跳过
+		}
+
+		err = filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				slog.Error("Error accessing path", "path", path, "error", err)
 				return nil
@@ -67,6 +87,8 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			if !supportedExts[ext] {
 				return nil
 			}
+
+			// ... (rest of the logic)
 
 			// 读取音频元数据
 			f, err := os.Open(path)
@@ -113,9 +135,25 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			}
 
 			// 2. 处理 Cover
-			// 移除封面处理逻辑，因为 CoverImage 模型已被删除
-			// var coverID *int
-			// ...
+			var coverID *int
+			var coverUrl string // 用于歌单封面
+			if m != nil && m.Picture() != nil {
+				pic := m.Picture()
+				// 保存目录: ./data/covers (相对运行目录)
+				hash, filename, width, height, err := imgtool.ProcessAndSaveCover(pic.Data, "./data/covers")
+				if err == nil {
+					// 数据库记录
+					cover, err := model.FindOrCreateCover(db, hash, filename, pic.Ext, int64(len(pic.Data)), width, height)
+					if err == nil {
+						coverID = &cover.ID
+						coverUrl = "/covers/" + filename
+					} else {
+						slog.Error("Failed to find/create Cover", "error", err)
+					}
+				} else {
+					slog.Warn("Failed to process cover image", "path", path, "error", err)
+				}
+			}
 
 			// 3. 处理 Album
 			var albumID *int
@@ -141,7 +179,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			song.AlbumName = songAlbum
 			song.ArtistID = artistID
 			song.AlbumID = albumID
-			// song.CoverImageID = coverID // 已删除
+			song.CoverID = coverID
 
 			song.TrackNum = trackNum
 			song.DiscNum = discNum
@@ -177,16 +215,17 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				slog.Error("Failed to save song", "title", songTitle, "error", err)
 			}
 
-			// 自动添加到对应权限的歌单
-			playlistName := strings.Title(permission) // Public, Private
-			playlist, err := model.FindOrCreatePlaylist(db, user.ID, playlistName, permission)
-			if err != nil {
-				slog.Error("Failed to create/find Playlist", "name", playlistName, "error", err)
-			} else {
-				// 关联歌曲到歌单 (如果尚未关联)
-				if err := model.AddSongToPlaylist(db, playlist, song); err != nil {
-					slog.Error("Failed to add song to playlist", "playlist", playlistName, "song", song.Title, "error", err)
+			// 关联歌曲到当前目录对应的歌单
+			if err := model.AddSongToPlaylist(db, currentPlaylist, song); err != nil {
+				slog.Error("Failed to add song to playlist", "playlist", currentPlaylist.Title, "song", song.Title, "error", err)
+			}
+
+			// 如果歌单封面为空，且当前歌曲有封面，设置该封面为歌单封面
+			if currentPlaylist.CoverUrl == "" && coverUrl != "" {
+				if err := db.Model(currentPlaylist).Update("cover_url", coverUrl).Error; err != nil {
+					slog.Warn("Failed to update playlist cover", "playlist", currentPlaylist.Title, "error", err)
 				}
+				currentPlaylist.CoverUrl = coverUrl
 			}
 
 			return nil
@@ -253,4 +292,22 @@ func (*SongAuth) GetPrivatePlaylists(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, playlists)
+}
+
+// GetPlaylistDetail 获取歌单详情(含歌曲)
+func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	songs, err := model.GetPlaylistSongs(db, idStr)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ReturnError(c, g.ErrDbOp, "歌单不存在")
+		} else {
+			ReturnError(c, g.ErrDbOp, err)
+		}
+		return
+	}
+
+	ReturnSuccess(c, songs)
 }

@@ -20,6 +20,9 @@ type Song struct {
 	AlbumID *int  `gorm:"index" json:"album_id"`                                                      // 关联专辑ID
 	Album   Album `gorm:"foreignKey:AlbumID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联专辑模型
 
+	CoverID *int  `gorm:"index" json:"cover_id"`                                                      // 关联封面ID
+	Cover   Cover `gorm:"foreignKey:CoverID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联封面模型
+
 	TrackNum int    `json:"track_num"`                    // 轨道号
 	DiscNum  int    `json:"disc_num"`                     // 碟号
 	Year     string `gorm:"type:varchar(20)" json:"year"` // 年份
@@ -36,6 +39,9 @@ type Song struct {
 	BitDepth   int     `json:"bit_depth"`   // 位深(bits) ex: 16, 24
 	Channels   int     `json:"channels"`    // 声道数
 	BitRate    int     `json:"bit_rate"`    // 比特率(kbps)
+
+	// 统计信息
+	PlayCount int `gorm:"default:0" json:"play_count"` // 播放次数
 
 	IsDelete bool `gorm:"default:false" json:"-"`
 }

@@ -54,6 +54,7 @@ func registerBaseHandler(r *gin.Engine) {
 	song := base.Group("/song")
 	{
 		song.GET("/playlists/public", songAuthAPI.GetPublicPlaylists)
+		song.GET("/playlist/:id", songAuthAPI.GetPlaylistDetail) // 获取歌单包含的歌曲
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
 	}
 }

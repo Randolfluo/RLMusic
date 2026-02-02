@@ -13,10 +13,14 @@ type Playlist struct {
 	Title       string `gorm:"type:varchar(255);not null;index" json:"title"` // 歌单标题
 	Description string `gorm:"type:text" json:"description"`                  // 歌单描述
 	IsPublic    bool   `gorm:"default:true" json:"is_public"`                 // 是否公开
+	CoverUrl    string `gorm:"type:varchar(500)" json:"cover_url"`            // 歌单封面 (第一首歌的ID，或者外部URL)
 
 	OwnerID int `gorm:"index" json:"owner_id"` // 创建者ID
 
 	Songs []Song `gorm:"many2many:playlist_songs;" json:"songs"` // 歌单包含的歌曲 (多对多)
+
+	// 统计信息
+	PlayCount int `gorm:"default:0" json:"play_count"` // 播放次数
 }
 
 // FindOrCreatePlaylist 查找或创建歌单
@@ -75,57 +79,75 @@ type PlaylistResponse struct {
 	Description string               `json:"description"`
 	IsPublic    bool                 `json:"is_public"`
 	OwnerID     int                  `json:"owner_id"`
-	Songs       []SimpleSongResponse `json:"songs"`
+	CoverUrl    string               `json:"cover_url"` // 新增封面字段返回
+	PlayCount   int                  `json:"play_count"`
+	Songs       []SimpleSongResponse `json:"songs"` // Deprecated: 列表接口不再返回详情
 }
 
-// GetPublicPlaylists 获取所有公共歌单
+// GetPublicPlaylists 获取所有公共歌单(不含歌曲详情)
 func GetPublicPlaylists(db *gorm.DB) ([]PlaylistResponse, error) {
 	var playlists []Playlist
-	// 只查询 public
-	if err := db.Preload("Songs").Preload("Songs.Artist").Preload("Songs.Album").
-		Where("is_public = ?", true).
+	// 只查询 public，不预加载 Songs
+	if err := db.Where("is_public = ?", true).
 		Find(&playlists).Error; err != nil {
 		return nil, err
 	}
 	return convertToResponse(playlists), nil
 }
 
-// GetPrivatePlaylists 获取用户私有歌单
+// GetPrivatePlaylists 获取用户私有歌单(不含歌曲详情)
 func GetPrivatePlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
 	var playlists []Playlist
-	// 只查询 private 且 owner_id = userID
-	if err := db.Preload("Songs").Preload("Songs.Artist").Preload("Songs.Album").
-		Where("is_public = ? AND owner_id = ?", false, userID).
+	// 只查询 private 且 owner_id = userID，不预加载 Songs
+	if err := db.Where("is_public = ? AND owner_id = ?", false, userID).
 		Find(&playlists).Error; err != nil {
 		return nil, err
 	}
 	return convertToResponse(playlists), nil
+}
+
+// GetPlaylistSongs 获取歌单内的歌曲详情
+func GetPlaylistSongs(db *gorm.DB, playlistIDStr string) ([]SimpleSongResponse, error) {
+	var playlist Playlist
+	// 预加载 Songs
+	if err := db.Preload("Songs").Preload("Songs.Artist").Preload("Songs.Album").
+		First(&playlist, playlistIDStr).Error; err != nil {
+		return nil, err
+	}
+
+	var songs []SimpleSongResponse
+	for _, s := range playlist.Songs {
+		songs = append(songs, SimpleSongResponse{
+			ID:         s.ID,
+			Title:      s.Title,
+			ArtistName: s.ArtistName,
+			AlbumTitle: s.AlbumName,
+			Duration:   s.Duration,
+		})
+	}
+	return songs, nil
 }
 
 func convertToResponse(playlists []Playlist) []PlaylistResponse {
 	var resp []PlaylistResponse
 	for _, p := range playlists {
-		var songs []SimpleSongResponse
-		for _, s := range p.Songs {
-			songs = append(songs, SimpleSongResponse{
-				ID:         s.ID,
-				Title:      s.Title,
-				ArtistName: s.ArtistName,
-				AlbumTitle: s.AlbumName,
-				Duration:   s.Duration,
-			})
-		}
+		// 不再返回歌曲列表
+		var songs []SimpleSongResponse = nil // Explicitly nil
+
 		resp = append(resp, PlaylistResponse{
 			ID:          p.ID,
 			Title:       p.Title,
 			Description: p.Description,
 			IsPublic:    p.IsPublic,
 			OwnerID:     p.OwnerID,
+			CoverUrl:    p.CoverUrl,
+			PlayCount:   p.PlayCount,
 			Songs:       songs,
 		})
 	}
 	return resp
 }
+
 
 // GetUserPlaylists 获取用户可见的歌单 (Legacy)
 func GetUserPlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {

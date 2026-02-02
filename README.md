@@ -51,3 +51,5 @@ go run .\cmd\main.go
 pnpm dev
 客户端构建
 pnpm 
+
+修改返回公共歌单和用户私有歌单，只返回歌单数据不返回详细的歌曲信息。添加根据歌单id获取歌曲信息，返回id,title,artistname,albumtitle,duration

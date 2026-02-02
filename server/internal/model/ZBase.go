@@ -12,6 +12,7 @@ func MakeMigrate(db *gorm.DB) error {
 		&SystemSetting{},
 		&Artist{},
 		&Album{},
+		&Cover{},
 		&Song{},
 		&Playlist{},
 	); err != nil {

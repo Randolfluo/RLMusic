@@ -31,6 +31,9 @@ func main() {
 	//r.Use(middleware.WithRedisDB(rdb))
 	//r.Use(middleware.WithCookieStore(conf.Session.Name, conf.Session.Salt))
 
+	// 静态资源: 封面图
+	r.Static("/covers", "./data/covers")
+
 	server.RegisterHandlers(r)
 
 	//运行服务

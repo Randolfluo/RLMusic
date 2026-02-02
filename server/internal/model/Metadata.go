@@ -1,7 +1,6 @@
 package model
 
 import (
-	"log/slog"
 	"time"
 
 	"gorm.io/gorm"
@@ -55,7 +54,6 @@ func FindOrCreateAlbum(db *gorm.DB, title string, artistID *int) (*Album, error)
 
 	if album.ID == 0 {
 		// 没找到，创建
-		slog.Info("Creating new album", "title", title)
 		album = Album{
 			Title:    title,
 			ArtistID: artistID,
@@ -65,4 +63,44 @@ func FindOrCreateAlbum(db *gorm.DB, title string, artistID *int) (*Album, error)
 		}
 	}
 	return &album, nil
+}
+
+// Cover 封面图片模型
+type Cover struct {
+	ID int `gorm:"primaryKey;auto_increment" json:"id"`
+
+	// 核心属性
+	Hash string `gorm:"type:varchar(64);uniqueIndex" json:"hash"` // 图片内容的哈希值(MD5/SHA256)，用于去重
+	Path string `gorm:"type:varchar(500)" json:"path"`            // 图片存储路径(相对路径)
+
+	// 图片元数据
+	Format string `gorm:"type:varchar(10)" json:"format"` // 格式: jpg, png
+	Size   int64  `json:"size"`                           // 文件大小
+	Width  int    `json:"width"`                          // 宽
+	Height int    `json:"height"`                         // 高
+}
+
+// FindOrCreateCover 根据Hash查找或创建封面
+func FindOrCreateCover(db *gorm.DB, hash string, path string, format string, size int64, width, height int) (*Cover, error) {
+	var cover Cover
+	// 尝试根据 Hash 查找，使用 Find 避免 First 找不到时打印日志
+	if err := db.Where("hash = ?", hash).Limit(1).Find(&cover).Error; err != nil {
+		return nil, err
+	}
+
+	if cover.ID == 0 {
+		// 创建新封面
+		cover = Cover{
+			Hash:   hash,
+			Path:   path,
+			Format: format,
+			Size:   size,
+			Width:  width,
+			Height: height,
+		}
+		if err := db.Create(&cover).Error; err != nil {
+			return nil, err
+		}
+	}
+	return &cover, nil
 }

@@ -1,7 +1,7 @@
 ### 全局变量
 @baseUrl = http://localhost:3000/api
 @contentType = application/json
-@username = testuser002
+@username = testuser001
 @password = password123
 @email = test001@example.com
 
@@ -57,6 +57,9 @@ Authorization: Bearer {{login.response.body.data.token}}
 
 ### 11. 播放歌曲 (无需登录，替换 ID)
 GET {{baseUrl}}/song/stream/1
+
+### 11-2. 获取歌单详情 (无需登录，替换 ID)
+GET {{baseUrl}}/song/playlist/1
 
 ### 12. 管理员登录
 # @name adminLogin

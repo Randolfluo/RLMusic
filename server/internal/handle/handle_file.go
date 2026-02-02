@@ -100,7 +100,7 @@ func (*FileAuth) InitUserFolder(c *gin.Context) {
 
 	// 需要创建的子目录
 	// "" 代表用户主目录本身
-	subDirs := []string{"", "setting", "public", "private"}
+	subDirs := []string{"public"}
 
 	// 创建主目录和子目录
 	for _, dir := range subDirs {
