@@ -49,6 +49,13 @@ func registerBaseHandler(r *gin.Engine) {
 		file.POST("/initFolder", fileAuthAPI.InitFolder)
 		file.GET("/avatar/:filename", userAuthAPI.GetAvatar)
 	}
+
+	// 歌曲相关(无需认证)
+	song := base.Group("/song")
+	{
+		song.GET("/playlists/public", songAuthAPI.GetPublicPlaylists)
+		song.GET("/stream/:id", songAuthAPI.StreamSong)
+	}
 }
 
 // registerAuthHandler 注册需要JWT认证的路由
@@ -80,10 +87,7 @@ func registerAuthHandler(r *gin.Engine) {
 	song := auth.Group("/song")
 	{
 		song.POST("/scan", songAuthAPI.ScanUserMusic)
-		song.GET("/list", songAuthAPI.GetPlayList)
-		song.GET("/playlists", songAuthAPI.GetPlaylists) // 获取歌单列表
-		song.GET("/stream/:id", songAuthAPI.StreamSong)
-		// song.GET("/cover/:id", songAuthAPI.GetSongCover) // 已移除
+		song.GET("/playlists", songAuthAPI.GetPrivatePlaylists) // 获取私人歌单列表
 	}
 
 	// 系统相关

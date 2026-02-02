@@ -7,12 +7,11 @@ import (
 // Song 歌曲模型
 type Song struct {
 	ID int `gorm:"primaryKey;auto_increment"`
-	// 权限控制
-	OwnerID    *int   `gorm:"index" json:"owner_id"` // 上传者/所有者ID
-	Permission string // public/private
 
 	// 基础信息
-	Title string `gorm:"type:varchar(255);index" json:"title"` // 歌名
+	Title      string `gorm:"type:varchar(255);index" json:"title"`       // 歌名
+	ArtistName string `gorm:"type:varchar(255);index" json:"artist_name"` // 冗余反范式化：直接存储艺术家名称
+	AlbumName  string `gorm:"type:varchar(255);index" json:"album_name"`  // 冗余反范式化：直接存储专辑名称
 
 	// 关联信息
 	ArtistID *int   `gorm:"index" json:"artist_id"`                                                      // 关联艺术家ID
@@ -69,28 +68,4 @@ func GetSongByID(db *gorm.DB, id string) (*Song, error) {
 	var song Song
 	err := db.First(&song, id).Error
 	return &song, err
-}
-
-// GetSongsList 获取歌曲列表
-func GetSongsList(db *gorm.DB, userID int, page, pageSize int) ([]Song, int64, error) {
-	var songs []Song
-	var total int64
-
-	// 查询条件：用户自己的 + 公开的所有
-	query := db.Model(&Song{}).
-		Preload("Artist").
-		Preload("Album").
-		Where("owner_id = ?", userID).
-		Or("permission = ?", "public")
-
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	offset := (page - 1) * pageSize
-	if err := query.Order("id desc").Offset(offset).Limit(pageSize).Find(&songs).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return songs, total, nil
 }

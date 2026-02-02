@@ -137,6 +137,8 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 
 			// 准备数据
 			song.Title = songTitle
+			song.ArtistName = songArtist
+			song.AlbumName = songAlbum
 			song.ArtistID = artistID
 			song.AlbumID = albumID
 			// song.CoverImageID = coverID // 已删除
@@ -162,10 +164,6 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 					slog.Warn("Failed to parse FLAC props", "path", path, "error", err)
 				}
 			}
-
-			// 权限信息 (如果是新歌，或者覆盖更新)
-			song.OwnerID = &user.ID
-			song.Permission = permission
 
 			// 保存
 			isCreated, err := model.SaveSong(db, song)
@@ -217,14 +215,6 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 		return
 	}
 
-	// 权限检查
-	currentUser := GetCurrentUser(c)
-	// 如果不是公开的，且当前用户不是所有者
-	if song.Permission != "public" && (currentUser == nil || *song.OwnerID != currentUser.ID) {
-		ReturnError(c, g.ErrPermission, "无权访问此歌曲")
-		return
-	}
-
 	// 检查文件是否存在
 	if _, err := os.Stat(song.FilePath); os.IsNotExist(err) {
 		ReturnError(c, g.ErrFileNotExist, "音频文件丢失")
@@ -238,36 +228,25 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 // GetSongCover 获取封面图片 (已移除)
 // func (*SongAuth) GetSongCover(c *gin.Context) { ... }
 
-// GetPlayList 获取播放列表 (示例：获取所有歌曲)
-func (*SongAuth) GetPlayList(c *gin.Context) {
+// GetPublicPlaylists 获取公共歌单
+func (*SongAuth) GetPublicPlaylists(c *gin.Context) {
 	db := GetDB(c)
-	user := GetCurrentUser(c)
 
-	pageStr := c.DefaultQuery("page", "1")
-	pageSizeStr := c.DefaultQuery("pageSize", "20")
-	page, _ := strconv.Atoi(pageStr)
-	pageSize, _ := strconv.Atoi(pageSizeStr)
-
-	songs, total, err := model.GetSongsList(db, user.ID, page, pageSize)
+	playlists, err := model.GetPublicPlaylists(db)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
 
-	ReturnSuccess(c, gin.H{
-		"list":     songs,
-		"total":    total,
-		"page":     page,
-		"pageSize": pageSize,
-	})
+	ReturnSuccess(c, playlists)
 }
 
-// GetPlaylists 获取所有歌单 (包括自己的和公开的)
-func (*SongAuth) GetPlaylists(c *gin.Context) {
+// GetPrivatePlaylists 获取私人歌单
+func (*SongAuth) GetPrivatePlaylists(c *gin.Context) {
 	db := GetDB(c)
 	user := GetCurrentUser(c)
 
-	playlists, err := model.GetUserPlaylists(db, user.ID)
+	playlists, err := model.GetPrivatePlaylists(db, user.ID)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return

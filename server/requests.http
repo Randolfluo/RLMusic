@@ -1,7 +1,7 @@
 ### 全局变量
 @baseUrl = http://localhost:3000/api
 @contentType = application/json
-@username = testuser001
+@username = testuser002
 @password = password123
 @email = test001@example.com
 
@@ -55,15 +55,8 @@ Authorization: Bearer {{login.response.body.data.token}}
 
 
 
-### 9. 获取歌曲列表 (需要登录)
-GET {{baseUrl}}/song/list?page=1&pageSize=10
-Authorization: Bearer {{login.response.body.data.token}}
-
-
-
-### 11. 播放歌曲 (需要登录，替换 ID)
+### 11. 播放歌曲 (无需登录，替换 ID)
 GET {{baseUrl}}/song/stream/1
-Authorization: Bearer {{login.response.body.data.token}}
 
 ### 12. 管理员登录
 # @name adminLogin
@@ -84,11 +77,14 @@ Authorization: Bearer {{adminLogin.response.body.data.token}}
     "filepath": 'C:\Users\lrj32\Desktop\music player\localmusicplayerFoleder'
 }
 
-### 14. 获取歌单列表 (需要登录)
+### 14. 获取私人歌单列表 (需要登录)
 GET {{baseUrl}}/song/playlists
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 15. 退出登录 (需要登录)
+### 15. 获取公共歌单列表 (无需登录)
+GET {{baseUrl}}/song/playlists/public
+
+### 16. 退出登录 (需要登录)
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{login.response.body.data.token}}
 
