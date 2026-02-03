@@ -91,6 +91,10 @@ export default ({ mode }: ConfigEnv) => {
           target: VITE_MUSIC_API,  // 从环境变量读取API地址
           changeOrigin: true,  // 改变请求源
           // rewrite: (path) => path.replace(/^\/api/, "")  // 重写路径
+        },
+        "/covers": {
+           target: VITE_MUSIC_API,
+           changeOrigin: true,
         }
       }
     },

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-//TODO
+import { getSongTime } from "@/utils/timeTools";
 
 export const useMusicDataStore = defineStore("musicData", {
   state: () => {
@@ -129,6 +129,104 @@ export const useMusicDataStore = defineStore("musicData", {
     getSearchHistory(state) {
       return state.persistData.searchHistory;
     },
-  }});
+    // 判断歌曲是否在红心列表
+    getSongIsLike: (state) => {
+      return (id: number) => {
+        return state.persistData.likeList.includes(id);
+      };
+    },
+  },
+  actions: {
+    // 更改播放界面显隐
+    setBigPlayerState(value: boolean) {
+      this.showBigPlayer = value;
+    },
+    // 更改播放状态
+    setPlayState(value: boolean) {
+      this.playState = value;
+    },
+    // 更改播放列表
+    setPlaylists(value: any[]) {
+      this.persistData.playlists = value;
+      this.persistData.playSongIndex = 0;
+    },
+    // 更改当前歌曲索引
+    setPlaySongIndex(value: "next" | "prev" | number) {
+      if (typeof value === "number") {
+        this.persistData.playSongIndex = value;
+      } else {
+        const len = this.persistData.playlists.length;
+        if (len === 0) return;
+        if (value === "next") {
+          this.persistData.playSongIndex =
+            (this.persistData.playSongIndex + 1) % len;
+        } else {
+          this.persistData.playSongIndex =
+            (this.persistData.playSongIndex - 1 + len) % len;
+        }
+      }
+    },
+    // 更改音量
+    setPlayVolume(value: number) {
+      this.persistData.playVolume = value;
+    },
+    // 更改播放时间
+    setPlaySongTime(value: any) {
+      this.persistData.playSongTime.currentTime = value.currentTime;
+      this.persistData.playSongTime.duration = value.duration;
+      // 计算进度条位置
+      if (value.duration > 0) {
+        this.persistData.playSongTime.barMoveDistance =
+          (value.currentTime / value.duration) * 100;
+        this.persistData.playSongTime.songTimePlayed = getSongTime(
+          value.currentTime * 1000
+        );
+        this.persistData.playSongTime.songTimeDuration = getSongTime(
+           value.duration * 1000
+        );
+      }
+    },
+    // 添加播放历史
+    setPlayHistory(data: any) {
+      const list = this.persistData.playHistory;
+      const index = list.findIndex((item: any) => item.id === data.id);
+      if (index !== -1) {
+        list.splice(index, 1);
+      }
+      list.unshift(data);
+      if (list.length > 100) {
+        list.pop();
+      }
+      this.persistData.playHistory = list;
+    },
+    // 更改当前歌曲播放链接
+    setPlaySongLink(value: string) {
+      this.playSongLink = value;
+    },
+    // 更改当前歌曲歌词
+    setPlaySongLyric(value: any[]) {
+      this.playSongLyric = value;
+    },
+    // 私人FM不感冒
+    setFmDislike(id: number) {
+        // TODO: Implement API logic
+    },
+    // 更改喜欢列表
+    changeLikeList(id: number, like: boolean) {
+      const list = this.persistData.likeList;
+      if (like) {
+        list.push(id);
+      } else {
+        const index = list.indexOf(id);
+        if (index !== -1) list.splice(index, 1);
+      }
+      this.persistData.likeList = list;
+    },
+    // 获取喜欢列表
+    setLikeList() {
+        // TODO: Implement API logic
+    },
+  }
+});
 
 

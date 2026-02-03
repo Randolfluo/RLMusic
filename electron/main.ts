@@ -38,13 +38,26 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 let win: BrowserWindow | null
+let splash: BrowserWindow | null
 
 /**
  * 创建主窗口
  */
 function createWindow() {
+  // 创建启动页
+  splash = new BrowserWindow({
+    width: 500,
+    height: 300,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    icon: path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png'),
+  })
+  splash.loadFile(path.join(process.env.VITE_PUBLIC as string, 'loading.html'))
+
   win = new BrowserWindow({
     title: 'Local Music Player',
+    show: false, // 先隐藏主窗口
     // 强制转换为 string 避免 TS 报错，或者使用 || '' 兼容
     icon: path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png'),
     width: 1200,
@@ -52,15 +65,28 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.mjs'), // 预加载脚本
+      preload: path.join(__dirname, '../dist-electron/preload.mjs'), 
       nodeIntegration: true,
       contextIsolation: true,
     },
   })
+  
+  // 隐藏菜单栏 (File, Edit, etc.)
+  win.setMenu(null)
 
   // 页面加载完成后，发送当前时间给渲染进程（测试用）
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
+  })
+
+  // 等待页面加载完成 (ready-to-show) 后再显示主窗口并关闭启动页
+  win.once('ready-to-show', () => {
+    setTimeout(() => {
+      splash?.destroy()
+      splash = null
+      win?.show()
+      win?.focus()
+    }, 2000)
   })
 
   if (VITE_DEV_SERVER_URL) {

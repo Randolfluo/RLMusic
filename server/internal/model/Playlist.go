@@ -71,6 +71,11 @@ type SimpleSongResponse struct {
 	ArtistName string  `json:"artist_name"` // from Artist.Name
 	AlbumTitle string  `json:"album_title"` // from Album.Title
 	Duration   float64 `json:"duration"`
+
+	// 补充字段适配前端播放
+	ArtistID int    `json:"artist_id"`
+	AlbumID  int    `json:"album_id"`
+	CoverUrl string `json:"cover_url"`
 }
 
 type PlaylistResponse struct {
@@ -106,26 +111,57 @@ func GetPrivatePlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
 	return convertToResponse(playlists), nil
 }
 
-// GetPlaylistSongs 获取歌单内的歌曲详情
-func GetPlaylistSongs(db *gorm.DB, playlistIDStr string) ([]SimpleSongResponse, error) {
+// GetPlaylistDetail 获取完整歌单详情(含歌曲)
+func GetPlaylistDetail(db *gorm.DB, playlistIDStr string) (*PlaylistResponse, error) {
 	var playlist Playlist
-	// 预加载 Songs
-	if err := db.Preload("Songs").Preload("Songs.Artist").Preload("Songs.Album").
+	// 预加载 Songs 以及关联信息
+	if err := db.Preload("Songs").
+		Preload("Songs.Artist").
+		Preload("Songs.Album").
+		Preload("Songs.Cover").
 		First(&playlist, playlistIDStr).Error; err != nil {
 		return nil, err
 	}
 
 	var songs []SimpleSongResponse
 	for _, s := range playlist.Songs {
+		artistId := 0
+		albumId := 0
+		if s.ArtistID != nil {
+			artistId = *s.ArtistID
+		}
+		if s.AlbumID != nil {
+			albumId = *s.AlbumID
+		}
+
+		coverUrl := ""
+		// 直接从 Preload 的 Cover 对象获取路径
+		if s.CoverID != nil && s.Cover.ID != 0 {
+			coverUrl = "/covers/" + s.Cover.Path
+		}
+
 		songs = append(songs, SimpleSongResponse{
 			ID:         s.ID,
 			Title:      s.Title,
 			ArtistName: s.ArtistName,
 			AlbumTitle: s.AlbumName,
 			Duration:   s.Duration,
+			ArtistID:   artistId,
+			AlbumID:    albumId,
+			CoverUrl:   coverUrl,
 		})
 	}
-	return songs, nil
+
+	return &PlaylistResponse{
+		ID:          playlist.ID,
+		Title:       playlist.Title,
+		Description: playlist.Description,
+		IsPublic:    playlist.IsPublic,
+		OwnerID:     playlist.OwnerID,
+		CoverUrl:    playlist.CoverUrl,
+		PlayCount:   playlist.PlayCount,
+		Songs:       songs,
+	}, nil
 }
 
 func convertToResponse(playlists []Playlist) []PlaylistResponse {
@@ -147,7 +183,6 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 	}
 	return resp
 }
-
 
 // GetUserPlaylists 获取用户可见的歌单 (Legacy)
 func GetUserPlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {

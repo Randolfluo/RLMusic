@@ -34,7 +34,6 @@
 </template>
 
 <script setup>
-import { addSongToPlayList } from "@/api/playlist";
 import { userStore } from "@/store";
 
 const user = userStore();
@@ -45,18 +44,20 @@ const addToPlaylistId = ref(null);
 
 // 收藏到歌单
 const addToPlayList = (pid, tracks) => {
-  console.log("添加" + tracks + "到" + pid);
-  addSongToPlayList(pid, tracks).then((res) => {
-    console.log(res);
-    if (res.status === 200) {
-      $message.success("添加歌曲至歌单成功");
-      closeAddToPlaylist();
-      user.setUserPlayLists();
-    } else {
-      $message.error("添加失败，请重试");
-    }
-  });
+  $message.warning("功能暂未开放");
+  // console.log("添加" + tracks + "到" + pid);
+  // addSongToPlayList(pid, tracks).then((res) => {
+  //   console.log(res);
+  //   if (res.status === 200) {
+  //     $message.success("添加歌曲至歌单成功");
+  //     closeAddToPlaylist();
+  //     user.setUserPlayLists();
+  //   } else {
+  //     $message.error("添加失败，请重试");
+  //   }
+  // });
 };
+
 
 // 开启收藏到歌单
 const openAddToPlaylist = (id) => {

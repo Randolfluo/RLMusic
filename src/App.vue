@@ -31,15 +31,18 @@
         </main>
       </n-layout-content>
     </n-layout>
+    <Player />
+    <BigPlayer v-if="music.getPlaylists[0]" />
   </Provider>
 </template>
 
 <script setup lang="ts">
 import { musicStore, userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
-import { getLoginState } from "@/api/login";
 import Provider from "@/components/Provider/index.vue";
 import Nav from "@/components/Nav/index.vue";
+import Player from "@/components/Player/index.vue";
+import BigPlayer from "@/components/Player/BigPlayer.vue";
 import packageJson from "@/../package.json";
 import { ref, onMounted } from 'vue';
 

@@ -39,7 +39,8 @@
 - [ ] 行为设置：完善最小化到托盘和关闭应用的相关选项
 
 //支持更多音乐拓展格式
-// 支持
+// 解决歌曲乱码与艺术家分隔问题
+//适应窗口大小
 
 
 服务端运行
@@ -52,4 +53,4 @@ pnpm dev
 客户端构建
 pnpm 
 
-修改返回公共歌单和用户私有歌单，只返回歌单数据不返回详细的歌曲信息。添加根据歌单id获取歌曲信息，返回id,title,artistname,albumtitle,duration
+//添加歌曲播放组件跳转，组件在comoenent/player，接口位于request.http。bigplayer.vue是全屏播放组件

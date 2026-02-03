@@ -78,6 +78,10 @@ export const formatNumber = (num) => {
   return (n / 10000).toFixed(1) + "万";
 };
 
+export const formatTime = (num) => {
+  return getSongPlayingTime(num);
+}
+
 /**
  * 歌曲播放时间转换
  * @param {number} num 歌曲播放时间，单位为秒

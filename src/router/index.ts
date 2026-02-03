@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import routes from "./routes";
-import { getLoginState } from "@/api/login";
 import { userStore } from "@/store";
 
 const router = createRouter({

@@ -48,10 +48,14 @@
                 @click="toSearch(item, 0)"
               />
             </n-space>
-            <div class="del" @click="delHistory">
+            <div
+              class="del"
+              v-if="music.getSearchHistory[0]"
+              @click="delHistory"
+            >
               <n-icon size="16" :depth="3">
                 <DeleteFour theme="filled" />
-              </n-icon>
+              </n-icon> && searchData.hot
               <n-text :depth="3">删除搜索历史</n-text>
             </div>
           </div>
@@ -222,14 +226,18 @@ const searchData = reactive({
 // 获取搜索相关数据
 const getSearchHotData = () => {
   getSearchHot().then((res) => {
-    searchData.hot = res.data;
+    if (res.data) {
+      searchData.hot = res.data;
+    }
   });
 };
 const getSearchSuggestData = (keywords) => {
   searchData.suggest = [];
   getSearchSuggest(keywords).then((res) => {
-    console.log(res);
-    searchData.suggest = res.result;
+    // console.log(res);
+    if (res.result) {
+      searchData.suggest = res.result;
+    }
   });
 };
 

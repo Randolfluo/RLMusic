@@ -1,413 +1,774 @@
-<!-- 顶部导航栏，常驻显示 -->
+<!-- 底部音乐播放组件 -->
 <template>
-  <nav>
-    <div class="left">
-      <div class="logo" @click="router.push('/')">
-        <img src="/images/logo/favicon.svg" alt="logo" />
-      </div>
-      <div class="controls">
-        <n-icon size="22" :component="Left" @click="router.go(-1)" />
-        <n-icon size="22" :component="Right" @click="router.go(1)" />
-      </div>
+  <n-card
+    :class="
+      music.getPlaylists[0] && music.showPlayBar ? 'player show' : 'player'
+    "
+    content-style="padding: 0"
+  >
+    <div class="slider">
+      <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
+      <n-slider
+        v-model:value="music.getPlaySongTime.barMoveDistance"
+        class="progress"
+        :step="0.01"
+        :tooltip="false"
+        @update:value="songTimeSliderUpdate"
+        @click.stop
+      />
+      <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
     </div>
-    <div class="center">
-      <router-link class="link" to="/">首页</router-link>
-      <n-dropdown
-        trigger="hover"
-        size="large"
-        :options="discoverOptions"
-        @select="menuSelect"
-      >
-        <router-link class="link" to="/discover">发现</router-link>
-      </n-dropdown>
-      <n-dropdown
-        trigger="hover"
-        size="large"
-        :options="userOptions" 
-        @select="menuSelect"
-      >
-        <router-link class="link" to="/user">我的</router-link>
-      </n-dropdown>
-    </div>
-    <div class="right">
-      <SearchInp />
-      <!-- 下拉菜单 -->
-      <n-dropdown
-        class="dropdown"
-        placement="bottom-end"
-        :show="showDropdown"
-        :show-arrow="true"
-        :options="dropdownOptions"
-        :on-clickoutside="closeDropdown"
-        @select="dropdownSelect"
-      >
-        <n-avatar
-          class="avatar"
-          round
-          size="small"
-          :src="
-            user.getUserData.avatarUrl
-              ? user.getUserData.avatarUrl
-              : '/images/ico/user-filling.svg'
-          "
-          :img-props="{ class: 'avatarImg' }"
-          fallback-src="/images/ico/user-filling.svg"
-          @click="showDropdown = !showDropdown"
+    <div class="all">
+      <div class="data">
+        <div class="pic" @click.stop="music.setBigPlayerState(true)">
+          <img
+            :src="
+              music.getPlaySongData
+                ? music.getPlaySongData.album.picUrl.replace(
+                    /^http:/,
+                    'https:'
+                  ) + '?param=50y50'
+                : '/images/pic/default.png'
+            "
+            alt="pic"
+          />
+          <n-icon class="open" size="30" :component="KeyboardArrowUpFilled" />
+        </div>
+        <div class="name">
+          <div
+            class="song text-hidden"
+            @click.stop="music.setBigPlayerState(true)"
+          >
+            {{
+              music.getPlaySongData ? music.getPlaySongData.name : "暂无歌曲"
+            }}
+          </div>
+          <div class="artisrOrLrc" v-if="music.getPlaySongData">
+            <template v-if="setting.bottomLyricShow">
+              <Transition mode="out-in">
+                <AllArtists
+                  v-if="!music.getPlayState || !music.getPlaySongLyric[0]"
+                  class="text-hidden"
+                  :artistsData="music.getPlaySongData.artist"
+                />
+                <n-text
+                  v-else-if="
+                    music.getPlaySongLyric[0] &&
+                    music.getPlaySongLyricIndex != -1
+                  "
+                  class="lrc text-hidden"
+                  :depth="3"
+                  v-html="
+                    music.getPlaySongLyric[music.getPlaySongLyricIndex].lyric
+                      ? music.getPlaySongLyric[music.getPlaySongLyricIndex]
+                          .lyric
+                      : '暂无歌词'
+                  "
+                />
+              </Transition>
+            </template>
+            <template v-else>
+              <AllArtists
+                class="text-hidden"
+                :artistsData="music.getPlaySongData.artist"
+              />
+            </template>
+          </div>
+        </div>
+      </div>
+      <div class="control">
+        <n-icon
+          v-if="!music.getPersonalFmMode"
+          title="上一曲"
+          class="prev"
+          size="30"
+          :component="SkipPreviousRound"
+          @click.stop="music.setPlaySongIndex('prev')"
         />
-      </n-dropdown>
-      <!-- 关于本站 -->
-      <AboutSite ref="aboutSiteRef" />
+        <n-icon
+          v-else
+          class="dislike"
+          size="20"
+          :component="ThumbDownRound"
+          @click="music.setFmDislike(music.getPersonalFmData.id)"
+        />
+        <div class="play-state">
+          <n-icon
+            size="46"
+            :title="music.getPlayState ? '暂停' : '播放'"
+            :component="
+              music.getPlayState ? PauseCircleFilled : PlayCircleFilled
+            "
+            @click.stop="music.setPlayState(!music.getPlayState)"
+          />
+        </div>
+        <n-icon
+          class="next"
+          size="30"
+          :component="SkipNextRound"
+          @click.stop="music.setPlaySongIndex('next')"
+        />
+      </div>
+      <div :class="music.getPersonalFmMode ? 'menu fm' : 'menu'">
+        <div class="like" v-if="music.getPlaySongData">
+          <n-icon
+            class="like-icon"
+            size="24"
+            :component="
+              music.getSongIsLike(music.getPlaySongData.id)
+                ? FavoriteRound
+                : FavoriteBorderRound
+            "
+            @click.stop="
+              music.getSongIsLike(music.getPlaySongData.id)
+                ? music.changeLikeList(music.getPlaySongData.id, false)
+                : music.changeLikeList(music.getPlaySongData.id, true)
+            "
+          />
+        </div>
+        <div class="add-playlist">
+          <n-icon
+            class="add-icon"
+            size="30"
+            :component="PlaylistAddRound"
+            @click.stop="
+              addPlayListRef.openAddToPlaylist(music.getPlaySongData.id)
+            "
+          />
+        </div>
+        <div class="pattern">
+          <n-icon
+            :component="
+              persistData.playSongMode === 'normal'
+                ? PlayCycle
+                : persistData.playSongMode === 'random'
+                ? ShuffleOne
+                : PlayOnce
+            "
+            @click="music.setPlaySongMode()"
+          />
+        </div>
+        <div class="playlist">
+          <PlayList />
+          <n-icon
+            class="next"
+            size="30"
+            :component="PlaylistPlayRound"
+            @click.stop="music.showPlayList = !music.showPlayList"
+          />
+        </div>
+        <div class="volume">
+          <n-icon
+            size="28"
+            :component="
+              persistData.playVolume == 0
+                ? VolumeOffRound
+                : persistData.playVolume < 0.4
+                ? VolumeMuteRound
+                : persistData.playVolume < 0.7
+                ? VolumeDownRound
+                : VolumeUpRound
+            "
+            @click.stop="volumeMute"
+          />
+          <div class="volume-box">
+            <n-slider
+              class="volmePg"
+              v-model:value="persistData.playVolume"
+              :tooltip="false"
+              :min="0"
+              :max="1"
+              :step="0.01"
+              vertical
+              @click.stop
+            />
+          </div>
+        </div>
+      </div>
     </div>
-  </nav>
+    <audio
+      ref="player"
+      :autoplay="music.getPlayState"
+      @timeupdate="songUpdate"
+      @play="songPlay"
+      @pause="songPause"
+      @canplay="songCanplay"
+      @error="songError"
+      @ended="music.setPlaySongIndex('next')"
+      :src="music.getPlaySongLink"
+    ></audio>
+  </n-card>
+  <AddPlaylist ref="addPlayListRef" />
 </template>
 
 <script setup>
-import { NIcon, NAvatar, NText, NProgress } from "naive-ui";
+import { checkMusicCanUse, getMusicUrl, getMusicLyric } from "@/api/song";
+import { NIcon } from "naive-ui";
 import {
-  Left,
-  Right,
-  Login,
-  Logout,
-  Info,
-  SettingTwo,
-  History,
-  SunOne,
-  Moon,
-} from "@icon-park/vue-next";
-import { userStore, settingStore } from "@/store";
+  KeyboardArrowUpFilled,
+  MusicNoteFilled,
+  PlayCircleFilled,
+  PauseCircleFilled,
+  SkipNextRound,
+  SkipPreviousRound,
+  PlaylistPlayRound,
+  VolumeOffRound,
+  VolumeMuteRound,
+  VolumeDownRound,
+  VolumeUpRound,
+  ThumbDownRound,
+  FavoriteBorderRound,
+  FavoriteRound,
+  PlaylistAddRound,
+} from "@vicons/material";
+import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
+import { storeToRefs } from "pinia";
+import { musicStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
-import AboutSite from "@/components/DataModel/AboutSite.vue";
-import SearchInp from "@/components/SearchInp/index.vue";
-
+import AddPlaylist from "@/components/DataModel/AddPlaylist.vue";
+import AllArtists from "@/components/DataList/AllArtists.vue";
+import PlayList from "@/components/DataList/PlayList.vue";
+import debounce from "@/utils/debounce";
 const router = useRouter();
-const user = userStore();
 const setting = settingStore();
-const aboutSiteRef = ref(null);
+const music = musicStore();
+const { persistData } = storeToRefs(music);
+const addPlayListRef = ref(null);
 
-// 下拉菜单显隐
-const showDropdown = ref(false);
-const closeDropdown = (event) => {
-  // 解决点击头像无法关闭
-  if (event.target.className == "avatarImg") {
-    showDropdown.value = true;
-  } else {
-    showDropdown.value = false;
-  }
-};
+// 音频标签
+const player = ref(null);
 
-// 用户数据模块
-const userDataRender = () => {
-  return h(
-    "div",
-    {
-      style:
-        "display: flex; align-items: center; padding: 8px 12px; cursor: pointer",
-      onclick: () => {
-        user.userLogin ? router.push("/user") : router.push("/login");
-        showDropdown.value = false;
-      },
-    },
-    [
-      h(NAvatar, {
-        round: true,
-        style: "margin-right: 12px",
-        src: user.userLogin
-          ? user.getUserData.avatarUrl
-          : "/images/ico/user-filling.svg",
-        fallbackSrc: "/images/ico/user-filling.svg",
-      }),
-      h("div", null, [
-        h("div", null, [
-          h(
-            NText,
-            { depth: 2 },
-            {
-              default: () =>
-                user.userLogin ? user.getUserData.nickname : "未登录",
-            }
-          ),
-        ]),
-        h("div", { style: "font-size: 12px;" }, [
-          h(
-            NText,
-            { depth: 3 },
-            {
-              default: () =>
-                user.userLogin
-                  ? Object.keys(user.getUserOtherData).length
-                    ? h(
-                        NProgress,
-                        {
-                          height: 4,
-                          type: "line",
-                          percentage: user.getUserOtherData.level.progress * 100,
-                          color: "#f55e55",
-                        },
-                        {
-                          default: () => "Lv." + user.getUserOtherData.level.level,
-                        }
-                      )
-                    : "等级信息获取失败"
-                  : "登录后享受完整功能",
-            }
-          ),
-        ]),
-      ]),
-    ]
-  );
-};
-
-// 下拉框数据
-const discoverOptions = ref([
-  {
-    label: "歌单123",
-    key: "/discover/playlists",
-  },
-  {
-    label: "排行榜123",
-    key: "/discover/toplists",
-  },
-  {
-    label: "歌手123",
-    key: "/discover/artists",
-  },
-]);
-const userOptions = ref(
-  user.userLogin
-    ? [
-        {
-          label: "我的歌单",
-          key: "/user/playlists",
-        },
-        {
-          label: "收藏的歌单",
-          key: "/user/like",
-        },
-        {
-          label: "收藏的歌手",
-          key: "/user/artists",
-        },
-        {
-          label: "音乐云盘",
-          key: "/user/cloud",
-        },
-      ]
-    : []
-);
-const dropdownOptions = ref([
-  {
-    key: "header",
-    type: "render",
-    render: userDataRender,
-  },
-  {
-    key: "header-divider",
-    type: "divider",
-  },
-  {
-    label: () => {
-      return h(NText, null, {
-        default: () =>
-          setting.getSiteTheme == "light" ? "深色模式" : "浅色模式",
+// 获取歌曲播放数据
+const getPlaySongData = (id, level = setting.songLevel) => {
+  checkMusicCanUse(id).then((res) => {
+    if (res.success) {
+      console.log("音乐可用");
+      // 获取音乐地址
+      getMusicUrl(id, level).then((res) => {
+        if (res.data[0].fee == 1) {
+          $message.warning("当前歌曲为 VIP 专享，仅可试听");
+        }
+        music.setPlaySongLink(res.data[0].url.replace(/^http:/, "https:"));
       });
-    },
-    key: "changeTheme",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => (setting.getSiteTheme == "light" ? h(Moon) : h(SunOne)),
+      // 获取歌词
+      getMusicLyric(id).then((res) => {
+        music.setPlaySongLyric(res);
       });
-    },
-  },
-  {
-    label: "播放历史",
-    key: "history",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(History),
-      });
-    },
-  },
-  {
-    label: "全局设置",
-    key: "setting",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(SettingTwo),
-      });
-    },
-  },
-  {
-    label: () => {
-      return h(NText, null, {
-        default: () => (user.userLogin ? "退出登录" : "登录账号"),
-      });
-    },
-    key: "user",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => (user.userLogin ? h(Logout) : h(Login)),
-      });
-    },
-  },
-  {
-    label: "关于本站",
-    key: "about",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(Info),
-      });
-    },
-  },
-]);
-
-// 下拉框事件
-const menuSelect = (key) => {
-  router.push(key);
-};
-const dropdownSelect = (key) => {
-  showDropdown.value = false;
-  switch (key) {
-    // 明暗切换
-    case "changeTheme":
-      setting.getSiteTheme == "light"
-        ? setting.setSiteTheme("dark")
-        : setting.setSiteTheme("light");
-      break;
-    // 播放历史
-    case "history":
-      router.push("/history");
-      break;
-    // 设置
-    case "setting":
-      router.push("/setting");
-      break;
-    // 用户
-    case "user":
-      if (user.userLogin) {
-        // 退出登录
-        $dialog.warning({
-          class: "s-dialog",
-          title: "退出登录",
-          content: "确认退出当前用户登录？",
-          positiveText: "退出登录",
-          negativeText: "取消",
-          onPositiveClick: () => {
-            user.userLogOut();
-            $message.success("已退出登录");
-          },
-        });
-      } else {
-        // 登录
-        router.push("/login");
+    } else {
+      console.log("无法播放");
+      if (music.getPlayState && $player) {
+        $message.error("当前歌曲无法播放，已跳至下一首");
+        music.setPlaySongIndex("next");
       }
-      break;
-    // 关于
-    case "about":
-      aboutSiteRef.value.openAboutSite();
-      break;
-    default:
-      break;
+    }
+  });
+};
+
+// 歌曲进度更新事件
+const songUpdate = (e) => {
+  const currentTime = e.target.currentTime;
+  const duration = e.target.duration;
+  music.setPlaySongTime({ currentTime, duration });
+};
+
+// 歌曲缓冲完毕
+const songCanplay = () => {
+  console.log("缓冲完毕", music.getPlayState);
+  if (music.getPlayState && $player) {
+    music.setPlayState(true);
+    songInOrOut("play");
   }
 };
+
+// 歌曲开始播放
+const songPlay = () => {
+  if (!music.getPlaySongData) {
+    $message.error("音乐数据获取失败");
+    return false;
+  }
+  music.setPlayState(true);
+  // 兼容 mediaSession
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: music.getPlaySongData.name,
+      artist: music.getPlaySongData.artist[0].name,
+      album: music.getPlaySongData.album.name,
+      artwork: [
+        {
+          src:
+            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
+            "?param=96y96",
+          sizes: "96x96",
+        },
+        {
+          src:
+            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
+            "?param=128y128",
+          sizes: "128x128",
+        },
+        {
+          src:
+            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
+            "?param=192y192",
+          sizes: "192x192",
+        },
+      ],
+    });
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
+      music.setPlaySongIndex("next");
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", () => {
+      music.setPlaySongIndex("prev");
+    });
+  }
+  $message.info(
+    music.getPlaySongData.name + " - " + music.getPlaySongData.artist[0].name,
+    {
+      icon: () =>
+        h(NIcon, null, {
+          default: () => h(MusicNoteFilled),
+        }),
+    }
+  );
+  // 写入播放历史
+  music.setPlayHistory(music.getPlaySongData);
+  // 更改页面标题
+  window.document.title = music.getPlaySongData.name + " - localMusicPlayer";
+};
+
+// 音乐渐入渐出
+const isFading = ref(false);
+const songInOrOut = (type) => {
+  if (isFading.value) {
+    return;
+  }
+  isFading.value = true;
+
+  if (type === "play") {
+    let volume = 0;
+    $player.play();
+    const interval = setInterval(() => {
+      // 如果音量已经到达当前音量，则停止渐入
+      if (volume >= persistData.value.playVolume) {
+        clearInterval(interval);
+        isFading.value = false;
+        return;
+      }
+      // 增加音量
+      volume += 0.1;
+      if (volume > persistData.value.playVolume) {
+        volume = persistData.value.playVolume;
+      }
+      $player.volume = volume;
+    }, 30);
+  } else if (type === "pause") {
+    let volume = persistData.value.playVolume;
+    const interval = setInterval(() => {
+      // 如果音量已经到达最小值，则停止渐出
+      if (volume <= 0) {
+        clearInterval(interval);
+        $player.pause();
+        isFading.value = false;
+        return;
+      }
+      // 减小音量
+      volume -= 0.1;
+      if (volume < 0) {
+        volume = 0;
+      }
+      $player.volume = volume;
+    }, 30);
+  }
+};
+
+// 歌曲暂停
+const songPause = () => {
+  console.log("音乐暂停");
+  if (!$player.ended) music.setPlayState(false);
+  // 更改页面标题
+  window.document.title = "localMusicPlayer";
+};
+
+// 歌曲进度条更新
+const songTimeSliderUpdate = (val) => {
+  if ($player && music.getPlaySongTime && music.getPlaySongTime.duration)
+    $player.currentTime = (music.getPlaySongTime.duration / 100) * val;
+};
+
+// 歌曲播放失败事件
+const songError = () => {
+  console.error("歌曲播放失败");
+  if (music.getPlaylists[0]) getPlaySongData(music.getPlaySongData.id);
+  if (music.getPlayState) songInOrOut("play");
+};
+
+// 静音事件
+const volumeMute = () => {
+  if (persistData.value.playVolume > 0) {
+    persistData.value.playVolumeMute = persistData.value.playVolume;
+    persistData.value.playVolume = 0;
+  } else {
+    persistData.value.playVolume = persistData.value.playVolumeMute;
+  }
+};
+
+onMounted(() => {
+  // 获取音乐数据
+  if (music.getPlaylists[0] && music.getPlaySongData)
+    getPlaySongData(music.getPlaySongData.id);
+  // 挂载播放器
+  window.$player = player.value;
+  // 恢复上次播放进度
+  if (music.getPlaySongTime && music.getPlaySongTime.currentTime) {
+    $player.currentTime = music.getPlaySongTime.currentTime;
+  }
+  // 设置音量
+  if ($player) $player.volume = persistData.value.playVolume;
+});
+
+// 监听当前音乐数据变化
+watch(
+  () => music.getPlaySongData,
+  (val) => {
+    debounce(() => {
+      getPlaySongData(val.id);
+    }, 500);
+  }
+);
+
+// 监听当前音量数据变化
+watch(
+  () => persistData.value.playVolume,
+  (val) => {
+    if ($player) $player.volume = val;
+  }
+);
+
+// 监听当前音乐状态变化
+watch(
+  () => music.getPlayState,
+  (val) => {
+    nextTick(() => {
+      // $player ? (val ? $player.play() : $player.pause()) : null;
+      if ($player) {
+        // val ? $player.play() : $player.pause();
+        val ? songInOrOut("play") : songInOrOut("pause");
+      } else {
+        $message.error("播放器初始化失败，请重试");
+      }
+    });
+  }
+);
+
+// 监听歌曲进度更新
+// watch(
+//   () => music.getPlaySongTime,
+//   (val) => {
+//     if (val.barMoveDistance) {
+//       songTimeVal.value = val.barMoveDistance;
+//     }
+//   }
+// );
 </script>
 
 <style lang="scss" scoped>
-nav {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  .left {
-    flex: 1;
-    max-width: 300px;
+.player {
+  height: 70px;
+  position: fixed;
+  bottom: -90px;
+  left: 0;
+  transition: all 0.3s;
+  z-index: 2;
+  &.show {
+    bottom: 0;
+  }
+  .slider {
+    position: absolute;
+    top: -12px;
+    left: 0;
+    width: 100%;
     display: flex;
-    flex-direction: row;
     align-items: center;
-    @media (max-width: 990px) {
-      flex: initial;
-    }
-    .logo {
-      width: 30px;
-      height: 30px;
-      margin-right: 12px;
-      cursor: pointer;
-      img {
-        width: 100%;
-        height: 100%;
+    @media (max-width: 640px) {
+      top: -6px;
+      > {
+        span {
+          display: none;
+        }
       }
     }
-    .controls {
+
+    .progress {
+      --n-handle-size: 12px;
+      --n-rail-height: 3px;
+    }
+    > {
+      span {
+        font-size: 12px;
+        white-space: nowrap;
+        background-color: var(--n-color);
+        outline: 1px solid var(--n-border-color);
+        padding: 2px 8px;
+        border-radius: 25px;
+        margin: 0 2px;
+      }
+    }
+  }
+
+  .all {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2vw;
+    @media (max-width: 620px) {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      .data {
+        .time {
+          display: none;
+        }
+      }
+      .control {
+        margin-left: auto;
+        .prev,
+        .next {
+          display: none;
+        }
+      }
+    }
+    .data {
       display: flex;
       flex-direction: row;
       align-items: center;
-      @media (max-width: 520px) {
-        display: none;
+      .pic {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-right: 12px;
+        position: relative;
+        box-shadow: 0 6px 8px -2px rgb(0 0 0 / 16%);
+        cursor: pointer;
+        img {
+          width: 100%;
+          height: 100%;
+          transform: scale(1);
+          filter: blur(0) brightness(1);
+          transition: all 0.3s;
+        }
+        .open {
+          position: absolute;
+          top: calc(50% - 15px);
+          left: calc(50% - 15px);
+          width: 30px;
+          height: 30px;
+          color: #fff;
+          opacity: 0;
+          transform: scale(0.6);
+          transition: all 0.3s;
+        }
+        &:hover {
+          img {
+            transform: scale(1.1);
+            filter: blur(6px) brightness(0.8);
+          }
+          .open {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      }
+      .name {
+        .song {
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s;
+          &:hover {
+            color: $mainColor;
+          }
+        }
+        .artisrOrLrc {
+          font-size: 12px;
+          margin-top: 2px;
+          .v-enter-active,
+          .v-leave-active {
+            transition: opacity 0.3s ease;
+          }
+
+          .v-enter-from,
+          .v-leave-to {
+            opacity: 0;
+          }
+        }
+      }
+    }
+    .control {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      .next,
+      .prev,
+      .dislike {
+        color: $mainColor;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
+        transform: scale(1);
+        transition: all 0.3s;
+        &:hover {
+          color: var(--n-color-embedded);
+          background-color: $mainColor;
+        }
+        &:active {
+          transform: scale(0.9);
+        }
+      }
+      .dislike {
+        padding: 9px;
+      }
+      .play-state {
+        width: 46px;
+        height: 46px;
+        color: $mainColor;
+        margin: 0 12px;
+        cursor: pointer;
+        transform: scale(1);
+        transition: all 0.3s;
+        &:hover {
+          transform: scale(1.1);
+        }
+        &:active {
+          transform: scale(1);
+        }
+      }
+    }
+    .menu {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      color: $mainColor;
+      @media (max-width: 640px) {
+        .volume,
+        .like,
+        .add-playlist,
+        .pattern {
+          display: none !important;
+        }
+      }
+      &.fm {
+        .pattern,
+        .playlist {
+          display: none;
+        }
       }
       .n-icon {
-        margin: 0 4px;
-        border-radius: 8px;
         padding: 4px;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s;
         &:hover {
-          background-color: var(--n-border-color);
+          background-color: $mainColor;
+          color: var(--n-color-embedded);
         }
         &:active {
           transform: scale(0.95);
         }
       }
-    }
-  }
-  .center {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    @media (max-width: 768px) {
-      display: none;
-    }
-    .link {
-      display: block;
-      text-decoration: none;
-      color: var(--n-text-color);
-      padding: 6px 16px;
-      margin: 0 2px;
-      border-radius: 8px;
-      transition: all 0.3s;
-      cursor: pointer;
-      &:hover {
-        background-color: $mainColor;
-        color: var(--n-color);
+      .like {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .n-icon {
+          padding: 7px;
+          margin-top: 1px;
+        }
       }
-      &:active {
-        transform: scale(0.95);
+      .add-playlist {
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-    }
-
-    .router-link-active {
-      background-color: $mainColor;
-      color: var(--n-color);
-    }
-  }
-  .right {
-    flex: 1;
-    max-width: 300px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    .avatar {
-      width: 30px;
-      min-width: 30px;
-      height: 30px;
-      margin-left: 12px;
-      box-shadow: 0 4px 12px -2px rgb(0 0 0 / 10%);
-      cursor: pointer;
+      .pattern {
+        margin-left: 8px;
+        .n-icon {
+          font-size: 22px;
+          padding: 8px;
+        }
+      }
+      .playlist {
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .volume {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        margin-left: 8px;
+        width: 36px;
+        height: 100%;
+        cursor: pointer;
+        .n-icon {
+          margin-right: 0;
+          transition: all 0.3s;
+          &:hover {
+            color: var(--n-primary-color);
+            transform: scale(1.1);
+          }
+        }
+        .volume-box {
+          position: absolute;
+          bottom: 45px;
+          left: 50%;
+          transform: translateX(-50%) translateY(10px) scale(0.95);
+          width: 36px;
+          height: 120px;
+          padding: 12px 0;
+          background-color: var(--n-color-modal);
+          backdrop-filter: blur(10px);
+          border-radius: 18px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+          border: 1px solid var(--n-border-color);
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 1000;
+          display: flex;
+          justify-content: center;
+          
+          .volmePg {
+            height: 100%;
+            --n-handle-size: 14px;
+            --n-rail-width: 4px;
+            
+            :deep(.n-slider-rail) {
+              background-color: var(--n-close-color-hover);
+            }
+          }
+        }
+        
+        &:hover {
+          .volume-box {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+        }
+      }
     }
   }
 }

@@ -24,6 +24,33 @@ const routes: any = [
     },
     component: () => import("@/views/User/index.vue"),
   },
+  // 歌手详情
+  {
+    path: "/artist",
+    name: "artist",
+    meta: {
+      title: "歌手详情",
+    },
+    component: () => import("@/views/Artist/index.vue"),
+  },
+  // 专辑详情
+  {
+    path: "/album",
+    name: "album",
+    meta: {
+      title: "专辑详情",
+    },
+    component: () => import("@/views/Album/index.vue"),
+  },
+  // 歌单详情
+  {
+    path: "/playlist/:id",
+    name: "playlist",
+    meta: {
+        title: "歌单详情",
+    },
+    component: () => import("@/views/Playlist/index.vue"),
+  },
   // 全局设置设置
   {
     path: "/setting",

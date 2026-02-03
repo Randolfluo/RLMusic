@@ -1,7 +1,7 @@
 ### 全局变量
 @baseUrl = http://localhost:3000/api
 @contentType = application/json
-@username = testuser001
+@username = testuser002
 @password = password123
 @email = test001@example.com
 
@@ -15,6 +15,11 @@ Content-Type: {{contentType}}
     "password": "{{password}}",
     "email": "{{email}}"
 }
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {}
+# }
 
 ### 2. 用户登录
 # @name login
@@ -25,15 +30,40 @@ Content-Type: {{contentType}}
     "username": "{{username}}",
     "password": "{{password}}"
 }
+# Response Example:
+# {
+#   "code": 1000,
+#   "message": "登录成功",
+#   "data": {
+#     "token": "eyJhbGciOiJIUzI1NiIs...",
+#     "user": {
+#       "id": 1,
+#       "username": "testuser001",
+#       "email": "test001@example.com",
+#       "avatar": "",
+#       "role": "user"
+#     }
+#   }
+# }
 
 
 ### 4. 注销用户 (需要登录后获取Token)
 DELETE {{baseUrl}}/user
 Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": null
+# }
 
 ### 5. 初始化基础文件夹 (不需要认证)
 POST {{baseUrl}}/file/initFolder
 Content-Type: {{contentType}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": "文件夹已存在"
+# }
 
 ### 6. 初始化用户目录 (需要登录后获取Token)
 POST {{baseUrl}}/file/initUserFolder
@@ -43,23 +73,64 @@ Authorization: Bearer {{login.response.body.data.token}}
 {
     "username": "{{username}}"
 }
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": "用户目录初始化成功"
+# }
+
 
 ### 7. 获取系统设置 (需要登录后获取Token)
 GET {{baseUrl}}/system/settings
 Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": [
+#     {
+#       "Key": "is_base_folder_created",
+#       "Value": "true"
+#     }
+#   ]
+# }
 
 ### 8. 扫描用户音乐 (需要登录)
 # !!! 必须先运行上面的 "2. 用户登录" 请求，获取到 Token 后才能运行此请求 !!!
 POST {{baseUrl}}/song/scan
 Authorization: Bearer {{login.response.body.data.token}}
-
-
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "added": 0,
+#     "message": "扫描完成",
+#     "updated": 183
+#   }
+# }
 
 ### 11. 播放歌曲 (无需登录，替换 ID)
 GET {{baseUrl}}/song/stream/1
+# Response: (Binary Audio Data)
+
+
+
 
 ### 11-2. 获取歌单详情 (无需登录，替换 ID)
 GET {{baseUrl}}/song/playlist/1
+
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": [
+#     {
+#       "id": 1,
+#       "title": "光辉岁月",
+#       "artist_name": "Beyond",
+#       "album_title": "黄家驹原作精选集",
+#       "duration": 297.5466666666667
+#     },
+#     ]
+# }
 
 ### 12. 管理员登录
 # @name adminLogin
@@ -79,28 +150,69 @@ Authorization: Bearer {{adminLogin.response.body.data.token}}
 {
     "filepath": 'C:\Users\lrj32\Desktop\music player\localmusicplayerFoleder'
 }
+# Response Example:
+# {
+#   "code": 1000,
+#   "message": "配置更新成功",
+#   "data": null
+# }
 
 ### 14. 获取私人歌单列表 (需要登录)
 GET {{baseUrl}}/song/playlists
 Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": [
+#     {
+#       "id": 2,
+#       "title": "东方钢琴音乐集",
+#       "description": "private",
+#       "is_public": false,
+#       "owner_id": 2,
+#       "cover_url": "/covers/b6891a2017460591bcaf4bc9cbb66164.png",
+#       "play_count": 0,
+#       "songs": null
+#     }, 
+#     ]
+# }
 
 ### 15. 获取公共歌单列表 (无需登录)
 GET {{baseUrl}}/song/playlists/public
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": [
+#     {
+#       "id": 1,
+#       "title": "public",
+#       "description": "public",
+#       "is_public": true,
+#       "owner_id": 2,
+#       "cover_url": "/covers/caa3b6fc12ccb5a27043e5217164ee3f.png",
+#       "play_count": 0,
+#       "songs": null
+#     },
+#  ]
+# }
 
 ### 16. 退出登录 (需要登录)
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": null
+# }
 
 ### 16. 上传用户头像 (需要登录)
 POST {{baseUrl}}/user/avatar
 Authorization: Bearer {{login.response.body.data.token}}
 Content-Type: multipart/form-data; boundary=MyBoundary
 
---MyBoundary
-Content-Disposition: form-data; name="file"; filename="favicon.png"
-Content-Type: image/png
-
-< ../public/images/logo/favicon.png
---MyBoundary--
-
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": "/api/file/avatar/user_3_1770028087.png"
+# }
 

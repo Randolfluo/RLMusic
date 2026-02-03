@@ -17,9 +17,21 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 let win;
+let splash;
 function createWindow() {
+  splash = new BrowserWindow({
+    width: 500,
+    height: 300,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    icon: path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png")
+  });
+  splash.loadFile(path.join(process.env.VITE_PUBLIC, "loading.html"));
   win = new BrowserWindow({
     title: "Local Music Player",
+    show: false,
+    // 先隐藏主窗口
     // 强制转换为 string 避免 TS 报错，或者使用 || '' 兼容
     icon: path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png"),
     width: 1200,
@@ -27,14 +39,22 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname$1, "../preload/index.mjs"),
-      // 预加载脚本
+      preload: path.join(__dirname$1, "../dist-electron/preload.mjs"),
       nodeIntegration: true,
       contextIsolation: true
     }
   });
+  win.setMenu(null);
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  });
+  win.once("ready-to-show", () => {
+    setTimeout(() => {
+      splash?.destroy();
+      splash = null;
+      win?.show();
+      win?.focus();
+    }, 2e3);
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);

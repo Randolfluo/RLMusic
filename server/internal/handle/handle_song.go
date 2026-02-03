@@ -299,7 +299,7 @@ func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	db := GetDB(c)
 
-	songs, err := model.GetPlaylistSongs(db, idStr)
+	playlistDetail, err := model.GetPlaylistDetail(db, idStr)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			ReturnError(c, g.ErrDbOp, "歌单不存在")
@@ -309,5 +309,5 @@ func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
 		return
 	}
 
-	ReturnSuccess(c, songs)
+	ReturnSuccess(c, playlistDetail)
 }

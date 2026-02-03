@@ -28,6 +28,43 @@ declare module 'axios' {
   export interface AxiosRequestConfig {
     hiddenBar?: boolean;
   }
+  // 扩展 AxiosResponse 以使返回值通过 TS 检查 (因为我们在 interceptor 中返回了 response.data)
+  // 如果您想覆盖默认的 AxiosResponse 行为，这可能有点 tricky，
+  // 通常更推荐下面的这种方式：不要在这里改 AxiosResponse，而是直接定义接口。
+}
+
+/**
+ * 统一的 API 响应结构
+ */
+export interface ApiResponse<T = any> {
+  code: number;
+  message: string;
+  data: T;
+}
+
+// 覆盖 axios 默认导出，强制让它通过泛型返回 ApiResponse
+// 实际上我们这里直接返回 axios 实例，但在业务调用时需要注意类型转化。
+// 为了让调用者方便，我们可以通过包装一层或者让 TS 认为 service 返回的是 data。
+
+// 修正：Response interceptor 已经返回了 response.data。
+// 所以 axios.get<T>() 返回的 Promise<AxiosResponse<T>> 实际上变成了 Promise<T>。
+// 我们需要自定义一个类型或扩展 axios 的类型定义。
+
+
+
+// 重新声明 AxiosInstance 的类型以匹配我们的拦截器行为
+// 拦截器现在返回的是 ApiResponse 结构，而不是 AxiosResponse
+declare module 'axios' {
+  interface AxiosInstance {
+    (config: AxiosRequestConfig): Promise<any>;
+    request<T = any>(config: AxiosRequestConfig): Promise<T>;
+    get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+    delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+    head<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+    post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+    put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+    patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
+  }
 }
 
 // 创建 axios 实例

@@ -214,7 +214,7 @@ const getFilter = (lrcIndex, index) => {
 // 点击歌词跳转
 const jumpTime = (time) => {
   lrcMouseStatus.value = false;
-  if ($player) $player.currentTime = time;
+  if (typeof $player !== 'undefined' && $player) $player.currentTime = time;
 };
 
 // 鼠标移出歌词区域
@@ -267,7 +267,7 @@ const lyricsScroll = (index) => {
 
 onMounted(() => {
   nextTick(() => {
-    if (setting.musicFrequency) {
+    if (setting.musicFrequency && typeof $player !== 'undefined' && $player) {
       $player.crossOrigin = "anonymous";
       musicFrequency.value = new MusicFrequency(
         avBars.value,

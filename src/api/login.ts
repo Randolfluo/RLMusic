@@ -38,17 +38,3 @@ export const login = (data: LoginParams) => {
   });
 };
 
-/**
- * 获取登录状态
- * Note: 此接口可能需要后端适配，此处保留以兼容前端调用
- */
-export const getLoginState = () => {
-  return axios({
-    method: "GET",
-    hiddenBar: true,
-    url: "/login/status",
-    params: {
-      timestamp: new Date().getTime(),
-    },
-  });
-};
