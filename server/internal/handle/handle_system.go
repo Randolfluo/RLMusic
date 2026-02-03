@@ -14,15 +14,53 @@ type UpdateConfigReq struct {
 	FilePath string `json:"filepath"`
 }
 
+type DurationStatsVO struct {
+	UserTotalDuration   int64 `json:"user_total_duration"`
+	SystemTotalDuration int64 `json:"system_total_duration"`
+}
+
 // GetSettings 获取所有系统设置
 func (*SystemAuth) GetSettings(c *gin.Context) {
 	db := GetDB(c)
-	settings, err := model.GetAllSystemSettings(db)
+	info, err := model.GetSystemInfoStruct(db)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
-	ReturnSuccess(c, settings)
+	ReturnSuccess(c, info)
+}
+
+// GetDurationStats 获取用户和系统总时长
+func (*SystemAuth) GetDurationStats(c *gin.Context) {
+	db := GetDB(c)
+	// 获取当前登录用户
+	authUser := GetCurrentUser(c)
+	if authUser == nil {
+		ReturnError(c, g.ErrTokenEmpty, nil)
+		return
+	}
+
+	user, err := model.GetUserAuthInfoByName(db, authUser.Username)
+	if err != nil {
+		ReturnError(c, g.ErrUserNotExist, err)
+		return
+	}
+
+	info, err := model.GetSystemInfoStruct(db)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 容错处理
+	if info == nil {
+		info = &model.SystemInfoStruct{}
+	}
+
+	ReturnSuccess(c, DurationStatsVO{
+		UserTotalDuration:   user.TotalDuration,
+		SystemTotalDuration: info.TotalDuration,
+	})
 }
 
 // UpdateConfig 更新系统配置

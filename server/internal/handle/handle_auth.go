@@ -98,7 +98,12 @@ func (*UserAuth) Register(c *gin.Context) {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
-
+	// 自动创建用户目录
+	// 忽略错误，因为这不应该阻止注册流程 (可能系统文件夹还没初始化，或者管理员还没配置路径)
+	// 用户可以在后续通过扫描等操作前被提示需要管理员初始化
+	if err := CreateUserFolder(db, req.Username); err != nil {
+		slog.Warn("Failed to auto-create user folder during registration", "user", req.Username, "error", err)
+	}
 	ReturnSuccess(c, RegisterVO{})
 }
 
@@ -204,16 +209,21 @@ func (*UserAuth) GetUserInfo(c *gin.Context) {
 		return
 	}
 
+	sysInfo, _ := model.GetSystemInfoStruct(db)
+	if sysInfo == nil {
+		sysInfo = &model.SystemInfoStruct{}
+	}
+
 	ReturnSuccess(c, UserInfoVO{
 		ID:            user.ID,
 		Username:      user.Username,
 		Email:         user.Email,
 		Avatar:        user.Avatar,
 		LastLogin:     user.LastLogin,
-		TotalSongs:    user.TotalSongs,
-		TotalAlbums:   user.TotalAlbums,
-		TotalArtists:  user.TotalArtists,
-		TotalDuration: user.TotalDuration,
+		TotalSongs:    sysInfo.TotalSongs,
+		TotalAlbums:   sysInfo.TotalAlbums,
+		TotalArtists:  sysInfo.TotalArtists,
+		TotalDuration: user.ListeningDuration, // 保持为用户的听歌时长
 		FavoriteSong:  user.FavoriteSong,
 	})
 }

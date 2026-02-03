@@ -53,7 +53,7 @@ func registerBaseHandler(r *gin.Engine) {
 	// 歌曲相关(无需认证)
 	song := base.Group("/song")
 	{
-		song.GET("/playlists/public", songAuthAPI.GetPublicPlaylists)
+		song.GET("/playlists", songAuthAPI.GetAllPlaylists)      // 获取所有歌单
 		song.GET("/playlist/:id", songAuthAPI.GetPlaylistDetail) // 获取歌单包含的歌曲
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
 	}
@@ -78,23 +78,17 @@ func registerAuthHandler(r *gin.Engine) {
 		user.POST("/avatar", userAuthAPI.UploadAvatar) // 上传头像
 	}
 
-	// 初始化用户文件夹
-	file := auth.Group("/file")
-	{
-		file.POST("/initUserFolder", fileAuthAPI.InitUserFolder)
-	}
-
 	// 歌曲管理
 	song := auth.Group("/song")
 	{
 		song.POST("/scan", songAuthAPI.ScanUserMusic)
-		song.GET("/playlists", songAuthAPI.GetPrivatePlaylists) // 获取私人歌单列表
 	}
 
 	// 系统相关
 	system := auth.Group("/system")
 	{
 		system.GET("/settings", systemAuthAPI.GetSettings)
+		system.GET("/duration", systemAuthAPI.GetDurationStats)
 		system.POST("/config", systemAuthAPI.UpdateConfig)
 	}
 }

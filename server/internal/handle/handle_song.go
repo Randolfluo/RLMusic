@@ -38,6 +38,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 
 	addedCount := 0
 	updatedCount := 0
+	var scannedDuration float64 = 0
 
 	// 读取用户目录下的一级子目录
 	entries, err := os.ReadDir(userPath)
@@ -60,14 +61,9 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 		subDirName := entry.Name()
 		targetDir := filepath.Join(userPath, subDirName)
 
-		// 确定权限: "public" 文件夹为公开，其他默认为私有
-		permission := "private"
-		if subDirName == "public" {
-			permission = "public"
-		}
-
 		// 查找或创建歌单 (歌单名 = 文件夹名)
-		currentPlaylist, err := model.FindOrCreatePlaylist(db, user.ID, subDirName, permission)
+		// 移除权限控制，permission参数不再使用，默认公开
+		currentPlaylist, err := model.FindOrCreatePlaylist(db, user.ID, subDirName)
 		if err != nil {
 			slog.Error("Failed to create/find Playlist", "name", subDirName, "error", err)
 			continue // 歌单创建失败，跳过该文件夹的扫描? 或者继续扫描但不加歌单? 这里选择跳过
@@ -211,6 +207,8 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				} else {
 					updatedCount++
 				}
+				// 累加时长
+				scannedDuration += song.Duration
 			} else {
 				slog.Error("Failed to save song", "title", songTitle, "error", err)
 			}
@@ -235,6 +233,23 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			slog.Error("Walk folder failed", "path", targetDir, "error", err)
 		}
 	}
+
+	// 更新用户总时长 (秒)
+	user.TotalDuration = int64(scannedDuration)
+	db.Save(user)
+
+	// 更新系统统计
+	var songCount, albumCount, artistCount int64
+	db.Model(&model.Song{}).Count(&songCount)
+	db.Model(&model.Album{}).Count(&albumCount)
+	db.Model(&model.Artist{}).Count(&artistCount)
+
+	// 计算所有用户总时长
+	var systemTotalDuration int64
+	db.Model(&model.User{}).Select("sum(total_duration)").Scan(&systemTotalDuration)
+
+	_ = model.UpdateSystemInfoStats(db, songCount, albumCount, artistCount, systemTotalDuration)
+
 	slog.Info("Music scan completed", "user", user.Username, "added", addedCount, "updated", updatedCount)
 	ReturnSuccess(c, gin.H{
 		"added":   addedCount,
@@ -267,25 +282,11 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 // GetSongCover 获取封面图片 (已移除)
 // func (*SongAuth) GetSongCover(c *gin.Context) { ... }
 
-// GetPublicPlaylists 获取公共歌单
-func (*SongAuth) GetPublicPlaylists(c *gin.Context) {
+// GetAllPlaylists 获取所有歌单
+func (*SongAuth) GetAllPlaylists(c *gin.Context) {
 	db := GetDB(c)
 
 	playlists, err := model.GetPublicPlaylists(db)
-	if err != nil {
-		ReturnError(c, g.ErrDbOp, err)
-		return
-	}
-
-	ReturnSuccess(c, playlists)
-}
-
-// GetPrivatePlaylists 获取私人歌单
-func (*SongAuth) GetPrivatePlaylists(c *gin.Context) {
-	db := GetDB(c)
-	user := GetCurrentUser(c)
-
-	playlists, err := model.GetPrivatePlaylists(db, user.ID)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return

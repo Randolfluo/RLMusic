@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
@@ -24,21 +22,22 @@ type Playlist struct {
 }
 
 // FindOrCreatePlaylist 查找或创建歌单
-func FindOrCreatePlaylist(db *gorm.DB, userID int, title string, permission string) (*Playlist, error) {
+func FindOrCreatePlaylist(db *gorm.DB, userID int, title string) (*Playlist, error) {
 	var playlist Playlist
 	// 使用 Find 避免 First 在找不到记录时打印错误日志
 	if err := db.Where("title = ? AND owner_id = ?", title, userID).Limit(1).Find(&playlist).Error; err != nil {
 		return nil, err
 	}
 
-	isPublic := permission == "public"
+	// 强制为公开
+	isPublic := true
 
 	// ID 为 0 说明未找到
 	if playlist.ID == 0 {
 		// 如果不存在歌单，则创建
 		playlist = Playlist{
 			Title:       title,
-			Description: fmt.Sprintf("%s", permission),
+			Description: "", // 移除权限描述
 			IsPublic:    isPublic,
 			OwnerID:     userID,
 		}
@@ -89,23 +88,10 @@ type PlaylistResponse struct {
 	Songs       []SimpleSongResponse `json:"songs"` // Deprecated: 列表接口不再返回详情
 }
 
-// GetPublicPlaylists 获取所有公共歌单(不含歌曲详情)
+// GetPublicPlaylists 获取所有歌单(不含歌曲详情)
 func GetPublicPlaylists(db *gorm.DB) ([]PlaylistResponse, error) {
 	var playlists []Playlist
-	// 只查询 public，不预加载 Songs
-	if err := db.Where("is_public = ?", true).
-		Find(&playlists).Error; err != nil {
-		return nil, err
-	}
-	return convertToResponse(playlists), nil
-}
-
-// GetPrivatePlaylists 获取用户私有歌单(不含歌曲详情)
-func GetPrivatePlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
-	var playlists []Playlist
-	// 只查询 private 且 owner_id = userID，不预加载 Songs
-	if err := db.Where("is_public = ? AND owner_id = ?", false, userID).
-		Find(&playlists).Error; err != nil {
+	if err := db.Find(&playlists).Error; err != nil {
 		return nil, err
 	}
 	return convertToResponse(playlists), nil

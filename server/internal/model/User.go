@@ -18,12 +18,10 @@ type User struct {
 
 	UserGroup string `gorm:"type:varchar(50);default:'user'" json:"user_group"` // 用户组: admin, user, guest
 
-	Avatar        string `gorm:"type:varchar(255)"` // 头像
-	TotalSongs    int64  `gorm:"default:0"`         // 总歌曲数
-	TotalAlbums   int64  `gorm:"default:0"`         // 总专辑数
-	TotalArtists  int64  `gorm:"default:0"`         // 总歌手数
-	TotalDuration int64  `gorm:"default:0"`         // 总听歌时长
-	FavoriteSong  string `gorm:"type:varchar(255)"` // 最喜爱的歌曲
+	Avatar            string `gorm:"type:varchar(255)"` // 头像
+	ListeningDuration int64  `gorm:"default:0"`         // 累计听歌时长 (播放产生)
+	TotalDuration     int64  `gorm:"default:0"`         // 歌曲总时长 (扫描产生)
+	FavoriteSong      string `gorm:"type:varchar(255)"` // 最喜爱的歌曲
 
 	LastLogin    *time.Time
 	IsDelete     bool
