@@ -60,6 +60,16 @@ const routes: any = [
     },
     component: () => import("@/views/Playlist/PublicPlaylists.vue"),
   },
+  // 私有歌单
+  {
+    path: "/private-playlists",
+    name: "private-playlists",
+    meta: {
+      title: "私有歌单",
+      needLogin: true,
+    },
+    component: () => import("@/views/Playlist/PrivatePlaylists.vue"),
+  },
   // 全局设置设置
   {
     path: "/setting",

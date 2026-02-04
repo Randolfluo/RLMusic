@@ -1,16 +1,16 @@
 <template>
-  <div class="public-playlists">
+  <div class="private-playlists">
     <div class="section-title">
-      <h2>公共歌单</h2>
+      <h2>私有歌单</h2>
     </div>
 
-    <PlaylistGrid :loading="loading" :playlists="playlists" empty-text="暂无公共歌单" />
+    <PlaylistGrid :loading="loading" :playlists="playlists" empty-text="暂无私有歌单" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getPublicPlaylists } from "@/api/playlist";
+import { getUserPrivatePlaylists } from "@/api/playlist";
 import { ResultCode } from "@/utils/request";
 import { useMessage } from "naive-ui";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
@@ -26,7 +26,7 @@ onMounted(() => {
 const getPlaylists = async () => {
   loading.value = true;
   try {
-    const res = await getPublicPlaylists();
+    const res = await getUserPrivatePlaylists();
     if (res.code === ResultCode.SUCCESS) {
       playlists.value = res.data;
     }
@@ -39,7 +39,7 @@ const getPlaylists = async () => {
 </script>
 
 <style scoped lang="scss">
-.public-playlists {
+.private-playlists {
   padding: 24px;
   .section-title {
     margin-bottom: 20px;

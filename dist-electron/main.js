@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
-createRequire(import.meta.url);
+const require$1 = createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -11,7 +11,7 @@ const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 if (os.release().startsWith("6.1")) app.disableHardwareAcceleration();
-if (process.platform === "win32") app.setAppUserModelId(app.getName());
+if (process.platform === "win32") app.setAppUserModelId("LocalMusicPlayer");
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
@@ -19,21 +19,25 @@ if (!app.requestSingleInstanceLock()) {
 let win;
 let splash;
 function createWindow() {
+  let iconPath = path.join(process.env.VITE_PUBLIC, "images/logo/favicon.ico");
+  const fs = require$1("fs");
+  if (!fs.existsSync(iconPath)) {
+    iconPath = path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png");
+  }
   splash = new BrowserWindow({
     width: 500,
     height: 300,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
-    icon: path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png")
+    icon: iconPath
   });
   splash.loadFile(path.join(process.env.VITE_PUBLIC, "loading.html"));
   win = new BrowserWindow({
     title: "Local Music Player",
     show: false,
     // 先隐藏主窗口
-    // 强制转换为 string 避免 TS 报错，或者使用 || '' 兼容
-    icon: path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png"),
+    icon: iconPath,
     width: 1200,
     height: 800,
     minWidth: 800,

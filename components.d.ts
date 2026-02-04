@@ -66,6 +66,7 @@ declare module 'vue' {
     PlayerCover: typeof import('./src/components/Player/PlayerCover.vue')['default']
     PlayerRecord: typeof import('./src/components/Player/PlayerRecord.vue')['default']
     PlayList: typeof import('./src/components/DataList/PlayList.vue')['default']
+    PlaylistGrid: typeof import('./src/components/DataList/PlaylistGrid.vue')['default']
     PlaylistUpdate: typeof import('./src/components/DataModel/PlaylistUpdate.vue')['default']
     Provider: typeof import('./src/components/Provider/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

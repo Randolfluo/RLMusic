@@ -29,7 +29,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
 
 // Win10+ 通知设置应用ID
-if (process.platform === 'win32') app.setAppUserModelId(app.getName())
+if (process.platform === 'win32') app.setAppUserModelId('LocalMusicPlayer')
 
 // 单例模式锁，防止启动多个实例
 if (!app.requestSingleInstanceLock()) {
@@ -44,6 +44,13 @@ let splash: BrowserWindow | null
  * 创建主窗口
  */
 function createWindow() {
+  // 优先查找 .ico 文件 (Windows 最佳实践)，如果不存在则使用 .png
+  let iconPath = path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.ico')
+  const fs = require('fs') // 引入 fs 模块用于检查文件是否存在
+  if (!fs.existsSync(iconPath)) {
+    iconPath = path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png')
+  }
+
   // 创建启动页
   splash = new BrowserWindow({
     width: 500,
@@ -51,15 +58,14 @@ function createWindow() {
     transparent: true,
     frame: false,
     alwaysOnTop: true,
-    icon: path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png'),
+    icon: iconPath,
   })
   splash.loadFile(path.join(process.env.VITE_PUBLIC as string, 'loading.html'))
 
   win = new BrowserWindow({
     title: 'Local Music Player',
     show: false, // 先隐藏主窗口
-    // 强制转换为 string 避免 TS 报错，或者使用 || '' 兼容
-    icon: path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png'),
+    icon: iconPath,
     width: 1200,
     height: 800,
     minWidth: 800,
