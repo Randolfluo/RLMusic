@@ -57,3 +57,5 @@ pnpm
 
 
 //添加歌单管理模式，支持物理方式删除歌单
+
+//total_duartion和listening_duration字段值修复

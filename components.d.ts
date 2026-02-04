@@ -46,6 +46,8 @@ declare module 'vue' {
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
     NModal: typeof import('naive-ui')['NModal']
     NNotificationProvider: typeof import('naive-ui')['NNotificationProvider']
+    NNumberAnimation: typeof import('naive-ui')['NNumberAnimation']
+    NPagination: typeof import('naive-ui')['NPagination']
     NPopover: typeof import('naive-ui')['NPopover']
     NResult: typeof import('naive-ui')['NResult']
     NScrollbar: typeof import('naive-ui')['NScrollbar']
@@ -69,5 +71,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchInp: typeof import('./src/components/SearchInp/index.vue')['default']
+    SystemStats: typeof import('./src/components/Home/SystemStats.vue')['default']
   }
 }

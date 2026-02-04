@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	g "server/internal/global"
-	"server/internal/model"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,13 +15,6 @@ type FileAuth struct{}
 
 // InitFolder 在 basicPath 下创建文件夹
 func (*FileAuth) InitFolder(c *gin.Context) {
-	// 检查是否已初始化 (持久化检查)
-	db := GetDB(c)
-	if info, _ := model.GetSystemInfoStruct(db); info != nil && info.IsBaseFolderCreated {
-		ReturnSuccess(c, "基础文件夹已初始化(已跳过创建)")
-		return
-	}
-
 	conf := g.GetConfig().BasicPath
 	if conf.FilePath == "" || conf.FileName == "" {
 		slog.Error("BasicPath not configured")
@@ -35,8 +27,7 @@ func (*FileAuth) InitFolder(c *gin.Context) {
 
 	//检查文件夹是否存在
 	if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
-		// 如果文件夹存在，也视为初始化成功，并写入数据库状态
-		_ = model.SetBaseFolderCreated(db)
+		// 如果文件夹存在，也视为初始化成功
 		ReturnSuccess(c, "文件夹已存在")
 		return
 	}
@@ -46,12 +37,6 @@ func (*FileAuth) InitFolder(c *gin.Context) {
 		slog.Error("Failed to create folder", "path", fullPath, "error", err)
 		ReturnError(c, g.Err, "创建文件夹失败: "+err.Error())
 		return
-	}
-
-	// 记录初始化状态
-	if err := model.SetBaseFolderCreated(db); err != nil {
-		slog.Error("Failed to save system setting", "error", err)
-		// 不阻断流程，仅记录日志
 	}
 
 	ReturnSuccess(c, "文件夹创建成功")

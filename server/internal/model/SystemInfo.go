@@ -7,11 +7,10 @@ import (
 )
 
 const (
-	KeyTotalSongs        = "total_songs"
-	KeyTotalAlbums       = "total_albums"
-	KeyTotalArtists      = "total_artists"
-	KeyTotalDuration     = "total_duration"
-	KeyBaseFolderCreated = "is_base_folder_created"
+	KeyTotalSongs    = "total_songs"
+	KeyTotalAlbums   = "total_albums"
+	KeyTotalArtists  = "total_artists"
+	KeyTotalDuration = "total_duration"
 )
 
 // SystemInfo 系统信息模型 (Key-Value)
@@ -22,11 +21,10 @@ type SystemInfo struct {
 
 // SystemInfoStruct 用于应用层传输的结构体 (非数据库表)
 type SystemInfoStruct struct {
-	TotalSongs          int64
-	TotalAlbums         int64
-	TotalArtists        int64
-	TotalDuration       int64
-	IsBaseFolderCreated bool
+	TotalSongs    int64
+	TotalAlbums   int64
+	TotalArtists  int64
+	TotalDuration int64
 }
 
 // GetSystemInfoValue 获取单个系统设置
@@ -63,8 +61,6 @@ func GetSystemInfoStruct(db *gorm.DB) (*SystemInfoStruct, error) {
 			res.TotalArtists, _ = strconv.ParseInt(info.Value, 10, 64)
 		case KeyTotalDuration:
 			res.TotalDuration, _ = strconv.ParseInt(info.Value, 10, 64)
-		case KeyBaseFolderCreated:
-			res.IsBaseFolderCreated = (info.Value == "true")
 		}
 	}
 	return res, nil
@@ -85,9 +81,4 @@ func UpdateSystemInfoStats(db *gorm.DB, songs, albums, artists, duration int64) 
 		return err
 	}
 	return nil
-}
-
-// SetBaseFolderCreated 设置基础文件夹已创建
-func SetBaseFolderCreated(db *gorm.DB) error {
-	return SetSystemInfoValue(db, KeyBaseFolderCreated, "true")
 }

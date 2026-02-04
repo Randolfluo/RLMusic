@@ -1,7 +1,7 @@
 ### 全局变量
 @baseUrl = http://localhost:3000/api
 @contentType = application/json
-@username = testuser005
+@username = testuser001
 @password = password123
 @email = test001@example.com
 
@@ -67,32 +67,23 @@ Content-Type: {{contentType}}
 ### 6. 初始化用户目录 (内部调用，已移除接口)
 # (用户注册时自动调用，不再提供独立接口)
 
-### 7. 获取系统设置 (需要登录后获取Token)
-GET {{baseUrl}}/system/settings
-Authorization: Bearer {{login.response.body.data.token}}
+### 7. 获取系统统计信息 (无需登录) (系统设置+时长统计)
+GET {{baseUrl}}/system/stats
 # {
 #   "code": 1000,
 #   "message": "success",
 #   "data": {
-#     "TotalSongs": 0,
-#     "TotalAlbums": 0,
-#     "TotalArtists": 0,
-#     "IsBaseFolderCreated": true
+#     "song_count": 1166,
+#     "album_count": 680,
+#     "artist_count": 536,
+#     "music_duration": 272187,
+#     "playlist_count": 15,
+#     "user_count": 6,
+#     "system_uptime": 34,
+#     "user_listening_duration": 0,
+#     "user_scanned_duration": 0
 #   }
 # }
-
-### 7-2. 获取时长统计 (需要登录)
-GET {{baseUrl}}/system/duration
-Authorization: Bearer {{login.response.body.data.token}}
-# {
-#   "code": 1000,
-#   "message": "success",
-#   "data": {
-#     "user_total_duration": 0,
-#     "system_total_duration": 0
-#   }
-# }
-
 ### 8. 扫描用户音乐 (需要登录)
 # !!! 必须先运行上面的 "2. 用户登录" 请求，获取到 Token 后才能运行此请求 !!!
 POST {{baseUrl}}/song/scan

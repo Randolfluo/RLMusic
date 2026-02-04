@@ -4,7 +4,7 @@ import request from "@/utils/request";
  * 检查音乐是否可用
  * @param {Number} id - 歌曲 id
  */
-export function checkMusicCanUse(id) {
+export function checkMusicCanUse(id: number | string) {
   return new Promise((resolve) => {
     resolve({ success: true, message: "ok" });
   });
@@ -15,7 +15,7 @@ export function checkMusicCanUse(id) {
  * @param {Number} id - 歌曲 id
  * @param {String} level - 音质
  */
-export function getMusicUrl(id, level) {
+export function getMusicUrl(id: number | string, level?: string) {
   return new Promise((resolve) => {
     resolve({
       data: [
@@ -34,7 +34,7 @@ export function getMusicUrl(id, level) {
  * 获取歌词
  * @param {Number} id - 歌曲 id
  */
-export function getMusicLyric(id) {
+export function getMusicLyric(id: number | string) {
   return new Promise((resolve) => {
     resolve({
       lrc: {
@@ -44,5 +44,16 @@ export function getMusicLyric(id) {
         lyric: "",
       },
     });
+  });
+}
+
+/**
+ * 点赞/取消点赞歌曲
+ * @param {Number|String} id - 歌曲 id
+ */
+export function toggleLike(id: number | string) {
+  return request({
+    method: "POST",
+    url: `/song/like/${id}`,
   });
 }

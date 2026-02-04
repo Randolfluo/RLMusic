@@ -57,6 +57,12 @@ func registerBaseHandler(r *gin.Engine) {
 		song.GET("/playlist/public/:id", songAuthAPI.GetPublicPlaylistDetail) // 获取公开歌单详情
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
 	}
+
+	// 系统相关(无需认证)
+	system := base.Group("/system")
+	{
+		system.GET("/stats", systemAuthAPI.GetStats) // 合并后的接口
+	}
 }
 
 // registerAuthHandler 注册需要JWT认证的路由
@@ -93,8 +99,7 @@ func registerAuthHandler(r *gin.Engine) {
 	// 系统相关
 	system := auth.Group("/system")
 	{
-		system.GET("/settings", systemAuthAPI.GetSettings)
-		system.GET("/duration", systemAuthAPI.GetDurationStats)
 		system.POST("/config", systemAuthAPI.UpdateConfig)
 	}
+
 }

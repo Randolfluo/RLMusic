@@ -3,6 +3,9 @@ package handle
 import (
 	g "server/internal/global"
 	"server/internal/model"
+	"server/internal/utils/jwt"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -14,52 +17,72 @@ type UpdateConfigReq struct {
 	FilePath string `json:"filepath"`
 }
 
-type DurationStatsVO struct {
-	UserTotalDuration   int64 `json:"user_total_duration"`
-	SystemTotalDuration int64 `json:"system_total_duration"`
+type StatsVO struct {
+	SongCount     int64 `json:"song_count"`
+	AlbumCount    int64 `json:"album_count"`
+	ArtistCount   int64 `json:"artist_count"`
+	MusicDuration int64 `json:"music_duration"`
+
+	PlaylistCount int64 `json:"playlist_count"`
+	UserCount     int64 `json:"user_count"`
+	SystemUptime  int64 `json:"system_uptime"`
+
+	UserListeningDuration int64 `json:"user_listening_duration"`
+	UserScannedDuration   int64 `json:"user_scanned_duration"`
 }
 
-// GetSettings 获取所有系统设置
-func (*SystemAuth) GetSettings(c *gin.Context) {
+// GetStats 获取系统统计信息（包含原有 Settings 和 Duration）
+func (*SystemAuth) GetStats(c *gin.Context) {
 	db := GetDB(c)
+
+	// 1. 获取系统基础信息
 	info, err := model.GetSystemInfoStruct(db)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
-	ReturnSuccess(c, info)
-}
-
-// GetDurationStats 获取用户和系统总时长
-func (*SystemAuth) GetDurationStats(c *gin.Context) {
-	db := GetDB(c)
-	// 获取当前登录用户
-	authUser := GetCurrentUser(c)
-	if authUser == nil {
-		ReturnError(c, g.ErrTokenEmpty, nil)
-		return
-	}
-
-	user, err := model.GetUserAuthInfoByName(db, authUser.Username)
-	if err != nil {
-		ReturnError(c, g.ErrUserNotExist, err)
-		return
-	}
-
-	info, err := model.GetSystemInfoStruct(db)
-	if err != nil {
-		ReturnError(c, g.ErrDbOp, err)
-		return
-	}
-
-	// 容错处理
 	if info == nil {
 		info = &model.SystemInfoStruct{}
 	}
 
-	ReturnSuccess(c, DurationStatsVO{
-		UserTotalDuration:   user.TotalDuration,
-		SystemTotalDuration: info.TotalDuration,
+	// 补充统计: 歌单数量
+	var totalPlaylists int64
+	db.Model(&model.Playlist{}).Count(&totalPlaylists)
+
+	// 补充统计: 用户数量
+	var totalUsers int64
+	db.Model(&model.User{}).Where("is_delete = ?", false).Count(&totalUsers)
+
+	// 补充统计: 系统运行时间
+	systemRunTime := int64(time.Since(g.StartTime).Seconds())
+
+	// 2. 获取当前用户时长信息 (可选登录)
+	var listeningDuration int64 = 0
+	var totalDuration int64 = 0
+	authorization := c.GetHeader("Authorization")
+	if authorization != "" {
+		parts := strings.Split(authorization, " ")
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			claims, err := jwt.ParseToken(g.Conf.JWT.Secret, parts[1])
+			if err == nil && time.Now().Unix() <= claims.ExpiresAt.Unix() {
+				if user, err := model.GetUserAuthInfoById(db, claims.UserId); err == nil {
+					listeningDuration = user.ListeningDuration
+					totalDuration = user.TotalDuration
+				}
+			}
+		}
+	}
+
+	ReturnSuccess(c, StatsVO{
+		SongCount:             info.TotalSongs,
+		AlbumCount:            info.TotalAlbums,
+		ArtistCount:           info.TotalArtists,
+		MusicDuration:         info.TotalDuration,
+		PlaylistCount:         totalPlaylists,
+		UserCount:             totalUsers,
+		SystemUptime:          systemRunTime,
+		UserListeningDuration: listeningDuration,
+		UserScannedDuration:   totalDuration,
 	})
 }
 

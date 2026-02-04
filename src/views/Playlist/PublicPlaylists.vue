@@ -1,15 +1,7 @@
 <template>
-  <div class="home">
-    <SystemStats />
-
+  <div class="public-playlists">
     <div class="section-title">
       <h2>公共歌单</h2>
-      <n-button text @click="router.push('/playlists')" style="font-size: 14px">
-        更多
-        <template #icon>
-          <n-icon :component="Right" />
-        </template>
-      </n-button>
     </div>
 
     <n-spin :show="loading">
@@ -22,8 +14,6 @@
         y-gap="20"
         cols="2 s:3 m:4 l:5 xl:6"
         responsive="screen"
-        collapsed
-        :collapsed-rows="2"
       >
         <n-grid-item v-for="item in playlists" :key="item.id">
           <n-card
@@ -58,9 +48,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { getPublicPlaylists } from "@/api/playlist";
-import SystemStats from "@/components/Home/SystemStats.vue";
 import { ResultCode } from "@/utils/request";
-import { Play, Right } from "@icon-park/vue-next";
+import { Play } from "@icon-park/vue-next";
 import { useMessage } from "naive-ui";
 import { useRouter } from "vue-router";
 
@@ -95,13 +84,12 @@ const formatCount = (count: number) => {
 </script>
 
 <style scoped lang="scss">
-.home {
+.public-playlists {
   padding: 24px;
   .section-title {
     margin-bottom: 20px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     h2 {
       font-size: 24px;
       font-weight: bold;

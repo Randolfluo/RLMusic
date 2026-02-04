@@ -4,6 +4,7 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper" // 配置文件读取包
 )
@@ -67,6 +68,7 @@ type Config struct {
 }
 
 var Conf *Config
+var StartTime time.Time
 
 // 从指定路径读取配置文件
 func ReadConfig(path string) *Config {

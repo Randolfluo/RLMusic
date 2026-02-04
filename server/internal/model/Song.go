@@ -17,6 +17,8 @@ type Song struct {
 	ArtistID *int   `gorm:"index" json:"artist_id"`                                                      // 关联艺术家ID
 	Artist   Artist `gorm:"foreignKey:ArtistID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联艺术家模型
 
+	Artists []Artist `gorm:"many2many:song_artists;" json:"artists"` // 多位艺术家支持
+
 	AlbumID *int  `gorm:"index" json:"album_id"`                                                      // 关联专辑ID
 	Album   Album `gorm:"foreignKey:AlbumID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"` // 关联专辑模型
 

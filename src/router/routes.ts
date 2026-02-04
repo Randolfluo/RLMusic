@@ -51,6 +51,15 @@ const routes: any = [
     },
     component: () => import("@/views/Playlist/index.vue"),
   },
+  // 公共歌单
+  {
+    path: "/playlists",
+    name: "public-playlists",
+    meta: {
+      title: "公共歌单",
+    },
+    component: () => import("@/views/Playlist/PublicPlaylists.vue"),
+  },
   // 全局设置设置
   {
     path: "/setting",

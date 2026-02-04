@@ -121,13 +121,33 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 
 			// 1. 处理 Artist
 			var artistID *int
+			var songArtists []model.Artist
 			if songArtist != "" {
-				artist, err := model.FindOrCreateArtist(db, songArtist)
-				if err != nil {
-					slog.Error("Failed to create/find Artist", "name", songArtist, "error", err)
-					return nil
+				// 替换常见分隔符为 /
+				tempInfo := songArtist
+				tempInfo = strings.ReplaceAll(tempInfo, ";", "/")
+				tempInfo = strings.ReplaceAll(tempInfo, "；", "/") // 中文分号
+				tempInfo = strings.ReplaceAll(tempInfo, "、", "/") // 中文顿号
+
+				names := strings.Split(tempInfo, "/")
+				for _, name := range names {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+
+					artist, err := model.FindOrCreateArtist(db, name)
+					if err != nil {
+						slog.Error("Failed to create/find Artist", "name", name, "error", err)
+						continue
+					}
+					songArtists = append(songArtists, *artist)
+
+					// 使用第一个扫描到的作为主要关联ID (兼容旧逻辑)
+					if artistID == nil {
+						artistID = &artist.ID
+					}
 				}
-				artistID = &artist.ID
 			}
 
 			// 2. 处理 Cover
@@ -174,6 +194,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			song.ArtistName = songArtist
 			song.AlbumName = songAlbum
 			song.ArtistID = artistID
+			song.Artists = songArtists
 			song.AlbumID = albumID
 			song.CoverID = coverID
 
@@ -202,6 +223,11 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			// 保存
 			isCreated, err := model.SaveSong(db, song)
 			if err == nil {
+				// 显式更新 Artists 关联 (针对更新场景)
+				if !isCreated && len(song.Artists) > 0 {
+					_ = db.Model(song).Association("Artists").Replace(song.Artists)
+				}
+
 				if isCreated {
 					addedCount++
 				} else {
@@ -516,4 +542,3 @@ func (*SongAuth) GetPrivatePlaylistDetail(c *gin.Context) {
 
 	ReturnSuccess(c, playlistDetail)
 }
-

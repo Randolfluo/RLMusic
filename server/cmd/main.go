@@ -7,11 +7,13 @@ import (
 	g "server/internal/global"
 	"server/internal/middleware"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	g.StartTime = time.Now()
 	configPath := flag.String("c", "config.toml", "配置文件路径")
 	flag.Parse()
 	conf := g.ReadConfig(*configPath)

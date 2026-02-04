@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { playlistUpdate } from "@/api/playlist";
+import { updatePlaylist } from "@/api/playlist";
 import { formRules } from "@/utils/formRules.js";
 import { musicStore, userStore } from "@/store";
 
@@ -76,15 +76,14 @@ const toUpdatePlayList = (e) => {
   e.preventDefault();
   playlistUpdateRef.value?.validate((errors) => {
     if (!errors) {
-      console.log("通过");
-      playlistUpdate(
-        playlistUpdateId.value,
-        playlistUpdateValue._value.name,
-        playlistUpdateValue._value.desc,
-        playlistUpdateValue._value.tags.join(";")
-      ).then((res) => {
-        console.log(res);
-        if (res.code === 200) {
+      // console.log("通过");
+      updatePlaylist(playlistUpdateId.value, {
+        title: playlistUpdateValue.value.name,
+        description: playlistUpdateValue.value.desc,
+        // tags: playlistUpdateValue.value.tags.join(";") // Backend doesn't support tags yet
+      }).then((res) => {
+        // console.log(res);
+        if (res.code === 1000) { // ResultCode.SUCCESS
           $message.success("编辑成功");
           closeUpdateModel();
           user.setUserPlayLists();

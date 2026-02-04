@@ -7,6 +7,9 @@
           :src="playlist.cover_url || '/images/logo/favicon.png'"
           fallback-src="/images/logo/favicon.png"
           object-fit="cover"
+          preview-disabled
+          @click="music.setBigPlayerState(true)"
+          style="cursor: pointer;"
         />
       </div>
       <div class="info">
@@ -63,10 +66,20 @@
           :data="playlist.songs || []"
           :bordered="false"
           :row-props="rowProps"
-          striped
+          :row-class-name="() => 'song-row'"
         />
         <div v-if="!loading && (!playlist.songs || playlist.songs.length === 0)" class="empty">
           <n-empty description="暂无歌曲" />
+        </div>
+        <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
+          <Pagination
+            v-if="playlist.songs && playlist.songs.length > 0"
+            :totalCount="playlist.total || 0"
+            :pageNumber="page"
+            :showSizePicker="true"
+            @pageNumberChange="onPageChange"
+            @pageSizeChange="onPageSizeChange"
+          />
         </div>
       </n-spin>
     </div>
@@ -76,11 +89,12 @@
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from "vue";
 import { useRoute } from "vue-router";
-import { getPlaylistDetail } from "@/api/playlist";
+import { getPublicPlaylistDetail, getPrivatePlaylistDetail } from "@/api/playlist";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NButton, NIcon, NImage, NTooltip } from "naive-ui";
 import { Play, HamburgerButton, Pic } from "@icon-park/vue-next";
 import { musicStore } from "@/store";
+import Pagination from "@/components/Pagination/index.vue";
 
 const route = useRoute();
 const message = useMessage();
@@ -89,6 +103,8 @@ const music = musicStore();
 const loading = ref(false);
 const playlist = ref<any>({});
 const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
+const page = ref(1);
+const limit = ref(30);
 
 const columns = computed(() => {
   const baseColumns: any[] = [
@@ -96,7 +112,7 @@ const columns = computed(() => {
       title: "#",
       key: "index",
       width: 60,
-      render: (_: any, index: number) => index + 1,
+      render: (_: any, index: number) => index + 1 + (page.value - 1) * limit.value,
     },
     {
       title: "标题",
@@ -160,10 +176,23 @@ onMounted(() => {
 const fetchPlaylistDetail = async (id: string) => {
   loading.value = true;
   try {
-    const res = await getPlaylistDetail(id);
+    // 尝试获取公开歌单详情
+    try {
+      const res = await getPublicPlaylistDetail(id, page.value, limit.value);
+      if (res.code === ResultCode.SUCCESS) {
+        playlist.value = res.data;
+        return;
+      }
+    } catch (e) {
+      // 获取公开详情失败（可能是私有歌单），继续尝试获取私有详情
+    }
+
+    // 尝试获取私有歌单详情
+    const res = await getPrivatePlaylistDetail(id, page.value, limit.value);
     if (res.code === ResultCode.SUCCESS) {
       playlist.value = res.data;
     } else {
+      // 如果都失败了
       message.error(res.message || "获取歌单详情失败");
     }
   } catch (error) {
@@ -171,6 +200,17 @@ const fetchPlaylistDetail = async (id: string) => {
   } finally {
     loading.value = false;
   }
+};
+
+const onPageChange = (val: number) => {
+  page.value = val;
+  fetchPlaylistDetail(route.params.id as string);
+};
+
+const onPageSizeChange = (val: number) => {
+  limit.value = val;
+  page.value = 1;
+  fetchPlaylistDetail(route.params.id as string);
 };
 
 const playAll = () => {
@@ -186,7 +226,7 @@ const playAll = () => {
         // 让我们先按后端其实返回了完整的 Song 对象来处理
        
         // 这里做一个简单的映射，防止前端播放器报错，具体视 Player 组件实现而定
-        const tracks = playlist.value.songs.map(song => ({
+        const tracks = playlist.value.songs.map((song: any) => ({
             ...song,
             name: song.title, // 适配 name
             artist: [{ name: song.artist_name, id: song.artist_id }], // 适配 artist array
@@ -199,15 +239,12 @@ const playAll = () => {
     }
 }
 
-const rowProps = (row, index) => {
+const rowProps = (_row: any, index: number) => {
   return {
     style: "cursor: pointer;",
-    onDblclick: () => {
-        // 双击播放单曲
-        // 先检查是否已经在当前播放列表中
-        // 这里简单处理：替换整个播放列表为当前歌单，并播放选中歌曲
-        // 实际上也可以 "添加到下一首播放"
-        const tracks = playlist.value.songs.map(song => ({
+    onClick: () => {
+        // 单击播放（原双击逻辑改为单击）
+        const tracks = playlist.value.songs.map((song: any) => ({
             ...song,
             name: song.title, 
             artist: [{ name: song.artist_name, id: song.artist_id }],
@@ -223,6 +260,15 @@ const rowProps = (row, index) => {
 </script>
 
 <style scoped lang="scss">
+:deep(.n-data-table .n-data-table-td) {
+  background-color: #fff !important;
+}
+:deep(.n-data-table .n-data-table-tr:hover .n-data-table-td) {
+  background-color: #f0f0f0 !important;
+}
+:deep(.n-data-table .n-data-table-th) {
+  background-color: #fff !important;
+}
 .playlist-detail {
   padding: 24px;
   
