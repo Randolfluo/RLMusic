@@ -53,8 +53,8 @@ func registerBaseHandler(r *gin.Engine) {
 	// 歌曲相关(无需认证)
 	song := base.Group("/song")
 	{
-		song.GET("/playlists", songAuthAPI.GetAllPlaylists)      // 获取所有歌单
-		song.GET("/playlist/:id", songAuthAPI.GetPlaylistDetail) // 获取歌单包含的歌曲
+		song.GET("/playlists/public", songAuthAPI.GetAllPlaylists)            // 获取所有公开歌单
+		song.GET("/playlist/public/:id", songAuthAPI.GetPublicPlaylistDetail) // 获取公开歌单详情
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
 	}
 }
@@ -82,6 +82,12 @@ func registerAuthHandler(r *gin.Engine) {
 	song := auth.Group("/song")
 	{
 		song.POST("/scan", songAuthAPI.ScanUserMusic)
+		song.PUT("/playlist/:id", songAuthAPI.UpdatePlaylist) // 更新歌单信息
+		// song.GET("/playlists/private", songAuthAPI.GetPrivatePlaylists) // Legacy (removed)
+		song.GET("/playlists/user/public", songAuthAPI.GetUserPublicPlaylists)   // 获取用户公开歌单
+		song.GET("/playlists/user/private", songAuthAPI.GetUserPrivatePlaylists) // 获取用户私有歌单
+		song.GET("/playlist/private/:id", songAuthAPI.GetPrivatePlaylistDetail)  // 获取私有歌单详情
+		song.POST("/like/:id", songAuthAPI.ToggleLike)                           // 点赞/取消点赞
 	}
 
 	// 系统相关

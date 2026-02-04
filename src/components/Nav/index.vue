@@ -3,7 +3,7 @@
   <nav>
     <div class="left">
       <div class="logo" @click="router.push('/')">
-        <img src="/images/logo/favicon.svg" alt="logo" />
+        <img src="/images/logo/favicon.png" alt="logo" />
       </div>
       <div class="controls">
         <n-icon size="22" :component="Left" @click="router.go(-1)" />

@@ -94,10 +94,17 @@ func (*UserAuth) Register(c *gin.Context) {
 	}
 
 	// 创建用户
-	if _, err := model.CreateUser(db, req.Username, hashedPassword, req.Email); err != nil {
+	user, err := model.CreateUser(db, req.Username, hashedPassword, req.Email)
+	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
+
+	// 创建默认歌单 "我喜欢的音乐" (私有)
+	if _, err := model.CreatePlaylist(db, user.ID, "我喜欢的音乐", "因为热爱，所以收藏", false); err != nil {
+		slog.Warn("Failed to create default playlist for user", "username", req.Username, "error", err)
+	}
+
 	// 自动创建用户目录
 	// 忽略错误，因为这不应该阻止注册流程 (可能系统文件夹还没初始化，或者管理员还没配置路径)
 	// 用户可以在后续通过扫描等操作前被提示需要管理员初始化

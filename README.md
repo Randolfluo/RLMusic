@@ -54,3 +54,6 @@ pnpm dev
 pnpm 
 
 //添加歌曲播放组件跳转，组件在comoenent/player，接口位于request.http。bigplayer.vue是全屏播放组件
+
+
+//添加歌单管理模式，支持物理方式删除歌单

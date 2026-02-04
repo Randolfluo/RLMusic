@@ -23,9 +23,8 @@ type User struct {
 	TotalDuration     int64  `gorm:"default:0"`         // 歌曲总时长 (扫描产生)
 	FavoriteSong      string `gorm:"type:varchar(255)"` // 最喜爱的歌曲
 
-	LastLogin    *time.Time
-	IsDelete     bool
-	IsCreateFile bool
+	LastLogin *time.Time
+	IsDelete  bool
 	// IPAddr    string    `gorm:"type:varchar(20)" json:"ip_addr"`
 	// IPSrc     string    `gorm:"type:varchar(50)" json:"ip_src"`
 }

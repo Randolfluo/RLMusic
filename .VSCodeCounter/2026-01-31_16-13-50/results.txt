@@ -93,7 +93,7 @@ Files
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\package.json                                  | JSON               |         94 |          0 |          1 |         95 |
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\pnpm-lock.yaml                                | YAML               |      5,664 |          0 |      1,570 |      7,234 |
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\public\images\ico\user-filling.svg            | XML                |          1 |          0 |          0 |          1 |
-| c:\Users\lrj32\Desktop\music player\localmusicplayer\public\images\logo\favicon.svg                | XML                |          1 |          0 |          0 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\public\images\logo\favicon.png                | XML                |          1 |          0 |          0 |          1 |
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\server\cmd\main.go                            | Go                 |         30 |          5 |         10 |         45 |
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\server\config.yml                             | YAML               |         23 |          0 |          5 |         28 |
 | c:\Users\lrj32\Desktop\music player\localmusicplayer\server\dockerfile                             | Docker             |          0 |          0 |          1 |          1 |

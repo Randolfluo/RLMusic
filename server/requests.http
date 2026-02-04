@@ -1,7 +1,7 @@
 ### 全局变量
 @baseUrl = http://localhost:3000/api
 @contentType = application/json
-@username = testuser003
+@username = testuser005
 @password = password123
 @email = test001@example.com
 
@@ -30,7 +30,6 @@ Content-Type: {{contentType}}
     "username": "{{username}}",
     "password": "{{password}}"
 }
-# Response Example:
 # {
 #   "code": 1000,
 #   "message": "登录成功",
@@ -115,21 +114,50 @@ GET {{baseUrl}}/song/stream/1
 
 
 
-### 11-2. 获取歌单详情 (无需登录，替换 ID)
-GET {{baseUrl}}/song/playlist/1
+### 11-2a. 获取公共歌单详情 (无需登录，验证 is_public)
+GET {{baseUrl}}/song/playlist/public/1?page=1&limit=90
+
+### 11-2b. 获取私有歌单详情 (需要登录，验证 owner_id)
+GET {{baseUrl}}/song/playlist/private/1?page=1&limit=90
+Authorization: Bearer {{login.response.body.data.token}}
 
 # {
 #   "code": 1000,
 #   "message": "success",
-#   "data": [
-#     {
-#       "id": 1,
-#       "title": "光辉岁月",
-#       "artist_name": "Beyond",
-#       "album_title": "黄家驹原作精选集",
-#       "duration": 297.5466666666667
-#     },
+#   "data": {
+#     "id": 1,
+#     "title": "公共歌单",
+#     "description": "",
+#     "is_public": true,
+#     "owner_id": 2,
+#     "cover_url": "",
+#     "play_count": 0,
+#     "total": 55,
+#     "songs": [
+#       {
+#         "id": 154,
+#         "title": "...",
+#         "artist_name": "...",
+#         "album_title": "...",
+#         "duration": 297.55,
+#         "artist_id": 0,
+#         "album_id": 0,
+#         "cover_url": ""
+#       }
 #     ]
+#   }
+# }
+
+### 11-3. 点赞/取消点赞歌曲 (需要登录)
+POST {{baseUrl}}/song/like/1
+Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "liked": true,
+#     "message": "已添加到喜欢"
+#   }
 # }
 
 ### 12. 管理员登录
@@ -157,33 +185,34 @@ Authorization: Bearer {{adminLogin.response.body.data.token}}
 #   "data": null
 # }
 
-### 14. 获取所有歌单 (无需登录)
-GET {{baseUrl}}/song/playlists
+### 14. 获取所有公开歌单 (无需登录)
+GET {{baseUrl}}/song/playlists/public
+# 返回 is_public=true 的歌单
+
+### 14-2. 获取我的公开歌单 (需要登录)
+GET {{baseUrl}}/song/playlists/user/public
+Authorization: Bearer {{login.response.body.data.token}}
+# 返回 owner_id 为当前用户，且 is_public=true 的歌单
+
+### 14-3. 获取我的私有歌单 (需要登录)
+GET {{baseUrl}}/song/playlists/user/private
+Authorization: Bearer {{login.response.body.data.token}}
+# 返回 owner_id 为当前用户，且 is_public=false 的歌单
+
+### 15. 更新歌单信息(包括权限) (需要登录)
+PUT {{baseUrl}}/song/playlist/1
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "title": "已修改的歌单名称",
+    "description": "这是新的描述",
+    "is_public": false
+}
 # {
 #   "code": 1000,
 #   "message": "success",
-#   "data": [
-#     {
-#       "id": 1,
-#       "title": "公共歌单",
-#       "description": "public",
-#       "is_public": true,
-#       "owner_id": 2,
-#       "cover_url": "...",
-#       "play_count": 0,
-#       "songs": null
-#     },
-#     {
-#       "id": 2,
-#       "title": "私人歌单",
-#       "description": "private",
-#       "is_public": true,
-#       "owner_id": 2,
-#       "cover_url": "...",
-#       "play_count": 0,
-#       "songs": null
-#     } 
-#     ]
+#   "data": "更新成功"
 # }
 
 ### 16. 退出登录 (需要登录)

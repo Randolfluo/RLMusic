@@ -23,7 +23,7 @@ Total : 106 files,  11484 codes, 892 comments, 2284 blanks, all 14660 lines
 | [package.json](/package.json) | JSON | 94 | 0 | 1 | 95 |
 | [pnpm-lock.yaml](/pnpm-lock.yaml) | YAML | 5,664 | 0 | 1,570 | 7,234 |
 | [public/images/ico/user-filling.svg](/public/images/ico/user-filling.svg) | XML | 1 | 0 | 0 | 1 |
-| [public/images/logo/favicon.svg](/public/images/logo/favicon.svg) | XML | 1 | 0 | 0 | 1 |
+| [public/images/logo/favicon.png](/public/images/logo/favicon.png) | XML | 1 | 0 | 0 | 1 |
 | [server/cmd/main.go](/server/cmd/main.go) | Go | 30 | 5 | 10 | 45 |
 | [server/config.yml](/server/config.yml) | YAML | 23 | 0 | 5 | 28 |
 | [server/dockerfile](/server/dockerfile) | Docker | 0 | 0 | 1 | 1 |

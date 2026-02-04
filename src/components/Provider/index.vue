@@ -65,9 +65,9 @@ const changeTheme = () => {
 //自定义主题色配置
 const themeOverrides = {
   common: {
-    primaryColor: "#f55e55",
-    primaryColorHover: "#F57B74",
-    primaryColorSuppl: "#F57B74",
+    primaryColor: "#009688",
+    primaryColorHover: "#26A69A",
+    primaryColorSuppl: "#26A69A",
     primaryColorPressed: "#F64B41",
   },
 };

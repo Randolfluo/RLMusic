@@ -59,11 +59,6 @@ func (*FileAuth) InitFolder(c *gin.Context) {
 
 // CreateUserFolder 内部调用：创建用户目录
 func CreateUserFolder(db *gorm.DB, username string) error {
-	// 检查基础文件夹是否已初始化
-	if info, _ := model.GetSystemInfoStruct(db); info == nil || !info.IsBaseFolderCreated {
-		return errors.New("基础文件夹尚未初始化")
-	}
-
 	conf := g.GetConfig().BasicPath
 	if conf.FilePath == "" || conf.FileName == "" {
 		return errors.New("服务器配置错误: BasicPath 未配置")
@@ -75,12 +70,6 @@ func CreateUserFolder(db *gorm.DB, username string) error {
 	// 创建用户主目录
 	if err := os.MkdirAll(userPath, 0755); err != nil {
 		slog.Error("Failed to create user folder", "path", userPath, "error", err)
-		return err
-	}
-
-	// 更新用户状态
-	if err := model.UpdateUserCreateFileStatus(db, username); err != nil {
-		slog.Error("Failed to update user status", "error", err)
 		return err
 	}
 

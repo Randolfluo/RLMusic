@@ -282,7 +282,7 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 // GetSongCover 获取封面图片 (已移除)
 // func (*SongAuth) GetSongCover(c *gin.Context) { ... }
 
-// GetAllPlaylists 获取所有歌单
+// GetAllPlaylists 获取所有公开歌单
 func (*SongAuth) GetAllPlaylists(c *gin.Context) {
 	db := GetDB(c)
 
@@ -295,12 +295,169 @@ func (*SongAuth) GetAllPlaylists(c *gin.Context) {
 	ReturnSuccess(c, playlists)
 }
 
-// GetPlaylistDetail 获取歌单详情(含歌曲)
-func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
-	idStr := c.Param("id")
+// GetUserPublicPlaylists 获取用户公开歌单
+func (*SongAuth) GetUserPublicPlaylists(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
 	db := GetDB(c)
 
-	playlistDetail, err := model.GetPlaylistDetail(db, idStr)
+	playlists, err := model.GetUserPublicPlaylists(db, user.ID)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, playlists)
+}
+
+// GetUserPrivatePlaylists 获取用户私有歌单
+func (*SongAuth) GetUserPrivatePlaylists(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+	db := GetDB(c)
+
+	playlists, err := model.GetUserPrivatePlaylists(db, user.ID)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, playlists)
+}
+
+type UpdatePlaylistRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	IsPublic    *bool  `json:"is_public"` // Using pointer to distinguish between false and nil
+}
+
+// UpdatePlaylist 更新歌单信息(仅限Owner)
+func (*SongAuth) UpdatePlaylist(c *gin.Context) {
+	idStr := c.Param("id")
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	var req UpdatePlaylistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	db := GetDB(c)
+	var playlist model.Playlist
+	if err := db.First(&playlist, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 权限检查: 仅 Owner 可修改
+	if playlist.OwnerID != user.ID {
+		ReturnError(c, g.ErrPermission, "无权修改此歌单")
+		return
+	}
+
+	// 更新字段
+	updates := make(map[string]interface{})
+	if req.Title != "" {
+		updates["title"] = req.Title
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
+	}
+	if req.IsPublic != nil {
+		updates["is_public"] = *req.IsPublic
+	}
+
+	if len(updates) > 0 {
+		if err := db.Model(&playlist).Updates(updates).Error; err != nil {
+			ReturnError(c, g.ErrDbOp, err)
+			return
+		}
+	}
+
+	ReturnSuccess(c, "更新成功")
+}
+
+// ToggleLike 切换歌曲的"喜欢"状态
+func (*SongAuth) ToggleLike(c *gin.Context) {
+	songIDStr := c.Param("id")
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+	db := GetDB(c)
+
+	// 查找用户的"我喜欢的音乐"歌单
+	var playlist model.Playlist
+	err := db.Where("owner_id = ? AND title = ?", user.ID, "我喜欢的音乐").First(&playlist).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// 如果不存在，自动创建(私有)
+			pl, err := model.CreatePlaylist(db, user.ID, "我喜欢的音乐", "因为热爱，所以收藏", false)
+			if err != nil {
+				ReturnError(c, g.ErrDbOp, "创建喜欢歌单失败")
+				return
+			}
+			playlist = *pl
+		} else {
+			ReturnError(c, g.ErrDbOp, err)
+			return
+		}
+	}
+
+	// 获取歌曲
+	song, err := model.GetSongByID(db, songIDStr)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, "歌曲不存在")
+		return
+	}
+
+	// 检查是否已在歌单中
+	if model.IsSongInPlaylist(db, playlist.ID, song.ID) {
+		// 存在则移除
+		if err := model.RemoveSongFromPlaylist(db, &playlist, song); err != nil {
+			ReturnError(c, g.ErrDbOp, err)
+			return
+		}
+		ReturnSuccess(c, gin.H{"liked": false, "message": "已取消喜欢"})
+	} else {
+		// 不存在则添加
+		if err := model.AddSongToPlaylist(db, &playlist, song); err != nil {
+			ReturnError(c, g.ErrDbOp, err)
+			return
+		}
+		ReturnSuccess(c, gin.H{"liked": true, "message": "已添加到喜欢"})
+	}
+}
+
+// GetPublicPlaylistDetail 获取公共歌单详情
+func (*SongAuth) GetPublicPlaylistDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
+	db := GetDB(c)
+
+	playlistDetail, err := model.GetPlaylistDetail(db, idStr, page, limit)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			ReturnError(c, g.ErrDbOp, "歌单不存在")
@@ -310,5 +467,53 @@ func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
 		return
 	}
 
+	if !playlistDetail.IsPublic {
+		ReturnError(c, g.ErrPermission, "该歌单为私有歌单，无法访问")
+		return
+	}
+
 	ReturnSuccess(c, playlistDetail)
 }
+
+// GetPrivatePlaylistDetail 获取私有歌单详情(需要验证 Owner)
+func (*SongAuth) GetPrivatePlaylistDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
+	db := GetDB(c)
+
+	playlistDetail, err := model.GetPlaylistDetail(db, idStr, page, limit)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ReturnError(c, g.ErrDbOp, "歌单不存在")
+		} else {
+			ReturnError(c, g.ErrDbOp, err)
+		}
+		return
+	}
+
+	// 验证 Owner
+	if playlistDetail.OwnerID != user.ID {
+		ReturnError(c, g.ErrPermission, "无权访问此私有歌单")
+		return
+	}
+
+	ReturnSuccess(c, playlistDetail)
+}
+

@@ -10,7 +10,7 @@ type Playlist struct {
 
 	Title       string `gorm:"type:varchar(255);not null;index" json:"title"` // 歌单标题
 	Description string `gorm:"type:text" json:"description"`                  // 歌单描述
-	IsPublic    bool   `gorm:"default:true" json:"is_public"`                 // 是否公开
+	IsPublic    bool   `gorm:"index" json:"is_public"`                        // 是否公开 (GORM Default tag removed to allow false/zero-value insert)
 	CoverUrl    string `gorm:"type:varchar(500)" json:"cover_url"`            // 歌单封面 (第一首歌的ID，或者外部URL)
 
 	OwnerID int `gorm:"index" json:"owner_id"` // 创建者ID
@@ -44,17 +44,23 @@ func FindOrCreatePlaylist(db *gorm.DB, userID int, title string) (*Playlist, err
 		if err := db.Create(&playlist).Error; err != nil {
 			return nil, err
 		}
-	} else {
-		// 如果已存在，确保 public/private 属性正确 (系统生成的 Public/Private 歌单)
-		if playlist.IsPublic != isPublic {
-			playlist.IsPublic = isPublic
-			// 只更新 is_public 字段
-			if err := db.Model(&playlist).Update("is_public", isPublic).Error; err != nil {
-				// 忽略错误 or log? handle_song will log if error returned here? No, signature is (*Playlist, error).
-				// We can just ignore error here as it's not critical for finding, but good to know.
-				return nil, err
-			}
-		}
+	}
+	// else {
+	// 	// 如果已存在，不再强制覆盖 is_public，尊重用户的修改
+	// }
+	return &playlist, nil
+}
+
+// CreatePlaylist 创建歌单
+func CreatePlaylist(db *gorm.DB, userID int, title string, description string, isPublic bool) (*Playlist, error) {
+	playlist := Playlist{
+		Title:       title,
+		Description: description,
+		IsPublic:    isPublic,
+		OwnerID:     userID,
+	}
+	if err := db.Create(&playlist).Error; err != nil {
+		return nil, err
 	}
 	return &playlist, nil
 }
@@ -62,6 +68,19 @@ func FindOrCreatePlaylist(db *gorm.DB, userID int, title string) (*Playlist, err
 // AddSongToPlaylist 添加歌曲到歌单
 func AddSongToPlaylist(db *gorm.DB, playlist *Playlist, song *Song) error {
 	return db.Model(playlist).Association("Songs").Append(song)
+}
+
+// RemoveSongFromPlaylist 从歌单移除歌曲
+func RemoveSongFromPlaylist(db *gorm.DB, playlist *Playlist, song *Song) error {
+	return db.Model(playlist).Association("Songs").Delete(song)
+}
+
+// IsSongInPlaylist 检查歌曲是否在歌单中
+func IsSongInPlaylist(db *gorm.DB, playlistID int, songID int) bool {
+	var count int64
+	// Table name defaults to playlist_songs
+	db.Table("playlist_songs").Where("playlist_id = ? AND song_id = ?", playlistID, songID).Count(&count)
+	return count > 0
 }
 
 type SimpleSongResponse struct {
@@ -85,32 +104,72 @@ type PlaylistResponse struct {
 	OwnerID     int                  `json:"owner_id"`
 	CoverUrl    string               `json:"cover_url"` // 新增封面字段返回
 	PlayCount   int                  `json:"play_count"`
+	Total       int64                `json:"total"` // 歌曲总数
 	Songs       []SimpleSongResponse `json:"songs"` // Deprecated: 列表接口不再返回详情
 }
 
-// GetPublicPlaylists 获取所有歌单(不含歌曲详情)
+// GetPublicPlaylists 获取所有公开歌单(不含歌曲详情)
 func GetPublicPlaylists(db *gorm.DB) ([]PlaylistResponse, error) {
 	var playlists []Playlist
-	if err := db.Find(&playlists).Error; err != nil {
+	if err := db.Where("is_public = ?", true).Find(&playlists).Error; err != nil {
+		return nil, err
+	}
+	// 列表不需要总条数
+	return convertToResponse(playlists), nil
+}
+
+// GetUserPublicPlaylists 获取用户公开歌单
+func GetUserPublicPlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
+	var playlists []Playlist
+	if err := db.Where("owner_id = ? AND is_public = ?", userID, true).Find(&playlists).Error; err != nil {
+		return nil, err
+	}
+	return convertToResponse(playlists), nil
+}
+
+// GetUserPrivatePlaylists 获取用户私有歌单
+func GetUserPrivatePlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
+	var playlists []Playlist
+	if err := db.Where("owner_id = ? AND is_public = ?", userID, false).Find(&playlists).Error; err != nil {
 		return nil, err
 	}
 	return convertToResponse(playlists), nil
 }
 
 // GetPlaylistDetail 获取完整歌单详情(含歌曲)
-func GetPlaylistDetail(db *gorm.DB, playlistIDStr string) (*PlaylistResponse, error) {
+func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (*PlaylistResponse, error) {
 	var playlist Playlist
-	// 预加载 Songs 以及关联信息
-	if err := db.Preload("Songs").
-		Preload("Songs.Artist").
-		Preload("Songs.Album").
-		Preload("Songs.Cover").
-		First(&playlist, playlistIDStr).Error; err != nil {
+	// 1. 获取歌单基本信息
+	if err := db.First(&playlist, playlistIDStr).Error; err != nil {
+		return nil, err
+	}
+
+	// 2. 获取该歌单下的歌曲总数
+	total := db.Model(&playlist).Association("Songs").Count()
+
+	// 3. 分页查询歌曲
+	var songsRaw []Song
+	offset := (page - 1) * limit
+	if offset < 0 {
+		offset = 0
+	}
+
+	// 关联查询: Song join playlist_songs
+	// 确保表名正确: default GORM many2many table name is playlist_songs
+	err := db.Joins("JOIN playlist_songs ON playlist_songs.song_id = song.id").
+		Where("playlist_songs.playlist_id = ?", playlist.ID).
+		Limit(limit).Offset(offset).
+		Preload("Artist").
+		Preload("Album").
+		Preload("Cover").
+		Find(&songsRaw).Error
+
+	if err != nil {
 		return nil, err
 	}
 
 	var songs []SimpleSongResponse
-	for _, s := range playlist.Songs {
+	for _, s := range songsRaw {
 		artistId := 0
 		albumId := 0
 		if s.ArtistID != nil {
@@ -146,6 +205,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string) (*PlaylistResponse, er
 		OwnerID:     playlist.OwnerID,
 		CoverUrl:    playlist.CoverUrl,
 		PlayCount:   playlist.PlayCount,
+		Total:       total,
 		Songs:       songs,
 	}, nil
 }
