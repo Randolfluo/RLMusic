@@ -70,6 +70,16 @@ const routes: any = [
     },
     component: () => import("@/views/Playlist/PrivatePlaylists.vue"),
   },
+  // 历史记录
+  {
+    path: "/history",
+    name: "history",
+    meta: {
+      title: "播放历史",
+      needLogin: true,
+    },
+    component: () => import("@/views/History/HistoryView.vue"),
+  },
   // 全局设置设置
   {
     path: "/setting",

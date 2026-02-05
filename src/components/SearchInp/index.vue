@@ -235,8 +235,8 @@ const getSearchSuggestData = (keywords) => {
   searchData.suggest = [];
   getSearchSuggest(keywords).then((res) => {
     // console.log(res);
-    if (res.result) {
-      searchData.suggest = res.result;
+    if (res) {
+      searchData.suggest = res;
     }
   });
 };

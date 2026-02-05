@@ -58,6 +58,13 @@ func registerBaseHandler(r *gin.Engine) {
 		song.GET("/stream/:id", songAuthAPI.StreamSong)
 	}
 
+	// 搜索相关(无需认证)
+	search := base.Group("/search")
+	{
+		search.GET("/suggest", handle.SearchSuggest) // 搜索建议
+		search.GET("/detail", handle.SearchDetail)   // 搜索详情
+	}
+
 	// 系统相关(无需认证)
 	system := base.Group("/system")
 	{
@@ -94,6 +101,9 @@ func registerAuthHandler(r *gin.Engine) {
 		song.GET("/playlists/user/private", songAuthAPI.GetUserPrivatePlaylists) // 获取用户私有歌单
 		song.GET("/playlist/private/:id", songAuthAPI.GetPrivatePlaylistDetail)  // 获取私有歌单详情
 		song.POST("/like/:id", songAuthAPI.ToggleLike)                           // 点赞/取消点赞
+		song.POST("/history", songAuthAPI.AddHistory)                            // 记录播放历史
+		song.GET("/history", songAuthAPI.GetHistory)                             // 获取播放历史
+		song.DELETE("/history", songAuthAPI.ClearHistory)                        // 清空播放历史
 	}
 
 	// 系统相关

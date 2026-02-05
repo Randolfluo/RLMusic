@@ -15,14 +15,24 @@ export const getSearchHot = () => {
  * 搜索建议
  * @param {string} keywords - 搜索关键词
  */
-export const getSearchSuggest = (keywords) => {
-  return Promise.resolve({ result: {} });
+export const getSearchSuggest = (keywords: string) => {
+  return axios.get("/search/suggest", { params: { keywords } });
 };
 
 /**
  * 搜索结果
  * @param {string} keywords - 搜索关键词
+ * @param {number} limit - 每页限制
+ * @param {number} offset - 分页偏移量 (页码)
+ * @param {number} type - 搜索类型 (1: 歌曲)
  */
-export const getSearchData = (keywords, limit = 30, offset = 0, type = 1) => {
-  return Promise.resolve({ data: { result: { songs: [] } } });
+export const getSearchData = (keywords: string, limit: number = 30, offset: number = 1, type: number = 1) => {
+    return axios.get("/search/detail", {
+        params: {
+            keywords,
+            type,
+            offset,
+            limit
+        }
+    });
 };

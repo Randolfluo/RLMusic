@@ -226,3 +226,28 @@ Content-Type: multipart/form-data; boundary=MyBoundary
 #   "data": "/api/file/avatar/user_3_1770028087.png"
 # }
 
+### 17. 记录播放历史
+POST {{baseUrl}}/song/history
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+    "song_id": 1
+}
+
+### 18. 获取播放历史
+GET {{baseUrl}}/song/history?page=1&limit=20
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 19. 清空播放历史
+DELETE {{baseUrl}}/song/history
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 20. 搜索建议
+GET {{baseUrl}}/search/suggest?keywords=Test
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 21. 搜索详情 (歌曲)
+GET {{baseUrl}}/search/detail?keywords=Test&type=1&offset=1&limit=10
+Authorization: Bearer {{login.response.body.data.token}}
+

@@ -1,5 +1,7 @@
 import { defineStore } from "pinia";
 import { getSongTime } from "@/utils/timeTools";
+import { useUserDataStore } from "./userData";
+import { recordHistory } from "@/api/song";
 
 export const useMusicDataStore = defineStore("musicData", {
   state: () => {
@@ -198,6 +200,12 @@ export const useMusicDataStore = defineStore("musicData", {
         list.pop();
       }
       this.persistData.playHistory = list;
+
+      // 同步到后端
+      const userStore = useUserDataStore();
+      if (userStore.userLogin && data && data.id) {
+        recordHistory(data.id);
+      }
     },
     // 更改当前歌曲播放链接
     setPlaySongLink(value: string) {

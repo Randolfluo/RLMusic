@@ -18,7 +18,7 @@
         :options="discoverOptions"
         @select="menuSelect"
       >
-        <router-link class="link" to="/discover">分类</router-link>
+        <router-link class="link" to="/discover">一起听歌</router-link>
       </n-dropdown>
       <n-dropdown
         trigger="hover"
@@ -155,8 +155,8 @@ const userDataRender = () => {
 // 下拉框数据
 const discoverOptions = ref([
   {
-    label: "歌单",
-    key: "/discover/playlists",
+    label: "",
+    key: "/discover/playlist",
   },
   {
     label: "歌手",
@@ -168,14 +168,24 @@ const discoverOptions = ref([
   },
 ]);
 const userOptions = computed(() => [
-  {
-    label: "统计",
-    key: "/user/playlists",
+   {
+    label: "歌单管理",
+    key: "/history",
   },
   {
-    label: "上传",
+    label: "红心歌曲",
+    key: "/like",
+  },
+  {
+    label: "播放历史",
+    key: "/history",
+  },
+  {
+    label: "上传歌曲",
     key: "/user/like",
   },
+
+
 
 ]);
 const dropdownOptions = computed(() => [

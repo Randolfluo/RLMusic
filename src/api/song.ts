@@ -48,6 +48,46 @@ export function getMusicLyric(id: number | string) {
 }
 
 /**
+ * 记录播放历史
+ * @param {Number} id - 歌曲 id
+ */
+export const recordHistory = (id: number) => {
+    return request({
+        method: "POST",
+        url: "/song/history",
+        data: {
+            song_id: id
+        }
+    });
+};
+
+/**
+ * 获取播放历史
+ * @param {Number} page
+ * @param {Number} limit
+ */
+export const getHistoryList = (page = 1, limit = 20) => {
+    return request({
+        method: "GET",
+        url: "/song/history",
+        params: {
+            page,
+            limit
+        }
+    });
+};
+
+/**
+ * 清空播放历史
+ */
+export const clearHistory = () => {
+    return request({
+        method: "DELETE",
+        url: "/song/history"
+    });
+};
+
+/**
  * 点赞/取消点赞歌曲
  * @param {Number|String} id - 歌曲 id
  */
