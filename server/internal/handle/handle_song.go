@@ -301,12 +301,83 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 		return
 	}
 
+	// 增加播放次数 (异步执行，不阻塞播放)
+	go func() {
+		//重新获取一个新的DB实例(最好是新的会话)，虽然GORM DB是并发安全的，但为了避免上下文取消等问题
+		// 这里直接用 db 即可，因为它是个 *gorm.DB
+		db.Model(song).UpdateColumn("play_count", gorm.Expr("play_count + ?", 1))
+	}()
+
 	// 使用 Gin 的 File 响应，它自动处理 Range 头实现流式传输
 	c.File(song.FilePath)
 }
 
-// GetSongCover 获取封面图片 (已移除)
-// func (*SongAuth) GetSongCover(c *gin.Context) { ... }
+// GetSongCover 获取歌曲封面
+func (*SongAuth) GetSongCover(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	var song model.Song
+	// Preload Cover specifically
+	if err := db.Preload("Cover").First(&song, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌曲不存在")
+		return
+	}
+
+	// 1. 优先尝试从音频源文件中提取完整的高清封面
+	if song.FilePath != "" {
+		f, err := os.Open(song.FilePath)
+		if err == nil {
+			defer f.Close()
+			// 读取标签信息
+			m, err := tag.ReadFrom(f)
+			if err == nil && m != nil {
+				pic := m.Picture()
+				if pic != nil {
+					// 直接返回原始图片数据
+					c.Data(200, pic.MIMEType, pic.Data)
+					return
+				}
+			} else {
+				// 读取失败日志，仅调试用
+				// slog.Warn("Failed to read tags from file", "path", song.FilePath, "error", err)
+			}
+		}
+	}
+
+	// 2. 如果源文件没有封面或读取失败，降级使用缓存的缩略图
+	if song.CoverID == nil || song.Cover.Path == "" {
+		// 404 Not Found if no cover
+		c.Status(404)
+		return
+	}
+
+	// 假设封面存在 ./data/covers (需与 imgtool/scan 逻辑保持一致)
+	coverPath := filepath.Join("./data/covers", song.Cover.Path)
+
+	if _, err := os.Stat(coverPath); os.IsNotExist(err) {
+		c.Status(404)
+		return
+	}
+
+	c.File(coverPath)
+}
+
+// GetSongDetail 获取歌曲详细信息
+func (*SongAuth) GetSongDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	var song model.Song
+	// Preload all associations
+	// Artist: Preload singular if needed, but Artists (plural) is many2many
+	if err := db.Preload("Artist").Preload("Artists").Preload("Album").Preload("Cover").First(&song, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌曲不存在")
+		return
+	}
+
+	ReturnSuccess(c, song)
+}
 
 // GetAllPlaylists 获取所有公开歌单
 func (*SongAuth) GetAllPlaylists(c *gin.Context) {
@@ -541,4 +612,77 @@ func (*SongAuth) GetPrivatePlaylistDetail(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, playlistDetail)
+}
+
+// GetSongLyric 获取歌曲歌词
+func (*SongAuth) GetSongLyric(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的ID")
+		return
+	}
+
+	db := GetDB(c)
+	var song model.Song
+	if err := db.First(&song, id).Error; err != nil {
+		ReturnError(c, g.Err, "歌曲不存在")
+		return
+	}
+
+	// 1. 尝试读取同名 .lrc 文件
+	ext := filepath.Ext(song.FilePath)
+	basePath := strings.TrimSuffix(song.FilePath, ext)
+	lrcPath := basePath + ".lrc"
+	transPath := basePath + ".fy.lrc" // 约定翻译歌词文件名为 .fy.lrc
+
+	lrcContent, errLrc := os.ReadFile(lrcPath)
+	transContent, errTrans := os.ReadFile(transPath)
+
+	if errLrc == nil {
+		tlyric := ""
+		if errTrans == nil {
+			tlyric = string(transContent)
+		}
+
+		ReturnSuccess(c, gin.H{
+			"lrc":    gin.H{"lyric": string(lrcContent)},
+			"tlyric": gin.H{"lyric": tlyric},
+			"source": "file",
+		})
+		return
+	}
+
+	// 2. 尝试读取内嵌歌词
+	f, err := os.Open(song.FilePath)
+	if err != nil {
+		ReturnError(c, g.Err, "无法打开文件")
+		return
+	}
+	defer f.Close()
+
+	m, err := tag.ReadFrom(f)
+	if err != nil {
+		// 无法读取元数据，返回无歌词
+		ReturnSuccess(c, gin.H{
+			"lrc":    gin.H{"lyric": "[00:00.000] 暂无歌词"},
+			"tlyric": gin.H{"lyric": ""},
+		})
+		return
+	}
+
+	lyric := m.Lyrics()
+	if lyric == "" {
+		ReturnSuccess(c, gin.H{
+			"lrc":    gin.H{"lyric": "[00:00.000] 暂无歌词"},
+			"tlyric": gin.H{"lyric": ""},
+		})
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"lrc":    gin.H{"lyric": lyric},
+		"tlyric": gin.H{"lyric": ""},
+		"source": "tag",
+	})
 }

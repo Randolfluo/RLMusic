@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getPublicPlaylistDetail, getPrivatePlaylistDetail } from "@/api/playlist";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NButton, NIcon, NImage, NTooltip } from "naive-ui";
@@ -97,6 +97,7 @@ import { musicStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 
 const route = useRoute();
+const router = useRouter();
 const message = useMessage();
 const music = musicStore();
 
@@ -117,6 +118,13 @@ const columns = computed(() => {
     {
       title: "标题",
       key: "title",
+      render: (row: any) => {
+        return h('span', {
+          style: { cursor: 'pointer' },
+          onClick: () => router.push(`/song/${row.id}`),
+          class: 'song-title-link'
+        }, row.title)
+      }
     },
     {
       title: "歌手",
@@ -330,6 +338,21 @@ const rowProps = (_row: any, index: number) => {
       
       .actions {
         margin-top: auto;
+      }
+    }
+  }
+
+  .songs-list {
+    margin-top: 20px;
+    
+    :deep(.song-title-link) {
+      color: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.3s var(--n-bezier);
+      
+      &:hover {
+        color: var(--n-color-primary);
       }
     }
   }

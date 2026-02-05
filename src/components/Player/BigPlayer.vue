@@ -5,10 +5,10 @@
       v-show="music.showBigPlayer"
       class="bplayer"
       :style="
-        music.getPlaySongData
+        bgCover
           ? 'background-image: url(' +
-            music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-            '?param=50y50)'
+            bgCover +
+            ')'
           : ''
       "
     >
@@ -27,7 +27,7 @@
       />
       <div
         :class="
-          music.getPlaySongLyric[0] && music.getPlaySongLyric.length > 4
+          music.getPlaySongLyric[0]
             ? 'all'
             : 'all noLrc'
         "
@@ -51,7 +51,7 @@
             <div
               class="lrcShow"
               v-if="
-                music.getPlaySongLyric[0] && music.getPlaySongLyric.length > 4
+                music.getPlaySongLyric[0]
               "
             >
               <div class="data" v-show="setting.playerStyle === 'record'">
@@ -176,6 +176,7 @@
   </Transition>
 </template>
 
+
 <script setup>
 import {
   KeyboardArrowDownFilled,
@@ -190,13 +191,25 @@ import MusicFrequency from "@/utils/MusicFrequency.js";
 import PlayerRecord from "./PlayerRecord.vue";
 import PlayerCover from "./PlayerCover.vue";
 import screenfull from "screenfull";
+import { getSongCover } from "@/api/song"; // 1. 导入 getSongCover
 
 const router = useRouter();
 const music = musicStore();
 const setting = settingStore();
 
+// 计算背景图
+const bgCover = computed(() => {
+  if (music.getPlaySongData?.id) {
+    return getSongCover(music.getPlaySongData.id);
+  }
+  return "";
+});
+
 // 工具栏显隐
 const menuShow = ref(false);
+
+// ... rest of script ...
+
 
 // 音乐频谱
 const avBars = ref(null);
@@ -574,9 +587,12 @@ watch(
               opacity: 1;
               .lrc-text {
                 transform: scale(1.05);
-                .lyric {
-                  font-weight: bold;
-                  text-shadow: 0px 0px 30px #ffffff40;
+                .lyric, .lyric-fy {
+                  color: #fff !important;
+                  font-weight: 900 !important;
+                  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8) !important;
+                  opacity: 1 !important;
+                  filter: none !important;
                 }
               }
             }

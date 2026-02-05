@@ -55,14 +55,19 @@ func registerBaseHandler(r *gin.Engine) {
 	{
 		song.GET("/playlists/public", songAuthAPI.GetAllPlaylists)            // 获取所有公开歌单
 		song.GET("/playlist/public/:id", songAuthAPI.GetPublicPlaylistDetail) // 获取公开歌单详情
-		song.GET("/stream/:id", songAuthAPI.StreamSong)
+		song.GET("/stream/:id", songAuthAPI.StreamSong)                       // 播放歌曲
+		song.GET("/detail/:id", songAuthAPI.GetSongDetail)                    // 获取歌曲详情
+		song.GET("/cover/:id", songAuthAPI.GetSongCover)                      // 获取歌曲封面
+		song.GET("/lyric/:id", songAuthAPI.GetSongLyric)                      // 获取歌曲歌词
 	}
 
 	// 搜索相关(无需认证)
 	search := base.Group("/search")
 	{
-		search.GET("/suggest", handle.SearchSuggest) // 搜索建议
-		search.GET("/detail", handle.SearchDetail)   // 搜索详情
+		search.GET("/song", handle.SearchSong)         // 搜索歌曲
+		search.GET("/artist", handle.SearchArtist)     // 搜索歌手
+		search.GET("/album", handle.SearchAlbum)       // 搜索专辑
+		search.GET("/playlist", handle.SearchPlaylist) // 搜索歌单
 	}
 
 	// 系统相关(无需认证)

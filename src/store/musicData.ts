@@ -41,7 +41,7 @@ export const useMusicDataStore = defineStore("musicData", {
         // 喜欢音乐列表
         likeList: [],
         // 播放列表
-        playlists: [],
+        playlists: [] as any[],
         // 当前歌曲索引
         playSongIndex: 0,
         // 当前播放模式
@@ -92,7 +92,7 @@ export const useMusicDataStore = defineStore("musicData", {
       return state.persistData.playSongMode;
     },
     // 获取当前歌曲
-    getPlaySongData(state) {
+    getPlaySongData(state): any {
       return state.persistData.playlists[state.persistData.playSongIndex];
     },
     // 获取当前歌词
@@ -187,6 +187,15 @@ export const useMusicDataStore = defineStore("musicData", {
            value.duration * 1000
         );
       }
+      // 计算歌词位置
+      const index = this.playSongLyric.findIndex(
+        (item: any) => item.time > value.currentTime
+      );
+      if (index === -1) {
+        this.playSongLyricIndex = this.playSongLyric.length - 1;
+      } else {
+        this.playSongLyricIndex = index - 1;
+      }
     },
     // 添加播放历史
     setPlayHistory(data: any) {
@@ -214,6 +223,7 @@ export const useMusicDataStore = defineStore("musicData", {
     // 更改当前歌曲歌词
     setPlaySongLyric(value: any[]) {
       this.playSongLyric = value;
+      this.playSongTransl = value.some((item) => item.lyricFy);
     },
     // 私人FM不感冒
     setFmDislike(id: number) {
@@ -233,6 +243,33 @@ export const useMusicDataStore = defineStore("musicData", {
     // 获取喜欢列表
     setLikeList() {
         // TODO: Implement API logic
+    },
+    setSearchHistory(text: string | null, clean: boolean = false) {
+      if (clean) {
+        this.persistData.searchHistory = [];
+        return;
+      }
+      if (!text) return;
+      const history = this.persistData.searchHistory;
+      if (history.includes(text)) {
+        history.splice(history.indexOf(text), 1);
+      }
+      history.unshift(text);
+      if (history.length > 20) {
+        history.pop();
+      }
+      this.persistData.searchHistory = history;
+    },
+    // 更改播放模式
+    setPlaySongMode() {
+      const mode = this.persistData.playSongMode;
+      if (mode === "normal") {
+        this.persistData.playSongMode = "random";
+      } else if (mode === "random") {
+        this.persistData.playSongMode = "single";
+      } else {
+        this.persistData.playSongMode = "normal";
+      }
     },
   }
 });

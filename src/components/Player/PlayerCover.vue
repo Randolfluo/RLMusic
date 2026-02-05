@@ -1,322 +1,318 @@
 <template>
-  <div class="cover">
-    <div class="pic">
-      <img
-        class="album"
-        :src="
-          music.getPlaySongData
-            ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-              '?param=1024y1024'
-            : '/images/pic/default.png'
-        "
-        alt="cover"
+  <div class="player-cover">
+    <div class="cover-wrapper">
+      <n-image
+        :src="coverUrl"
+        class="cover-img"
+        object-fit="contain"
+        fallback-src="/images/logo/logo.png"
+        preview-disabled
       />
     </div>
-    <div class="control">
-      <div class="data">
-        <div class="desc">
-          <span class="name text-hidden">
-            {{
-              music.getPlaySongData ? music.getPlaySongData.name : "暂无歌曲"
-            }}
-          </span>
-          <div v-if="music.getPlaySongData" class="message">
-            <AllArtists
-              :artistsData="[
-                music.getPlaySongData.artist[0],
-                music.getPlaySongData.artist[1]
-                  ? music.getPlaySongData.artist[1]
-                  : null,
-              ]"
-            />
-            <span
-              class="ablum text-hidden"
-              @click="
-                routerJump('/album', {
-                  id: music.getPlaySongData
-                    ? music.getPlaySongData.album.id
-                    : null,
-                })
-              "
-            >
-              {{ music.getPlaySongData.album.name }}
-            </span>
-          </div>
+    
+    <div class="info-section">
+      <div class="song-info">
+        <div class="title" :title="songData?.name">
+          {{ songData?.name || "暂无歌曲" }}
         </div>
-        <n-icon
-          v-if="music.getPlaySongData && user.userLogin"
-          class="like"
-          size="20"
-          :component="
-            music.getSongIsLike(music.getPlaySongData.id)
-              ? FavoriteRound
-              : FavoriteBorderRound
-          "
-          @click.stop="
-            music.getSongIsLike(music.getPlaySongData.id)
-              ? music.changeLikeList(music.getPlaySongData.id, false)
-              : music.changeLikeList(music.getPlaySongData.id, true)
-          "
-        />
+        <div class="artist" :title="songData?.artist_name">
+          <span
+            v-for="(artist, index) in songData?.artist || []"
+            :key="index"
+          >
+            {{ artist.name }}
+            <span v-if="index < (songData?.artist?.length || 0) - 1"> / </span>
+          </span>
+          <span v-if="!songData?.artist && songData?.artist_name">
+            {{ songData.artist_name }}
+          </span>
+        </div>
       </div>
-      <div class="time">
-        <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
-        <n-slider
-          v-model:value="music.getPlaySongTime.barMoveDistance"
-          class="progress"
-          :step="0.01"
-          @update:value="songTimeSliderUpdate"
-        />
-        <span>{{ music.getPlaySongTime.songTimeDuration }}</span>
+
+      <div class="progress-section">
+        <div class="time-track">
+          <span class="time">{{ music.getPlaySongTime.songTimePlayed }}</span>
+          <n-slider
+            v-model:value="music.getPlaySongTime.barMoveDistance"
+            :step="0.01"
+            :tooltip="false"
+            class="progress-slider"
+            @update:value="handleProgressUpdate"
+          />
+          <span class="time">{{ music.getPlaySongTime.songTimeDuration }}</span>
+        </div>
       </div>
-      <div class="buttons">
-        <n-icon
-          :style="
-            music.getPersonalFmMode
-              ? 'opacity: 0.2;pointer-events: none;'
-              : null
-          "
-          size="16"
-          class="mode"
-          :component="
-            music.getPlaySongMode === 'normal'
-              ? PlayCycle
-              : music.getPlaySongMode === 'random'
-              ? ShuffleOne
-              : PlayOnce
-          "
-          @click="music.setPlaySongMode()"
+
+      <div class="controls-section">
+        <n-icon 
+            size="24" 
+            class="mode-icon btn" 
+            :component="modeIcon" 
+            @click="music.setPlaySongMode()"
         />
-        <n-icon
-          v-if="!music.getPersonalFmMode"
-          class="prev"
-          size="30"
-          :component="SkipPreviousRound"
-          @click.stop="music.setPlaySongIndex('prev')"
-        />
-        <n-icon
-          v-else
-          class="dislike"
-          size="20"
-          :component="ThumbDownRound"
-          @click="music.setFmDislike(music.getPersonalFmData.id)"
-        />
-        <div class="play-state">
-          <n-icon
-            size="50"
-            :component="music.getPlayState ? PauseRound : PlayArrowRound"
-            @click.stop="music.setPlayState(!music.getPlayState)"
+        
+        <div class="main-controls">
+          <n-icon 
+            size="32" 
+            class="btn" 
+            :component="SkipPreviousRound" 
+            @click="music.setPlaySongIndex('prev')"
+          />
+          
+          <div class="play-pause-btn" @click="music.setPlayState(!music.getPlayState)">
+            <n-icon 
+                size="48" 
+                color="white"
+                :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled" 
+            />
+          </div>
+          
+          <n-icon 
+            size="32" 
+            class="btn" 
+            :component="SkipNextRound" 
+            @click="music.setPlaySongIndex('next')"
           />
         </div>
-        <n-icon
-          class="next"
-          size="30"
-          :component="SkipNextRound"
-          @click.stop="music.setPlaySongIndex('next')"
+
+        <n-icon 
+            size="24" 
+            class="menu-icon btn" 
+            :component="PlaylistPlayRound"
+            @click.stop="music.showPlayList = !music.showPlayList"
         />
-        <n-icon
-          class="comment"
-          size="18"
-          :component="MessageFilled"
-          @click="
-            routerJump('/comment', {
-              id: music.getPlaySongData ? music.getPlaySongData.id : null,
-            })
-          "
+      </div>
+      
+      <div class="volume-section">
+         <n-icon
+          size="20"
+          class="volume-icon"
+          :component="volumeIcon"
+          @click="toggleMute"
+        />
+        <n-slider
+          v-model:value="music.persistData.playVolume"
+          :step="0.01"
+          :min="0"
+          :max="1"
+          :tooltip="false"
+          class="volume-slider"
         />
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { computed } from "vue";
+import { musicStore } from "@/store";
+import { getSongCover } from "@/api/song";
 import {
-  PlayArrowRound,
-  PauseRound,
-  SkipNextRound,
+  PlayCircleFilled,
+  PauseCircleFilled,
   SkipPreviousRound,
-  MessageFilled,
-  ThumbDownRound,
-  FavoriteBorderRound,
-  FavoriteRound,
+  SkipNextRound,
+  PlaylistPlayRound,
+  VolumeUpRound,
+  VolumeDownRound,
+  VolumeMuteRound,
+  VolumeOffRound,
 } from "@vicons/material";
 import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
-import { musicStore, userStore } from "@/store";
-import { useRouter } from "vue-router";
-import AllArtists from "@/components/DataList/AllArtists.vue";
 
-const router = useRouter();
 const music = musicStore();
-const user = userStore();
 
-const canvas = ref(null);
+const songData = computed(() => {
+    return music.getPlaySongData as any;
+});
 
-// 歌曲进度条更新
-const songTimeSliderUpdate = (val) => {
-  if ($player && music.getPlaySongTime && music.getPlaySongTime.duration)
-    $player.currentTime = (music.getPlaySongTime.duration / 100) * val;
+const handleProgressUpdate = (val: number) => {
+    if ((window as any).$player && music.getPlaySongTime.duration) {
+        (window as any).$player.currentTime = (music.getPlaySongTime.duration / 100) * val;
+    }
 };
 
-// 页面跳转
-const routerJump = (url, query) => {
-  music.setBigPlayerState(false);
-  router.push({
-    path: url,
-    query,
-  });
+const coverUrl = computed(() => {
+  if (songData.value?.id) {
+    return getSongCover(songData.value.id);
+  }
+  return "/images/logo/logo.png";
+});
+
+const modeIcon = computed(() => {
+    const mode = music.persistData.playSongMode;
+    if (mode === 'random') return ShuffleOne;
+    if (mode === 'single') return PlayOnce;
+    return PlayCycle;
+});
+
+const volumeIcon = computed(() => {
+    const vol = music.persistData.playVolume;
+    if (vol === 0) return VolumeOffRound;
+    if (vol < 0.4) return VolumeMuteRound;
+    if (vol < 0.7) return VolumeDownRound;
+    return VolumeUpRound;
+});
+
+const toggleMute = () => {
+    if (music.persistData.playVolume > 0) {
+        music.persistData.playVolumeMute = music.persistData.playVolume;
+        music.persistData.playVolume = 0;
+    } else {
+        music.persistData.playVolume = music.persistData.playVolumeMute || 0.5;
+    }
 };
+
 </script>
 
 <style lang="scss" scoped>
-.cover {
-  .pic {
-    width: 50vh;
-    height: 50vh;
-    border-radius: 8px;
+.player-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center; // Center horizontally
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 2rem;
+  
+  .cover-wrapper {
+    width: 45vh;
+    height: 45vh;
+    max-width: 80vw;
+    max-height: 80vw;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 0 40px 14px rgb(0 0 0 / 20%);
-    @media (max-width: 1200px) {
-      width: 44vh;
-      height: 44vh;
-    }
-    @media (max-width: 870px) {
-      width: 40vh;
-      height: 40vh;
-    }
-    .album {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    margin-bottom: 24px;
+
+    .cover-img {
       width: 100%;
       height: 100%;
+      display: block;
     }
   }
-  .control {
-    margin-top: 24px;
-    .data {
-      width: 50vh;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      @media (max-width: 1200px) {
-        width: 44vh;
-      }
-      @media (max-width: 870px) {
-        width: 40vh;
-      }
-      .desc {
-        width: 100%;
-        padding-right: 4px;
-        .name {
-          font-size: 23px;
-          font-weight: bold;
-          -webkit-line-clamp: 2;
-          @media (max-width: 1200px) {
-            font-size: 20px;
-          }
+
+  .info-section {
+    width: 45vh;
+    max-width: 80vw;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .song-info {
+        text-align: left;
+        margin-bottom: 8px;
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .message {
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          margin: 2px 0 6px;
-          font-size: 2vh;
-          font-size: 15px;
-          width: 100%;
-          color: #ffffffcc;
-          @media (max-width: 1200px) {
-            font-size: 14px;
-          }
-          .ablum {
-            transition: all 0.3s;
-            &:hover {
-              color: #fff;
+
+        .artist {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .progress-section {
+        .time-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            
+            .time {
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.6);
+                width: 40px;
+                text-align: center;
+                font-variant-numeric: tabular-nums;
             }
-            &::before {
-              content: "·";
-              margin: 0 4px;
-            }
-          }
-          .artists {
-            flex-wrap: nowrap;
-            :deep(.artist) {
-              display: inline-block;
-              white-space: nowrap;
-              .name {
-                color: #ffffffcc;
-                &:hover {
-                  color: #fff;
+
+            .progress-slider {
+                flex: 1;
+                :deep(.n-slider-rail) {
+                    background-color: rgba(255, 255, 255, 0.2);
+                    height: 4px;
                 }
-              }
+                :deep(.n-slider-rail__fill) {
+                    background-color: #fff;
+                }
+                :deep(.n-slider-handle) {
+                    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+                }
             }
-          }
         }
-      }
-      .like {
-        padding: 8px;
-        border-radius: 8px;
-        transition: all 0.3s;
-        cursor: pointer;
-        &:hover {
-          background-color: #ffffff26;
-        }
-        &:active {
-          transform: scale(0.9);
-        }
-      }
     }
-    .time {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      span {
-        opacity: 0.8;
-      }
-      .progress {
-        margin: 0 12px;
-        --n-handle-size: 12px;
-        --n-fill-color: #fff;
-        --n-fill-color-hover: #fff;
-        --n-rail-color: #ffffff20;
-        --n-rail-color-hover: #ffffff30;
-      }
+
+    .controls-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+
+        .btn {
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.2s;
+            &:hover {
+                color: #fff;
+                transform: scale(1.1);
+            }
+            &:active {
+                transform: scale(0.95);
+            }
+        }
+
+        .main-controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+
+            .play-pause-btn {
+                cursor: pointer;
+                transition: transform 0.2s;
+                opacity: 0.9;
+                &:hover {
+                    transform: scale(1.1);
+                    opacity: 1;
+                }
+                 &:active {
+                    transform: scale(0.95);
+                }
+            }
+        }
     }
-    .buttons {
-      margin-top: 26px;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      .play-state {
+    
+    .volume-section {
         display: flex;
         align-items: center;
-        justify-content: center;
-        .n-icon {
-          padding: 0;
+        gap: 12px;
+        margin-top: 12px;
+        
+        .volume-icon {
+            opacity: 0.7;
+            cursor: pointer;
+            &:hover { opacity: 1; }
         }
-      }
-      .mode,
-      .comment {
-        &.n-icon {
-          opacity: 0.8;
-          margin: 0 6px;
-          padding: 8px;
+        
+        .volume-slider {
+            width: 100px;
+             :deep(.n-slider-rail) {
+                    background-color: rgba(255, 255, 255, 0.2);
+                    height: 4px;
+            }
+            :deep(.n-slider-rail__fill) {
+                background-color: rgba(255, 255, 255, 0.8);
+            }
         }
-      }
-      .dislike {
-        padding: 10px !important;
-      }
-      .n-icon {
-        margin: 0 4px;
-        cursor: pointer;
-        padding: 6px;
-        border-radius: 8px;
-        transition: all 0.3s;
-        &:hover {
-          background-color: #ffffff4d;
-        }
-        &:active {
-          transform: scale(0.9);
-        }
-      }
     }
   }
 }

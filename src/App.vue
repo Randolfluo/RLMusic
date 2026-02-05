@@ -48,8 +48,26 @@ import { ref, onMounted } from 'vue';
 
 const music = musicStore();
 const user = userStore();
-const setting = settingStore();
 const router = useRouter();
+const setting = settingStore();
+
+// 监听空格键控制播放暂停
+onMounted(() => {
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      // 如果当前焦点在输入框或文本域中，不触发
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+      e.preventDefault();
+      music.setPlayState(!music.getPlayState);
+    }
+  });
+});
+
 const mainContent = ref<HTMLElement | null>(null);
 
 // 公告数据

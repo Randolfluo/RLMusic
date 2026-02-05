@@ -80,6 +80,24 @@ const routes: any = [
     },
     component: () => import("@/views/History/HistoryView.vue"),
   },
+  // 搜索页
+  {
+    path: "/search",
+    name: "search",
+    meta: {
+      title: "搜索",
+    },
+    component: () => import("@/views/Search/index.vue"),
+  },
+  // 歌曲详情
+  {
+    path: "/song/:id",
+    name: "song",
+    meta: {
+      title: "歌曲详情",
+    },
+    component: () => import("@/views/Song/SongView.vue"),
+  },
   // 全局设置设置
   {
     path: "/setting",

@@ -61,3 +61,7 @@ pnpm
 //total_duartion和listening_duration字段值修复
 
 //添加获取详细封面图接口,歌单封面,大屏播放时调用
+
+
+//添加总播放次数，添加api请求次数
+//添加cpu信息等

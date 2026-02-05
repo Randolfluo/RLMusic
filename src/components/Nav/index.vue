@@ -12,6 +12,7 @@
     </div>
     <div class="center">
       <router-link class="link" to="/">发现</router-link>
+      <router-link class="link" to="/search">搜索</router-link>
       <n-dropdown
         trigger="hover"
         size="large"
@@ -30,7 +31,6 @@
       </n-dropdown>
     </div>
     <div class="right">
-      <SearchInp />
       <!-- 下拉菜单 -->
       <n-dropdown
         class="dropdown"
@@ -77,7 +77,6 @@ import {
 import { userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
 import AboutSite from "@/components/DataModel/AboutSite.vue";
-import SearchInp from "@/components/SearchInp/index.vue";
 
 const router = useRouter();
 const user = userStore();

@@ -1,4 +1,5 @@
 import request from "@/utils/request";
+import lyricFormat from "@/utils/lyricFormat.js";
 
 /**
  * 检查音乐是否可用
@@ -35,15 +36,17 @@ export function getMusicUrl(id: number | string, level?: string) {
  * @param {Number} id - 歌曲 id
  */
 export function getMusicLyric(id: number | string) {
-  return new Promise((resolve) => {
-    resolve({
-      lrc: {
-        lyric: "[00:00.000] 暂无歌词",
-      },
-      tlyric: {
-        lyric: "",
-      },
-    });
+  return request({
+    url: `/song/lyric/${id}`,
+    method: "get",
+  }).then((res) => {
+    // 后端返回结构为 { code, data: { lrc: { lyric: "..." }, ... } }
+    // 这里的 res 即为 response.data
+    const data = res.data; 
+    if (data && data.lrc && data.lrc.lyric) {
+      return lyricFormat(data.lrc.lyric, data.tlyric?.lyric);
+    }
+    return [];
   });
 }
 
@@ -96,4 +99,23 @@ export function toggleLike(id: number | string) {
     method: "POST",
     url: `/song/like/${id}`,
   });
+}
+
+/**
+ * 获取歌曲详情
+ * @param {Number|String} id - 歌曲 id
+ */
+export function getSongDetail(id: number | string) {
+  return request({
+    method: "GET",
+    url: `/song/detail/${id}`,
+  });
+}
+
+/**
+ * 获取歌曲封面
+ * @param {Number|String} id - 歌曲 id
+ */
+export function getSongCover(id: number | string) {
+  return `/api/song/cover/${id}`;
 }

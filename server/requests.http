@@ -102,8 +102,38 @@ Authorization: Bearer {{login.response.body.data.token}}
 GET {{baseUrl}}/song/stream/1
 # Response: (Binary Audio Data)
 
-
-
+### 11-1. 获取歌曲详情
+GET {{baseUrl}}/song/detail/1
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "ID": 1,
+#     "title": "1925",
+#     "artist_name": "T-POCKET、初音ミク",
+#     "album_name": "EXIT TUNES PRESENTS Vocalolegend feat. 初音ミク",
+#     "artist_id": 1,
+#     "artists": null,
+#     "album_id": 1,
+#     "cover_id": 1,
+#     "track_num": 6,
+#     "disc_num": 0,
+#     "year": "2010",
+#     "file_path": "C:\\Users\\lrj32\\Desktop\\music player\\localmusicplayerFoleder\\testuser001\\初音未来\\1925 - T-POCKET、初音ミク.flac",
+#     "file_name": "1925 - T-POCKET、初音ミク.flac",
+#     "file_size": 25309823,
+#     "format": "flac",
+#     "duration": 199,
+#     "sample_rate": 44100,
+#     "bit_depth": 16,
+#     "channels": 2,
+#     "bit_rate": 1017,
+#     "play_count": 0
+#   }
+# }
+### 11-2. 获取歌曲封面
+GET {{baseUrl}}/song/cover/1
+# Response: (Binary Image Data)
 
 ### 11-2a. 获取公共歌单详情 (无需登录，验证 is_public)
 GET {{baseUrl}}/song/playlist/public/1?page=1&limit=90
@@ -243,11 +273,30 @@ Authorization: Bearer {{login.response.body.data.token}}
 DELETE {{baseUrl}}/song/history
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 20. 搜索建议
-GET {{baseUrl}}/search/suggest?keywords=Test
-Authorization: Bearer {{login.response.body.data.token}}
+### 20. 搜索歌曲
+GET {{baseUrl}}/search/song?keywords=miku&offset=1&limit=30
 
-### 21. 搜索详情 (歌曲)
-GET {{baseUrl}}/search/detail?keywords=Test&type=1&offset=1&limit=10
-Authorization: Bearer {{login.response.body.data.token}}
+### 21. 搜索歌手
+GET {{baseUrl}}/search/artist?keywords=miku&offset=1&limit=30
 
+### 22. 搜索专辑
+GET {{baseUrl}}/search/album?keywords=miku&offset=1&limit=30
+
+### 23. 搜索歌单
+GET {{baseUrl}}/search/playlist?keywords=miku&offset=1&limit=30
+
+### 24. 获取歌词
+GET {{baseUrl}}/song/lyric/1
+
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "lrc": {
+#       "lyric": "[00:00.00]作词 : とみー\n[00:01.00]作曲 : とみー\n[00:16.82]いたいけなモーション\n[00:16.82]讨人怜爱的动作\n[00:18.38]振り切れるテンション\n[00:18.38]超越计量的紧张\n[00:19.92]意外、意外\n[00:19.92]意外 意外\n[00:21.42]いけるものね\n[00:21.42]是可行的呢\n[00:23.21]繰り返す問答\n[00:23.21]迂迴反复问答\n[00:24.86]答えなら無用\n[00:24.86]回答也是没用\n[00:26.45]嫌い、嫌い縛らないで\n[00:26.45]讨厌 讨厌 不要困着我\n[00:29.82]ひとりぼっちの\n[00:29.82]将孤零零一个人的\n[00:33.12]「ぼっち」を押すの\n[00:33.12]「孤零零」按住\n[00:36.46]やめて、よしての妄想で\n[00:36.46]住手 快停下来 如此陷入妄想\n[00:44.55]買えないものなど\n[00:44.55]没什么用金钱\n[00:46.50]ないのです\n[00:46.50]买不到的东西\n[00:48.10]転じて言えば何物にも\n[00:48.10]换而言之 无论什么样的东西\n[00:51.33]値段をつけて売るのです\n[00:51.33]都可以标上价格贩卖\n[00:54.21]尊徳の感情はないの\n[00:54.21]一点尊严都没有吗\n[01:11.33]ホンノリと少々\n[01:11.33]稍稍地少许地\n[01:12.87]チラミセの本性\n[01:12.87]若隐若现挑逗的本性\n[01:14.48]ズルい、ズルい\n[01:14.48]狡猾 狡猾\n[01:16.12]可愛くない\n[01:16.12]一点都不可爱\n[01:17.81]それならばこうしよう\n[01:17.81]既然如此就这么办吧\n[01:19.56]ズルムケの本性\n[01:19.56]坦荡荡全都脱了的本性\n[01:21.10]臭い、臭い\n[01:21.10]好恶 好恶\n[01:22.61]はしたないわ\n[01:22.61]太卑鄙 无耻啦\n[01:24.40]間違い探しのペアルック\n[01:24.40]在情侣装上找茬\n[01:31.00]あれとこれとそれとどれ\n[01:31.00]那里 这里 那里 还有哪里\n[01:39.24]飽きたらガムを\n[01:39.24]为了将嚼厌的\n[01:40.68]捨てるように\n[01:40.68]口香糖吐掉\n[01:42.63]新たな恋を探す道理\n[01:42.63]探寻新恋情的道理\n[01:45.92]パズルの凸凹意外にも\n[01:45.92]拼图的凸凹也出乎意料地\n[01:49.00]誰とでもハマるようだ\n[01:49.00]好像与谁都合得起来\n[01:52.78]降りしきる雨の中\n[01:52.78]下个不停的雨之中\n[01:58.79]止まるべき錨を捨て\n[01:58.79]丢掉该用来固定的锚\n[02:05.62]人生は「コウカイ」と\n[02:05.62]人生是名为「后悔」的\n[02:12.34]いう名の船旅だ\n[02:12.34]航船旅行\n[02:32.43]遮るものを\n[02:32.43]要是揭开\n[02:33.57]あげるならば\n[02:33.57]那些遮挡的话\n[02:35.52]心と道徳、法律か\n[02:35.52]心？道德？法律？\n[02:38.77]お高い壁も遠回りを\n[02:38.77]要是高高墙挡也绕过去的话\n[02:42.01]したならば ほら\n[02:42.01]你看 今天是\n[02:44.00]こんにちは\n[02:44.00]多么美好\n[02:45.65]「アイ」とはなんぞ\n[02:45.65]如果要问\n[02:46.89]と問われれば\n[02:46.89]「爱」是什么\n[02:48.78]それは「ワタシ」と\n[02:48.78]那就回答\n[02:50.24]答えようぞ\n[02:50.24]「是我」吧\n[02:52.03]ひび割れしにくいだけなので\n[02:52.03]正因为不容易出现裂痕\n[02:55.27]ダイヤなどいらないのです\n[02:55.27]钻石什么的都不需要"
+#     },
+#     "source": "tag",
+#     "tlyric": {
+#       "lyric": ""
+#     }
+#   }
+# }

@@ -1,230 +1,91 @@
 <template>
-  <div class="record">
-    <img
-      :class="music.getPlayState ? 'pointer play' : 'pointer'"
-      src="/images/ico/pointer.png"
-      alt="pointer"
-    />
-    <div
-      class="pic"
-      :style="{
-        animationPlayState: music.getPlayState ? 'running' : 'paused',
-      }"
-    >
-      <img
-        class="album"
-        :src="
-          music.getPlaySongData
-            ? music.getPlaySongData.album.picUrl.replace(/^http:/, 'https:') +
-              '?param=500y500'
-            : '/images/pic/default.png'
-        "
-        alt="cover"
-      />
-    </div>
-    <div class="control">
-      <n-icon
-        v-if="!music.getPersonalFmMode"
-        class="prev"
-        size="36"
-        :component="SkipPreviousRound"
-        @click.stop="music.setPlaySongIndex('prev')"
-      />
-      <n-icon
-        v-else
-        class="dislike"
-        size="24"
-        :component="ThumbDownRound"
-        @click="music.setFmDislike(music.getPersonalFmData.id)"
-      />
-      <div class="play-state">
-        <n-icon
-          v-show="!music.getPlayState"
-          size="58"
-          :component="PlayCircleFilled"
-          @click.stop="music.setPlayState(true)"
-        />
-        <n-icon
-          v-show="music.getPlayState"
-          size="58"
-          :component="PauseCircleFilled"
-          @click.stop="music.setPlayState(false)"
-        />
+  <div class="player-record" :class="{ playing: music.getPlayState }">
+    <div class="record-wrapper">
+      <div class="disc">
+        <div class="cover">
+            <img :src="coverUrl" alt="cover" />
+        </div>
       </div>
-      <n-icon
-        class="next"
-        size="36"
-        :component="SkipNextRound"
-        @click.stop="music.setPlaySongIndex('next')"
-      />
     </div>
   </div>
 </template>
 
-<script setup>
-import {
-  PlayCircleFilled,
-  PauseCircleFilled,
-  SkipNextRound,
-  SkipPreviousRound,
-  ThumbDownRound,
-} from "@vicons/material";
+<script setup lang="ts">
+import { computed } from "vue";
 import { musicStore } from "@/store";
+import { getSongCover } from "@/api/song";
+
 const music = musicStore();
+
+const coverUrl = computed(() => {
+  if (music.getPlaySongData?.id) {
+    return getSongCover(music.getPlaySongData.id);
+  }
+  return "/images/logo/logo.png";
+});
 </script>
 
 <style lang="scss" scoped>
-.record {
-  position: relative;
+.player-record {
   display: flex;
   align-items: center;
   justify-content: center;
-  &:hover {
-    .control {
-      opacity: 1;
-    }
-  }
-  .pointer {
-    position: absolute;
-    width: 14vh;
-    left: calc(50% - 1.8vh);
-    top: -14vh;
-    transform: rotate(-20deg);
-    transform-origin: 1.8vh 1.8vh;
-    z-index: 1;
-    transition: all 0.3s;
-    &.play {
-      transform: rotate(0);
-    }
-  }
-  .pic {
-    animation: rotate 18s linear infinite;
+  width: 100%;
+  height: 100%;
+
+  .record-wrapper {
+    position: relative;
+    width: 45vh;
+    height: 45vh;
+    max-width: 75vw;
+    max-height: 75vw;
     border-radius: 50%;
-    border: 1vh solid #ffffff30;
-    background: linear-gradient(black 0%, transparent, black 98%),
-      radial-gradient(
-        #000 52%,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555,
-        #000,
-        #555
-      );
-    background-clip: content-box;
-    width: 40vh;
-    height: 40vh;
+    background: #000;
+    background-image: radial-gradient(circle, #444 0%, #111 100%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     display: flex;
+    align-items: center;
     justify-content: center;
-    align-items: center;
-    .album {
-      border: 1vh solid #ffffff40;
+    animation: rotate 20s linear infinite;
+    animation-play-state: paused;
+
+    .disc {
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
-      width: 70%;
-      height: 70%;
-      object-fit: cover;
+      background: linear-gradient(30deg, transparent 40%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.1) 55%, transparent 60%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .cover {
+          width: 70%;
+          height: 70%;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 4px solid #111;
+          
+          img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+          }
+      }
     }
   }
-  .control {
-    opacity: 0;
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    width: 68%;
-    height: 68%;
-    border-radius: 50%;
-    background-color: #00000050;
-    backdrop-filter: blur(20px);
-    transition: all 0.5s;
-    .n-icon {
-      cursor: pointer;
-      transition: all 0.3s;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      &:hover {
-        transform: scale(1.1);
-      }
-      &:active {
-        transform: scale(1);
-      }
-    }
-    .play-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      .n-icon {
-        width: 60px;
-        height: 60px;
-      }
+
+  &.playing {
+    .record-wrapper {
+      animation-play-state: running;
     }
   }
 }
 
-// 旋转动画
 @keyframes rotate {
-  0% {
+  from {
     transform: rotate(0deg);
   }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
