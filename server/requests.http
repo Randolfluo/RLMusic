@@ -81,7 +81,10 @@ GET {{baseUrl}}/system/stats
 #     "user_count": 6,
 #     "system_uptime": 34,
 #     "user_listening_duration": 0,
-#     "user_scanned_duration": 0
+#     "user_scanned_duration": 0,
+#     "cpu_usage": 12.5,
+#     "mem_usage": 45.2,
+#     "api_call_count": 1024
 #   }
 # }
 ### 8. 扫描用户音乐 (需要登录)
@@ -300,3 +303,9 @@ GET {{baseUrl}}/song/lyric/1
 #     }
 #   }
 # }
+
+### 25. 获取歌手详情
+GET {{baseUrl}}/song/artist/1
+
+### 26. 获取专辑详情
+GET {{baseUrl}}/song/album/1

@@ -1,5 +1,16 @@
 <template>
   <div class="stats-container">
+    <div class="header">
+       <n-space justify="end" style="margin-bottom: 10px;">
+           <n-button strong secondary circle type="primary" @click="getStats" :loading="loading">
+             <template #icon>
+                <n-icon>
+                    <Refresh />
+                </n-icon>
+             </template>
+           </n-button>
+       </n-space>
+    </div>
     <n-grid x-gap="12" y-gap="12" :cols="4">
       <n-gi>
         <n-card size="small" :bordered="false" class="stats-card">
@@ -65,16 +76,42 @@
           </n-statistic>
         </n-card>
       </n-gi>
+      <n-gi>
+        <n-card size="small" :bordered="false" class="stats-card">
+          <n-statistic label="CPU 利用率">
+            <n-number-animation :from="0" :to="stats.cpu_usage || 0" :precision="1" />
+             <template #suffix>%</template>
+          </n-statistic>
+        </n-card>
+      </n-gi>
+      <n-gi>
+        <n-card size="small" :bordered="false" class="stats-card">
+          <n-statistic label="内存 利用率">
+            <n-number-animation :from="0" :to="stats.mem_usage || 0" :precision="1" />
+             <template #suffix>%</template>
+          </n-statistic>
+        </n-card>
+      </n-gi>
+      <n-gi>
+        <n-card size="small" :bordered="false" class="stats-card">
+          <n-statistic label="API 调用次数">
+            <n-number-animation :from="0" :to="stats.api_call_count || 0" />
+             <template #suffix>次</template>
+          </n-statistic>
+        </n-card>
+      </n-gi>
     </n-grid>
     <n-divider />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from "vue";
+import { ref, onMounted, onUnmounted, reactive } from "vue";
 import { getSystemStats, type SystemStats } from "@/api/system";
 import { ResultCode } from "@/utils/request";
+import { Refresh } from "@icon-park/vue-next";
 
+const loading = ref(false);
 const stats = ref<SystemStats>({
   song_count: 0,
   album_count: 0,
@@ -84,7 +121,10 @@ const stats = ref<SystemStats>({
   user_count: 0,
   system_uptime: 0,
   user_listening_duration: 0,
-  user_scanned_duration: 0
+  user_scanned_duration: 0,
+  cpu_usage: 0,
+  mem_usage: 0,
+  api_call_count: 0
 });
 
 const units = reactive({
@@ -111,11 +151,8 @@ const getUnitText = (unit: string) => {
     return map[unit] || unit;
 }
 
-onMounted(() => {
-  getStats();
-});
-
 const getStats = async () => {
+    loading.value = true;
     try {
         const res = await getSystemStats();
         if (res.code === ResultCode.SUCCESS) {
@@ -123,8 +160,14 @@ const getStats = async () => {
         }
     } catch (e) {
         console.error(e);
+    } finally {
+        loading.value = false;
     }
 }
+
+onMounted(() => {
+  getStats();
+});
 </script>
 
 <style scoped lang="scss">

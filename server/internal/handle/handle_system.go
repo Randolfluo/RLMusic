@@ -5,9 +5,12 @@ import (
 	"server/internal/model"
 	"server/internal/utils/jwt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/spf13/viper"
 )
 
@@ -29,6 +32,10 @@ type StatsVO struct {
 
 	UserListeningDuration int64 `json:"user_listening_duration"`
 	UserScannedDuration   int64 `json:"user_scanned_duration"`
+
+	CpuUsage     float64 `json:"cpu_usage"`
+	MemUsage     float64 `json:"mem_usage"`
+	ApiCallCount int64   `json:"api_call_count"`
 }
 
 // GetStats 获取系统统计信息（包含原有 Settings 和 Duration）
@@ -55,6 +62,21 @@ func (*SystemAuth) GetStats(c *gin.Context) {
 
 	// 补充统计: 系统运行时间
 	systemRunTime := int64(time.Since(g.StartTime).Seconds())
+
+	// 系统负载 (CPU & Mem)
+	var cpuUsage float64 = 0
+	percent, err := cpu.Percent(0, false)
+	if err == nil && len(percent) > 0 {
+		cpuUsage = percent[0]
+	}
+	var memUsage float64 = 0
+	vMem, err := mem.VirtualMemory()
+	if err == nil {
+		memUsage = vMem.UsedPercent
+	}
+
+	// API 调用次数
+	apiCount := atomic.LoadInt64(&g.ApiCallCount)
 
 	// 2. 获取当前用户时长信息 (可选登录)
 	var listeningDuration int64 = 0
@@ -83,6 +105,9 @@ func (*SystemAuth) GetStats(c *gin.Context) {
 		SystemUptime:          systemRunTime,
 		UserListeningDuration: listeningDuration,
 		UserScannedDuration:   totalDuration,
+		CpuUsage:              cpuUsage,
+		MemUsage:              memUsage,
+		ApiCallCount:          apiCount,
 	})
 }
 

@@ -151,7 +151,6 @@
               </div>
               <div
                 :class="menuShow ? 'menu show' : 'menu'"
-                v-show="setting.playerStyle === 'record'"
               >
                 <n-icon
                   v-if="music.getPlaySongTransl"
@@ -164,6 +163,11 @@
                   :component="MessageFilled"
                   @click="toComment"
                 />
+                <div class="lyric-offset-control">
+                  <n-icon class="btn" :component="RemoveOutlined" @click="changeOffset(-0.1)" />
+                  <span class="text">{{ offsetText }}</span>
+                  <n-icon class="btn" :component="AddOutlined" @click="changeOffset(0.1)" />
+                </div>
               </div>
             </div>
           </Transition>
@@ -184,6 +188,8 @@ import {
   MessageFilled,
   FullscreenRound,
   FullscreenExitRound,
+  AddOutlined,
+  RemoveOutlined,
 } from "@vicons/material";
 import { musicStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
@@ -277,6 +283,20 @@ const lyricsScroll = (index) => {
     });
   }
 };
+
+// 歌词偏移控制
+const offsetText = computed(() => {
+  const offset = music.getLyricOffset;
+  if (offset === 0) return "0.0s";
+  return offset > 0 ? `延迟 ${offset.toFixed(1)}s` : `提前 ${Math.abs(offset).toFixed(1)}s`;
+});
+
+const changeOffset = (val) => {
+  const current = music.getLyricOffset;
+  const next = parseFloat((current + val).toFixed(1));
+  music.setLyricOffset(next);
+};
+
 
 onMounted(() => {
   nextTick(() => {
@@ -588,9 +608,9 @@ watch(
               .lrc-text {
                 transform: scale(1.05);
                 .lyric, .lyric-fy {
-                  color: #fff !important;
+                  color: $mainColor !important;
                   font-weight: 900 !important;
-                  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8) !important;
+                  text-shadow: 0 0 20px rgba($mainColor, 0.4) !important;
                   opacity: 1 !important;
                   filter: none !important;
                 }
@@ -616,6 +636,32 @@ watch(
           transition: all 0.3s;
           &.show {
             opacity: 1;
+          }
+          .lyric-offset-control {
+            display: flex;
+            align-items: center;
+            background-color: #ffffff20;
+            backdrop-filter: blur(10px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-left: 12px;
+            .btn {
+              padding: 0 !important;
+              margin: 0 !important;
+              font-size: 20px !important;
+              opacity: 0.8;
+              &:hover {
+                background-color: transparent !important;
+                opacity: 1;
+                transform: scale(1.1);
+              }
+            }
+            .text {
+              margin: 0 10px;
+              font-size: 1.6vh;
+              min-width: 40px;
+              text-align: center;
+            }
           }
           .n-icon {
             margin-right: 8px;

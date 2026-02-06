@@ -10,6 +10,9 @@ export interface SystemStats {
     system_uptime: number;
     user_listening_duration: number;
     user_scanned_duration: number;
+    cpu_usage?: number;
+    mem_usage?: number;
+    api_call_count?: number;
 }
 
 /**

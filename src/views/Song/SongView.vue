@@ -70,35 +70,35 @@
         
         <div class="info-cards">
            <!-- 格式 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">音频格式</div>
               <div class="card-value">{{ song.format }}</div>
               <div class="card-tag">{{ ((song.bit_rate || 0) / 1000).toFixed(0) }} kbps</div>
            </div>
 
             <!-- 时长 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">时长</div>
               <div class="card-value">{{ formatTime(song.duration) }}</div>
               <div class="card-tag">Time</div>
            </div>
 
            <!-- 采样率 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">采样率</div>
               <div class="card-value">{{ song.sample_rate }} Hz</div>
               <div class="card-tag">{{ song.bit_depth }} bit</div>
            </div>
            
            <!-- 声道/大小 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">声道/大小</div>
               <div class="card-value">{{ song.channels === 2 ? 'Stereo' : (song.channels === 1 ? 'Mono' : song.channels + ' Ch') }}</div>
               <div class="card-tag">{{ (song.file_size / 1024 / 1024).toFixed(2) }} MB</div>
            </div>
 
             <!-- 轨道/年份 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">发行信息</div>
               <div class="card-value">{{ song.year || '未知年份' }}</div>
               <div class="card-tag">
@@ -108,19 +108,57 @@
            </div>
 
            <!-- 播放次数 -->
-           <div class="info-card">
+           <div class="info-card hover-effect">
               <div class="card-label">播放统计</div>
               <div class="card-value">{{ song.play_count }}</div>
               <div class="card-tag">Plays</div>
            </div>
 
-           <!-- 文件信息 -->
-           <div class="info-card" :title="song.file_path">
+           <!-- 文件信息 (Clickable) -->
+           <div class="info-card hover-effect clickable" @click="showFileInfo = true" :title="song.file_path">
               <div class="card-label">源文件</div>
-              <div class="card-value" style="font-size: 14px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ song.file_name }}</div>
-              <div class="card-tag">ID: {{ song.id }} | Path: {{ song.file_path }}</div>
+              <div class="card-value file-name">{{ song.file_name }}</div>
+              <div class="card-tag">点击查看详细路径</div>
            </div>
+           
+           <!-- 占位卡片 (Ensure layout balance if needed) -->
+           <!-- But grid handles it well -->
         </div>
+
+        <!-- File Detail Modal -->
+        <n-modal v-model:show="showFileInfo">
+            <n-card
+                style="width: 600px; max-width: 90vw;"
+                title="文件详细信息"
+                :bordered="false"
+                size="huge"
+                role="dialog"
+                aria-modal="true"
+            >
+                <div class="file-details">
+                    <div class="detail-row">
+                        <span class="label">文件ID:</span>
+                        <span class="value">{{ song.id }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">文件名:</span>
+                        <span class="value">{{ song.file_name }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">完整路径:</span>
+                        <span class="value path-value">{{ song.file_path }}</span>
+                    </div>
+                     <div class="detail-row">
+                        <span class="label">文件大小:</span>
+                        <span class="value">{{ song.file_size }} bytes ({{ (song.file_size / 1024 / 1024).toFixed(2) }} MB)</span>
+                    </div>
+                     <div class="detail-row">
+                        <span class="label">哈希值:</span>
+                        <span class="value">{{ song.hash || 'N/A' }}</span>
+                    </div>
+                </div>
+            </n-card>
+        </n-modal>
         
         <div class="intro-block" v-if="false">
           <!-- 预留简介区域，目前数据库没有 -->
@@ -153,6 +191,7 @@ const musicStore = useMusicDataStore();
 
 const songId = route.params.id as string;
 const loading = ref(true);
+const showFileInfo = ref(false); // Controls file info modal
 // Use loose type with specific array definition for artists to ensure v-for index is number
 const song = ref<{ artists?: any[]; [key: string]: any } | null>(null);
 
@@ -323,23 +362,41 @@ onMounted(() => {
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
       margin-bottom: 40px;
+
+      @media (max-width: 1024px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      @media (max-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
       
       .info-card {
-        background-color: var(--n-card-color); // Adaptation
+        background-color: var(--n-card-color); 
         border-radius: 12px;
         padding: 20px;
         display: flex;
         flex-direction: column;
-        // Naive UI variables usually available if using n-config-provider, else default colors
+        justify-content: space-between;
         background: #f5f5f7; 
+        height: 140px; // Unified height
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
         
-        // Dark mode adaptation hint (if simple CSS)
         @media (prefers-color-scheme: dark) {
            background: #2c2c2e;
         }
-        
-        // If app uses specific class/attribute for dark mode, adjust accordingly. 
-        // Assuming light/default for now or relying on transparent/inherit if inside n-card.
+
+        &.hover-effect:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        &.clickable {
+            cursor: pointer;
+            &:active {
+                transform: scale(0.98);
+            }
+        }
         
         .card-label {
             font-size: 13px;
@@ -351,6 +408,13 @@ onMounted(() => {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; 
+
+            &.file-name {
+                 font-size: 15px;
+            }
         }
         
         .card-tag {
@@ -387,6 +451,38 @@ onMounted(() => {
             font-size: 15px;
         }
     }
+  }
+  
+  .file-details {
+     display: flex;
+     flex-direction: column;
+     gap: 15px;
+     
+     .detail-row {
+         display: flex;
+         flex-direction: column;
+         gap: 5px;
+         
+         .label {
+             font-size: 13px;
+             color: var(--n-text-color-3);
+             font-weight: bold;
+         }
+         .value {
+             font-size: 14px;
+             color: var(--n-text-color-1);
+             word-break: break-all;
+             background: rgba(100,100,100,0.1);
+             padding: 10px;
+             border-radius: 8px;
+             font-family: monospace;
+             
+             &.path-value {
+                 max-height: 150px;
+                 overflow-y: auto;
+             }
+         }
+     }
   }
 }
 

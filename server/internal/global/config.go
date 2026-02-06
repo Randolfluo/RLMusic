@@ -9,6 +9,11 @@ import (
 	"github.com/spf13/viper" // 配置文件读取包
 )
 
+// 全局统计变量
+var (
+	ApiCallCount int64 // API调用次数
+)
+
 type Config struct {
 	Server struct {
 		Mode          string // debug | release

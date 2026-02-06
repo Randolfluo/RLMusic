@@ -379,6 +379,30 @@ func (*SongAuth) GetSongDetail(c *gin.Context) {
 	ReturnSuccess(c, song)
 }
 
+// GetArtistDetail 获取歌手详情
+func (*SongAuth) GetArtistDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+	var artist model.Artist
+	if err := db.First(&artist, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌手不存在")
+		return
+	}
+	ReturnSuccess(c, artist)
+}
+
+// GetAlbumDetail 获取专辑详情
+func (*SongAuth) GetAlbumDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+	var album model.Album
+	if err := db.Preload("Artist").First(&album, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "专辑不存在")
+		return
+	}
+	ReturnSuccess(c, album)
+}
+
 // GetAllPlaylists 获取所有公开歌单
 func (*SongAuth) GetAllPlaylists(c *gin.Context) {
 	db := GetDB(c)

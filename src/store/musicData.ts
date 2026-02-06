@@ -16,6 +16,8 @@ export const useMusicDataStore = defineStore("musicData", {
       playState: false,
       // 当前歌曲播放链接
       playSongLink: null,
+      // 歌词偏移时间 (秒)
+      lyricOffset: 0,
       // 当前歌曲歌词
       playSongLyric: [],
       // 当前歌曲歌词播放索引
@@ -78,6 +80,10 @@ export const useMusicDataStore = defineStore("musicData", {
     // 获取是否拥有翻译
     getPlaySongTransl(state) {
       return state.playSongTransl;
+    },
+    // 获取歌词偏移
+    getLyricOffset(state) {
+      return state.lyricOffset;
     },
     // 获取每日推荐
     getDailySongs(state) {
@@ -188,14 +194,20 @@ export const useMusicDataStore = defineStore("musicData", {
         );
       }
       // 计算歌词位置
+      // lyricOffset > 0 代表歌词延迟显示（即需要在播放进度更靠后时才显示当前行），意味着“有效时间”要减去 offset
+      const effectiveTime = value.currentTime - this.lyricOffset;
       const index = this.playSongLyric.findIndex(
-        (item: any) => item.time > value.currentTime
+        (item: any) => item.time > effectiveTime
       );
       if (index === -1) {
         this.playSongLyricIndex = this.playSongLyric.length - 1;
       } else {
         this.playSongLyricIndex = index - 1;
       }
+    },
+    // 设置歌词偏移
+    setLyricOffset(value: number) {
+      this.lyricOffset = value;
     },
     // 添加播放历史
     setPlayHistory(data: any) {

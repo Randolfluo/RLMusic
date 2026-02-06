@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-    <SystemStats />
 
     <div class="section-title">
       <h2>公共歌单</h2>

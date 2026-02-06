@@ -28,6 +28,8 @@ func RegisterHandlers(r *gin.Engine) {
 	docs.SwaggerInfo.BasePath = apiBasePath
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	r.Use(middleware.StatsMiddleware()) // 注册统计中间件
+
 	registerBaseHandler(r)
 	registerAuthHandler(r)
 }
@@ -59,6 +61,8 @@ func registerBaseHandler(r *gin.Engine) {
 		song.GET("/detail/:id", songAuthAPI.GetSongDetail)                    // 获取歌曲详情
 		song.GET("/cover/:id", songAuthAPI.GetSongCover)                      // 获取歌曲封面
 		song.GET("/lyric/:id", songAuthAPI.GetSongLyric)                      // 获取歌曲歌词
+		song.GET("/artist/:id", songAuthAPI.GetArtistDetail)                  // 获取歌手详情
+		song.GET("/album/:id", songAuthAPI.GetAlbumDetail)                    // 获取专辑详情
 	}
 
 	// 搜索相关(无需认证)

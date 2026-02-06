@@ -21,6 +21,7 @@
       >
         <router-link class="link" to="/discover">一起听歌</router-link>
       </n-dropdown>
+      <router-link class="link" to="/system-stats">系统信息</router-link>
       <n-dropdown
         trigger="hover"
         size="large"

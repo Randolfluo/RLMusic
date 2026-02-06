@@ -21,7 +21,7 @@
             :key="index"
           >
             {{ artist.name }}
-            <span v-if="index < (songData?.artist?.length || 0) - 1"> / </span>
+            <span v-if="index < (Number(songData?.artist?.length) || 0) - 1"> / </span>
           </span>
           <span v-if="!songData?.artist && songData?.artist_name">
             {{ songData.artist_name }}
@@ -147,7 +147,7 @@ const modeIcon = computed(() => {
 });
 
 const volumeIcon = computed(() => {
-    const vol = music.persistData.playVolume;
+    const vol = Number(music.persistData.playVolume);
     if (vol === 0) return VolumeOffRound;
     if (vol < 0.4) return VolumeMuteRound;
     if (vol < 0.7) return VolumeDownRound;
@@ -155,7 +155,7 @@ const volumeIcon = computed(() => {
 });
 
 const toggleMute = () => {
-    if (music.persistData.playVolume > 0) {
+    if (Number(music.persistData.playVolume) > 0) {
         music.persistData.playVolumeMute = music.persistData.playVolume;
         music.persistData.playVolume = 0;
     } else {
@@ -188,7 +188,14 @@ const toggleMute = () => {
     .cover-img {
       width: 100%;
       height: 100%;
-      display: block;
+      display: flex; /* Naive UI n-image might render wrapper */
+      justify-content: center;
+      align-items: center;
+      :deep(img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; 
+      }
     }
   }
 

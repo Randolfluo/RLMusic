@@ -89,6 +89,15 @@ const routes: any = [
     },
     component: () => import("@/views/Search/index.vue"),
   },
+  // 系统信息
+  {
+    path: "/system-stats",
+    name: "system-stats",
+    meta: {
+      title: "系统信息",
+    },
+    component: () => import("@/views/System/StatsView.vue"),
+  },
   // 歌曲详情
   {
     path: "/song/:id",
