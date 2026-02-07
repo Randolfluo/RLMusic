@@ -81,7 +81,8 @@ service.interceptors.request.use(
     if (!config.hiddenBar && window.$loadingBar) {
       window.$loadingBar.start();
     }
-    const token = localStorage.getItem("token");
+    // 改为 sessionStorage
+    const token = sessionStorage.getItem("token");
     if (token) {
         config.headers.Authorization = `Bearer ${token}`; // 添加 token
     }

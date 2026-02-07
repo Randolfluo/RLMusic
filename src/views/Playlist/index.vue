@@ -174,13 +174,13 @@ const rowProps = (_row: any, index: number) => {
 
 <style scoped lang="scss">
 :deep(.n-data-table .n-data-table-td) {
-  background-color: #fff !important;
+  background-color: transparent !important;
 }
 :deep(.n-data-table .n-data-table-tr:hover .n-data-table-td) {
-  background-color: #f0f0f0 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 :deep(.n-data-table .n-data-table-th) {
-  background-color: #fff !important;
+  background-color: transparent !important;
 }
 .playlist-detail {
   padding: 24px;

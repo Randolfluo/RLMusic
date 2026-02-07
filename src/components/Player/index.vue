@@ -209,6 +209,7 @@
 
 <script setup>
 import { checkMusicCanUse, getMusicUrl, getMusicLyric } from "@/api/song";
+import { updateListeningDuration } from "@/api/user";
 import { NIcon } from "naive-ui";
 import {
   KeyboardArrowUpFilled,
@@ -229,7 +230,7 @@ import {
 } from "@vicons/material";
 import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
 import { storeToRefs } from "pinia";
-import { musicStore, settingStore } from "@/store";
+import { musicStore, settingStore, userStore } from "@/store";
 import { useRouter } from "vue-router";
 import AddPlaylist from "@/components/DataModel/AddPlaylist.vue";
 import AllArtists from "@/components/DataList/AllArtists.vue";
@@ -238,7 +239,10 @@ import debounce from "@/utils/debounce";
 const router = useRouter();
 const setting = settingStore();
 const music = musicStore();
+const user = userStore();
 const { persistData } = storeToRefs(music);
+const listeningTimer = ref(0);
+const lastDurationTime = ref(0);
 const addPlayListRef = ref(null);
 
 // 音频标签
@@ -275,6 +279,25 @@ const songUpdate = (e) => {
   const currentTime = e.target.currentTime;
   const duration = e.target.duration;
   music.setPlaySongTime({ currentTime, duration });
+
+  // 听歌时长统计
+  if (user.userLogin) {
+    const delta = currentTime - lastDurationTime.value;
+    // 忽略异常跳转 (暂停后恢复、拖动进度条等导致的较大时间差或负值)
+    if (delta > 0 && delta < 2) {
+      listeningTimer.value += delta;
+    }
+    lastDurationTime.value = currentTime;
+
+    // 每积累 60 秒发送一次请求
+    if (listeningTimer.value >= 60) {
+      updateListeningDuration(60);
+      listeningTimer.value -= 60;
+    }
+  } else {
+    lastDurationTime.value = currentTime;
+    listeningTimer.value = 0;
+  }
 };
 
 // 歌曲缓冲完毕

@@ -6,7 +6,7 @@ import (
 
 // Song 歌曲模型
 type Song struct {
-	ID int `gorm:"primaryKey;auto_increment"`
+	ID int `gorm:"primaryKey;auto_increment" json:"id"`
 
 	// 基础信息
 	Title      string `gorm:"type:varchar(255);index" json:"title"`       // 歌名

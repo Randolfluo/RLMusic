@@ -9,6 +9,8 @@ export const useSettingDataStore = defineStore("settingData", {
       // 全局主题
       theme: "light",
       themeAuto: true,
+      // 主题色
+      themeColor: "#009688",
       // 搜索历史
       searchHistory: true,
       // 轮播图显示
@@ -19,6 +21,8 @@ export const useSettingDataStore = defineStore("settingData", {
       listClickMode: "dblclick",
       // 播放器样式
       playerStyle: "cover",
+      // 播放器背景模糊
+      playerBgBlur: true,
       // 底栏歌词显示
       bottomLyricShow: true,
       // 是否显示歌词翻译
@@ -33,6 +37,12 @@ export const useSettingDataStore = defineStore("settingData", {
       lyricsBlur: false,
       // 音乐频谱
       musicFrequency: false,
+      // 粒子效果
+      particleEffect: true,
+      // 粒子数量
+      particleLimit: 50,
+      // 频谱跳动幅度
+      musicFrequencyScale: 90,
       // 鼠标移入歌词区域暂停滚动
       lrcMousePause: true,
     };
@@ -45,6 +55,10 @@ export const useSettingDataStore = defineStore("settingData", {
     // 获取是否开启翻译
     getShowTransl(state) {
       return state.showTransl;
+    },
+    // 获取主题色
+    getThemeColor(state) {
+      return state.themeColor;
     },
   },
   actions: {
@@ -61,6 +75,10 @@ export const useSettingDataStore = defineStore("settingData", {
     // 更改翻译开启选项
     setShowTransl(value: boolean) {
       this.showTransl = value;
+    },
+    // 设置主题色
+    setThemeColor(value: string) {
+      this.themeColor = value;
     },
   },
   // 开启数据持久化

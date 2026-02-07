@@ -51,7 +51,7 @@ import { ref, computed, h } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty } from "naive-ui";
 import { HamburgerButton, Pic } from "@icon-park/vue-next";
-import { musicStore } from "@/store";
+import { musicStore, settingStore } from "@/store";
 
 const props = defineProps({
   songs: {
@@ -74,6 +74,7 @@ const props = defineProps({
 
 const router = useRouter();
 const music = musicStore();
+const setting = settingStore();
 const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
 
 const columns = computed(() => {
@@ -82,17 +83,28 @@ const columns = computed(() => {
       title: "#",
       key: "index",
       width: 60,
-      render: (_: any, index: number) => index + 1 + (props.page - 1) * props.pageSize,
+      align: 'center',
+      render: (_: any, index: number) => h('span', { 
+        style: { opacity: 0.6, fontFamily: 'Monaco, monospace', fontSize: '13px' } 
+      }, `${index + 1 + (props.page - 1) * props.pageSize}`),
     },
     {
       title: "标题",
       key: "title",
       render: (row: any) => {
         return h('span', {
-          style: { cursor: 'pointer' },
+          style: { cursor: 'pointer', transition: 'all 0.3s', fontSize: '15px', fontWeight: '500' },
           onClick: (e: Event) => {
              e.stopPropagation();
              router.push(`/song/${row.id}`);
+          },
+          onMouseover: (e: Event) => {
+            (e.target as HTMLElement).style.color = setting.themeColor;
+            // (e.target as HTMLElement).style.paddingLeft = '4px'; // 增加一点位移效果
+          },
+          onMouseout: (e: Event) => {
+            (e.target as HTMLElement).style.color = 'inherit';
+            // (e.target as HTMLElement).style.paddingLeft = '0';
           },
           class: 'song-title-link'
         }, row.title)
@@ -113,13 +125,19 @@ const columns = computed(() => {
 
         return h('span', {
             class: 'artist-link',
-            style: { cursor: 'pointer', transition: 'color 0.3s' },
+            style: { cursor: 'pointer', transition: 'color 0.3s', fontSize: '13px', opacity: 0.8 },
             onClick: (e: Event) => {
                 e.stopPropagation();
                 if (artistId) router.push({ name: 'artist', query: { id: artistId } });
             },
-            onMouseover: (e: Event) => (e.target as HTMLElement).style.color = 'var(--n-color-primary)',
-            onMouseout: (e: Event) => (e.target as HTMLElement).style.color = 'inherit'
+            onMouseover: (e: Event) => {
+                (e.target as HTMLElement).style.color = setting.themeColor;
+                (e.target as HTMLElement).style.opacity = '1';
+            },
+            onMouseout: (e: Event) => {
+                (e.target as HTMLElement).style.color = 'inherit';
+                (e.target as HTMLElement).style.opacity = '0.8';
+            }
         }, artistName || "Unknown Artist")
       },
     },
@@ -127,18 +145,25 @@ const columns = computed(() => {
       title: "专辑",
       key: "album_title",
       render: (row: any) => {
-        const albumName = row.album_title || row.album?.name || row.album?.title || "Unknown Album";
+        // 先尝试获取 album_name（API返回的标准字段），然后是 album_title（旧兼顾），再是对象内的属性
+        const albumName = row.album_name || row.album_title || row.album?.name || row.album?.title || "Unknown Album";
         const albumId = row.album_id || row.album?.id;
         
         return h('span', {
            class: 'album-link',
-           style: { cursor: 'pointer', transition: 'color 0.3s' },
+           style: { cursor: 'pointer', transition: 'color 0.3s', fontSize: '13px', opacity: 0.6 },
            onClick: (e: Event) => {
                e.stopPropagation();
                if (albumId) router.push({ path: '/album', query: { id: albumId } });
            },
-           onMouseover: (e: Event) => (e.target as HTMLElement).style.color = 'var(--n-color-primary)',
-           onMouseout: (e: Event) => (e.target as HTMLElement).style.color = 'inherit'
+           onMouseover: (e: Event) => {
+               (e.target as HTMLElement).style.color = setting.themeColor;
+               (e.target as HTMLElement).style.opacity = '1';
+           },
+           onMouseout: (e: Event) => {
+               (e.target as HTMLElement).style.color = 'inherit';
+               (e.target as HTMLElement).style.opacity = '0.6';
+           }
         }, albumName);
       },
     },
@@ -146,7 +171,7 @@ const columns = computed(() => {
       title: "时长",
       key: "duration",
       width: 100,
-      render: (row: any) => formatDuration(row.duration),
+      render: (row: any) => h('span', { style: { opacity: 0.5, fontFamily: 'Monaco, monospace', fontSize: '12px' } }, formatDuration(row.duration)),
     },
   ];
 
@@ -155,14 +180,16 @@ const columns = computed(() => {
       title: "封面",
       key: "cover",
       width: 80,
+      align: 'center',
       render: (row: any) => {
         return h(NImage, {
           src: row.cover_url || (row.album ? row.album.picUrl : null) || row.picUrl || `/api/song/cover/${row.id}`,
           fallbackSrc: '/images/logo/favicon.png',
-          width: 50,
-          height: 50,
+          width: 48,
+          height: 48,
+          lazy: true, 
           objectFit: 'cover',
-          style: { borderRadius: '4px', verticalAlign: 'middle' },
+          style: { borderRadius: '6px', verticalAlign: 'middle', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' },
           previewDisabled: true
         });
       }
@@ -179,7 +206,7 @@ const formatDuration = (seconds: number) => {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
-const rowProps = (row: any, index: number) => {
+const rowProps = (_: any, index: number) => {
   return {
     style: "cursor: pointer;",
     onClick: () => {
@@ -199,7 +226,7 @@ const mapSongsToPlayer = (list: any[]) => {
         // Ensure artist format is consistent for player
         artist: song.artists || [{ name: song.artist_name, id: song.artist_id }],
         album: song.album || { 
-            name: song.album_title, 
+            name: song.album_name || song.album_title, // 优先使用 album_name
             id: song.album_id, 
             picUrl: song.cover_url || `/api/song/cover/${song.id}` 
         },
@@ -209,18 +236,60 @@ const mapSongsToPlayer = (list: any[]) => {
 </script>
 
 <style scoped lang="scss">
+.song-list-component {
+    padding-bottom: 20px;
+    position: relative;
+}
 .list-control {
+    position: absolute;
+    top: -46px; /* 向上移动，与父组件的标题行或控制行对齐 */
+    right: 0;
+    z-index: 100;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 12px;
-    padding-right: 12px;
+    padding: 0;
+    pointer-events: none;
+    
+    .right {
+        pointer-events: auto;
+    }
+    
+    /* 如果 slot 有内容，可能需要额外处理，这里默认 float right */
+    .left {
+       display: none; /* 暂时隐藏左侧空 slot */
+    }
 }
 
-:deep(.n-data-table .n-data-table-td) {
-  background-color: transparent !important;
-}
-:deep(.n-data-table .n-data-table-tr:hover .n-data-table-td) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+:deep(.n-data-table) {
+  .n-data-table-th {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    font-weight: normal;
+    opacity: 0.7;
+    padding: 12px 16px;
+  }
+  
+  .n-data-table-td {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    transition: background-color 0.2s ease;
+    padding: 10px 16px; 
+    vertical-align: middle;
+  }
+
+  .song-row {
+     transition: all 0.2s ease;
+     &:hover {
+        td {
+           background-color: rgba(128, 128, 128, 0.1) !important;
+        }
+     }
+  }
+  
+  // 隐藏最后一个 border
+  .n-data-table-tr:last-child .n-data-table-td {
+      border-bottom: none;
+  }
 }
 </style>

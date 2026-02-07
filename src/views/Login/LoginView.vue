@@ -154,6 +154,10 @@ const loginForm = reactive({
 
 const registerForm = reactive({
   username: "",
+  password: "",
+  email: ""
+});
+
 onMounted(() => {
     const savedUser = localStorage.getItem("remember_user");
     const savedPass = localStorage.getItem("remember_pass");
@@ -187,20 +191,16 @@ const handleLogin = (e) => {
              avatarUrl: res.data.avatar || "" 
           };
           user.setUserData(userData);
-          localStorage.setItem("token", res.data.token); 
+          // 使用 sessionStorage 存储 token，这样每次关闭应用后 token 会自动清除，实现“每次打开由于没有token需要重新登录”
+          sessionStorage.setItem("token", res.data.token); 
           
           if (rememberMe.value) {
-              localStorage.setItem("remember_user", loginForm.username);
-              localStorage.setItem("remember_pass", aesEncrypt(loginForm.password));
+            localStorage.setItem("remember_user", loginForm.username);
+            localStorage.setItem("remember_pass", aesEncrypt(loginForm.password));
           } else {
-              localStorage.removeItem("remember_user");
-              localStorage.removeItem("remember_pass");
+            localStorage.removeItem("remember_user");
+            localStorage.removeItem("remember_pass");
           }
-
-             avatarUrl: res.data.avatar || "" 
-          };
-          user.setUserData(userData);
-          localStorage.setItem("token", res.data.token); 
           router.push("/");
         } else {
           message.error(res.msg || "登录失败");

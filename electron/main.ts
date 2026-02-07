@@ -7,6 +7,10 @@ import os from 'node:os'
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// 屏蔽 Electron 的安全警告
+// 这个警告通常出现在开发环境中，因为 Vite 等构建工具需要使用 'unsafe-eval'
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
+
 // 目录结构说明
 //
 // ├─┬ dist-electron

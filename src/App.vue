@@ -37,8 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { musicStore, userStore, settingStore } from "@/store";
-import { useRouter } from "vue-router";
+import { musicStore, userStore } from "@/store";
 import { login } from "@/api/login"; // 引入登录api
 import { aesDecrypt } from "@/utils/encrypt"; // 引入解密
 import Provider from "@/components/Provider/index.vue";
@@ -51,8 +50,8 @@ import { ResultCode } from "@/utils/request";
 
 const music = musicStore();
 const user = userStore();
-const router = useRouter();
-const setting = settingStore();
+// const router = useRouter();
+// const setting = settingStore();
 
 // 自动登录逻辑
 onMounted(() => {
@@ -193,8 +192,6 @@ onMounted(() => {
 });
 
 </script>
-
-
 
 
 

@@ -131,14 +131,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, nextTick } from "vue";
+import { ref, reactive, onMounted, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMessage, useDialog } from "naive-ui";
 import SongList from "@/components/DataList/SongList.vue";
 import { 
-    Search, History, DeleteFour,
-    MusicOne, Voice, RecordDisc, Record,
-    Right, PlayOne
+    Search, DeleteFour,
+    Voice, RecordDisc, Record,
 } from "@icon-park/vue-next";
 import { getSearchHot, getSearchSuggest } from "@/api/search";
 import { useMusicDataStore } from "@/store/musicData";
@@ -149,7 +148,7 @@ const router = useRouter();
 const route = useRoute();
 const music = useMusicDataStore();
 const setting = useSettingDataStore();
-const message = useMessage();
+
 const dialog = useDialog();
 
 const inputRef = ref<any>(null); // Use any to support component ref methods
@@ -173,11 +172,6 @@ const searchData = reactive<{
         albums: [],
         playlists: []
     }
-});
-
-const isEmptyResult = computed(() => {
-    const s = searchData.suggest;
-    return !s.songs?.length && !s.artists?.length && !s.albums?.length && !s.playlists?.length;
 });
 
 // 初始化
@@ -250,19 +244,6 @@ const delHistory = () => {
             music.setSearchHistory(null, true);
         }
     })
-}
-
-const playSong = (song: any) => {
-    // 兼容 pinia store 方法名: setPlaylists vs setPlayList
-    if (typeof (music as any).setPlayList === 'function') {
-        (music as any).setPlayList([song]);
-    } else if (typeof music.setPlaylists === 'function') {
-        music.setPlaylists([song]);
-    }
-    music.setPlaySongIndex(0);
-    // 可选：记录搜索历史
-    music.setSearchHistory(inputValue.value.trim());
-    message.success(`开始播放: ${song.title}`);
 }
 
 </script>

@@ -18,11 +18,12 @@ type History struct {
 func AddHistory(db *gorm.DB, userID int, songID int) error {
 	var history History
 	err := db.Where("user_id = ? AND song_id = ?", userID, songID).First(&history).Error
-	if err == nil {
+	switch err {
+	case nil:
 		// Update existing record
 		history.CreatedAt = time.Now()
 		return db.Save(&history).Error
-	} else if err == gorm.ErrRecordNotFound {
+	case gorm.ErrRecordNotFound:
 		// Create new record
 		history = History{
 			UserID:    userID,
@@ -30,8 +31,9 @@ func AddHistory(db *gorm.DB, userID int, songID int) error {
 			CreatedAt: time.Now(),
 		}
 		return db.Create(&history).Error
+	default:
+		return err
 	}
-	return err
 }
 
 // GetUserHistory 获取用户播放历史

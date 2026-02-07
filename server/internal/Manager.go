@@ -98,6 +98,7 @@ func registerAuthHandler(r *gin.Engine) {
 		user.DELETE("", userAuthAPI.DeleteUser)        // 注销用户
 		user.GET("/info", userAuthAPI.GetUserInfo)     // 获取用户信息
 		user.POST("/avatar", userAuthAPI.UploadAvatar) // 上传头像
+		user.POST("/duration", userAuthAPI.UpdateListeningDuration) // 更新听歌时长
 	}
 
 	// 歌曲管理

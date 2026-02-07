@@ -13,6 +13,22 @@
       <n-switch v-model:value="themeAuto" :round="false" />
     </n-card>
     <n-card class="set-item">
+      <div class="name">主题颜色</div>
+      <n-color-picker
+        class="set"
+        v-model:value="themeColor"
+        :show-alpha="false"
+        :swatches="[
+          '#009688',
+          '#18a058',
+          '#2080f0',
+          '#f0a020',
+          '#d03050',
+          '#ffc0cb',
+        ]"
+      />
+    </n-card>
+    <n-card class="set-item">
       <div class="name">显示搜索历史</div>
       <n-switch v-model:value="searchHistory" :round="false" />
     </n-card>
@@ -40,6 +56,13 @@
         v-model:value="playerStyle"
         :options="playerStyleOptions"
       />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        播放器背景模糊
+        <span class="tip">开启后全屏播放器背景将进行高斯模糊处理</span>
+      </div>
+      <n-switch v-model:value="playerBgBlur" :round="false" />
     </n-card>
     <n-card
       class="set-item"
@@ -103,7 +126,65 @@
       <n-switch
         v-model:value="musicFrequency"
         :round="false"
-        @click="changeMusicFrequency"
+      />
+    </n-card>
+    <n-card class="set-item">
+      <div class="name">
+        显示粒子效果
+      </div>
+      <n-switch
+        v-model:value="particleEffect"
+        :round="false"
+      />
+    </n-card>
+    <n-card
+      class="set-item"
+      :content-style="{
+        'flex-direction': 'column',
+        'align-items': 'flex-start',
+      }"
+      v-if="particleEffect"
+    >
+      <div class="name">
+        粒子数量
+        <span class="tip">调整背景粒子的密度</span>
+      </div>
+      <n-slider
+        v-model:value="particleLimit"
+        :tooltip="false"
+        :max="200"
+        :min="10"
+        :step="10"
+        :marks="{
+          10: '少',
+          50: '默认',
+          200: '多',
+        }"
+      />
+    </n-card>
+    <n-card
+      class="set-item"
+      :content-style="{
+        'flex-direction': 'column',
+        'align-items': 'flex-start',
+      }"
+      v-if="musicFrequency"
+    >
+      <div class="name">
+        频谱跳动幅度
+        <span class="tip">调整频谱显示的跳动高度</span>
+      </div>
+      <n-slider
+        v-model:value="musicFrequencyScale"
+        :tooltip="false"
+        :max="200"
+        :min="10"
+        :step="10"
+        :marks="{
+          10: '低',
+          90: '默认',
+          200: '高',
+        }"
       />
     </n-card>
   </div>
@@ -117,14 +198,19 @@ const user = userStore();
 const {
   theme,
   themeAuto,
+  themeColor,
   searchHistory,
   bottomLyricShow,
   lrcMousePause,
   playerStyle,
+  playerBgBlur,
   lyricsFontSize,
   lyricsBlock,
   lyricsBlur,
   musicFrequency,
+  musicFrequencyScale,
+  particleEffect,
+  particleLimit,
 } = storeToRefs(setting);
 
 // 深浅模式
@@ -162,29 +248,6 @@ const playerStyleOptions = [
     value: "record",
   },
 ];
-
-// 音乐频谱提醒
-const changeMusicFrequency = () => {
-  if (musicFrequency.value) {
-    $dialog.warning({
-      class: "s-dialog",
-      title: "实验性功能",
-      content: "确认开启音乐频谱？将于刷新后生效",
-      positiveText: "开启",
-      negativeText: "取消",
-      onMaskClick: () => {
-        musicFrequency.value = false;
-      },
-      onPositiveClick: () => {
-        musicFrequency.value = true;
-        location.reload();
-      },
-      onNegativeClick: () => {
-        musicFrequency.value = false;
-      },
-    });
-  }
-};
 </script>
 
 <style lang="scss" scoped>

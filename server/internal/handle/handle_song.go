@@ -234,13 +234,15 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 					updatedCount++
 				}
 
-				// 尝试为关联的艺术家设置封面（如果没有封面，则使用当前歌曲ID）
-				for _, artist := range songArtists {
-					db.Model(&model.Artist{}).Where("id = ? AND cover_song_id IS NULL", artist.ID).Update("cover_song_id", song.ID)
-				}
-				// 尝试为关联的专辑设置封面
-				if song.AlbumID != nil {
-					db.Model(&model.Album{}).Where("id = ? AND cover_song_id IS NULL", *song.AlbumID).Update("cover_song_id", song.ID)
+				// 尝试为关联的艺术家设置封面
+				if coverUrl != "" {
+					for _, artist := range songArtists {
+						db.Model(&model.Artist{}).Where("id = ? AND (cover IS NULL OR cover = '')", artist.ID).Update("cover", coverUrl)
+					}
+					// 尝试为关联的专辑设置封面
+					if song.AlbumID != nil {
+						db.Model(&model.Album{}).Where("id = ? AND (cover IS NULL OR cover = '')", *song.AlbumID).Update("cover", coverUrl)
+					}
 				}
 
 				// 累加时长
@@ -399,11 +401,6 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 		return
 	}
 
-	// 填充封面URL
-	if artist.CoverSongID != nil {
-		artist.Cover = "/api/song/cover/" + strconv.Itoa(*artist.CoverSongID)
-	}
-
 	ReturnSuccess(c, artist)
 }
 
@@ -412,13 +409,9 @@ func (*SongAuth) GetAlbumDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	db := GetDB(c)
 	var album model.Album
-	if err := db.Preload("Artist").First(&album, idStr).Error; err != nil {
+	if err := db.Preload("Artist").Preload("Songs").First(&album, idStr).Error; err != nil {
 		ReturnError(c, g.ErrDbOp, "专辑不存在")
 		return
-	}
-
-	if album.CoverSongID != nil {
-		album.Cover = "/api/song/cover/" + strconv.Itoa(*album.CoverSongID)
 	}
 
 	ReturnSuccess(c, album)

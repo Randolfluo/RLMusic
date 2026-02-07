@@ -5,6 +5,7 @@ import path from "node:path";
 import os from "node:os";
 const require$1 = createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");

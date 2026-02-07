@@ -51,6 +51,18 @@ Authorization: Bearer {{login.response.body.data.token}}
 DELETE {{baseUrl}}/song/history
 Authorization: Bearer {{login.response.body.data.token}}
 
+### 20. 更新用户听歌时长
+POST {{baseUrl}}/user/duration
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+    "duration": 60
+}
+
+DELETE {{baseUrl}}/song/history
+Authorization: Bearer {{login.response.body.data.token}}
+
 ### 24. 获取歌词
 GET {{baseUrl}}/song/lyric/1
 

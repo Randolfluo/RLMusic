@@ -4,7 +4,13 @@
       <div class="cover">
         <n-image
           class="cover-img"
-          :src="album.picUrl || album.cover_url || '/images/logo/favicon.png'"
+          :src="
+            album.cover ||
+            (album.cover_song_id ? `/api/song/cover/${album.cover_song_id}` : null) ||
+            album.picUrl ||
+            album.cover_url ||
+            '/images/logo/favicon.png'
+          "
           fallback-src="/images/logo/favicon.png"
           object-fit="cover"
           preview-disabled

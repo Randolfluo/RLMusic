@@ -313,3 +313,31 @@ func (*UserAuth) GetAvatar(c *gin.Context) {
 
 	c.File(filePath)
 }
+
+// UpdateListeningDurationReq 更新听歌时长请求参数
+type UpdateListeningDurationReq struct {
+	Duration int64 `json:"duration" binding:"required"`
+}
+
+// UpdateListeningDuration 更新用户听歌时长
+func (*UserAuth) UpdateListeningDuration(c *gin.Context) {
+	currentUser := GetCurrentUser(c)
+	if currentUser == nil {
+		ReturnError(c, g.ErrTokenEmpty, nil)
+		return
+	}
+
+	var req UpdateListeningDurationReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	db := GetDB(c)
+	if err := model.UpdateListeningDuration(db, currentUser.ID, req.Duration); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, nil)
+}

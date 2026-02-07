@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { defineComponent, h, ref, watch, onMounted } from "vue";
+import { defineComponent, h, ref, watch, onMounted, computed } from "vue";
 import {
   zhCN,         // 中文语言包
   dateZhCN,     // 中文日期包
@@ -45,6 +45,13 @@ import {
   useDialog,     // 钩子：获取对话框 API
   useMessage,    // 钩子：获取消息 API
   useNotification,// 钩子：获取通知 API
+  // 显式导入组件，避免自动导入可能导致的重复挂载问题
+  NConfigProvider,
+  NGlobalStyle,
+  NLoadingBarProvider,
+  NDialogProvider,
+  NNotificationProvider,
+  NMessageProvider,
 } from "naive-ui";
 import { settingStore } from "@/store";  // 引入全局设置
 
@@ -63,14 +70,52 @@ const changeTheme = () => {
 };
 
 //自定义主题色配置
-const themeOverrides = {
-  common: {
-    primaryColor: "#009688",
-    primaryColorHover: "#26A69A",
-    primaryColorSuppl: "#26A69A",
-    primaryColorPressed: "#F64B41",
-  },
+const themeOverrides = computed(() => {
+  const color = setting.getThemeColor || "#009688";
+  return {
+    common: {
+      primaryColor: color,
+      primaryColorHover: color,
+      primaryColorSuppl: color,
+      primaryColorPressed: color,
+    },
+  };
+});
+
+// Hex to RGBA
+const hexToRgba = (hex, alpha) => {
+  let r = 0,
+    g = 0,
+    b = 0;
+  if(!hex) return `rgba(0, 150, 136, ${alpha})`;
+  if (hex.length == 4) {
+    r = parseInt("0x" + hex[1] + hex[1]);
+    g = parseInt("0x" + hex[2] + hex[2]);
+    b = parseInt("0x" + hex[3] + hex[3]);
+  } else if (hex.length == 7) {
+    r = parseInt("0x" + hex[1] + hex[2]);
+    g = parseInt("0x" + hex[3] + hex[4]);
+    b = parseInt("0x" + hex[5] + hex[6]);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
+
+// 更新 CSS 变量
+const updateThemeVars = () => {
+  const color = setting.getThemeColor || "#009688";
+  const el = document.documentElement;
+  el.style.setProperty("--main-primary-color", color);
+  el.style.setProperty("--main-secondary-color", hexToRgba(color, 0.12));
+  el.style.setProperty("--main-primary-color-dim", hexToRgba(color, 0.4));
+};
+
+// 监听主题色变化
+watch(
+  () => setting.getThemeColor,
+  () => {
+    updateThemeVars();
+  }
+);
 
 // 挂载 naive 组件的方法，解决作用域问题
 const setupNaiveTools = () => {
@@ -98,6 +143,7 @@ const NaiveProviderContent = defineComponent({
 // 页面挂载时执行一次，初始化主题
 onMounted(() => {
   changeTheme();
+  updateThemeVars();
 });
 
 // 监听 Store 中的主题明暗变化

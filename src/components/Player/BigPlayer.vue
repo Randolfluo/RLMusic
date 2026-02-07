@@ -12,7 +12,11 @@
           : ''
       "
     >
-      <div class="gray" />
+      <div
+        class="gray"
+        :style="{ backdropFilter: setting.playerBgBlur ? 'blur(80px)' : 'none' }"
+      />
+      <canvas class="particle-canvas" ref="particleCanvas" />
       <n-icon
         class="close"
         size="40"
@@ -38,7 +42,7 @@
             <n-text>点击选中的歌词以调整播放进度</n-text>
           </div>
         </Transition>
-        <div class="left" @click="changePlayerStyle">
+        <div class="left">
           <PlayerCover v-if="setting.playerStyle === 'cover'" />
           <PlayerRecord v-else />
         </div>
@@ -116,6 +120,12 @@
                   @click="jumpTime(item.time)"
                 >
                   <div
+                    class="curr-time"
+                    :style="{ fontSize: setting.lyricsFontSize * 0.5 + 'vh' }"
+                  >
+                    {{ formatTime(item.time) }}
+                  </div>
+                  <div
                     :class="setting.lyricsBlur ? 'lrc-text blur' : 'lrc-text'"
                     :style="{
                       transformOrigin:
@@ -152,6 +162,17 @@
               <div
                 :class="menuShow ? 'menu show' : 'menu'"
               >
+                <n-tooltip trigger="hover">
+                  <template #trigger>
+                    <n-icon
+                      class="style-switch"
+                      :component="setting.playerStyle === 'cover' ? DiscFullOutlined : ImageOutlined"
+                      @click="changePlayerStyle"
+                    />
+                  </template>
+                  {{ setting.playerStyle === 'cover' ? '切换为唱片模式' : '切换为封面模式' }}
+                </n-tooltip>
+
                 <n-icon
                   v-if="music.getPlaySongTransl"
                   :class="setting.getShowTransl ? 'open' : ''"
@@ -184,10 +205,13 @@ import {
   FullscreenExitRound,
   AddOutlined,
   RemoveOutlined,
+  DiscFullOutlined,
+  ImageOutlined,
 } from "@vicons/material";
 import { musicStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
-import MusicFrequency from "@/utils/MusicFrequency.js";
+import MusicFrequency from "@/utils/MusicFrequency";
+import ParticleEffect from "@/utils/ParticleEffect";
 import PlayerRecord from "./PlayerRecord.vue";
 import PlayerCover from "./PlayerCover.vue";
 import screenfull from "screenfull";
@@ -219,6 +243,17 @@ const changePlayerStyle = () => {
 // 音乐频谱
 const avBars = ref(null);
 const musicFrequency = ref(null);
+
+// 粒子效果
+const particleCanvas = ref(null);
+const particleEffect = ref(null);
+
+// 格式化时间
+const formatTime = (time) => {
+  const min = Math.floor(time / 60);
+  const sec = Math.floor(time % 60).toString().padStart(2, '0');
+  return `${min}:${sec}`;
+};
 
 // 歌词模糊数值
 const getFilter = (lrcIndex, index) => {
@@ -297,25 +332,123 @@ const changeOffset = (val) => {
 };
 
 
+// 初始化频谱
+const initMusicFrequency = () => {
+  if (typeof $player !== 'undefined' && $player) {
+    if (musicFrequency.value) musicFrequency.value.dispose();
+    $player.crossOrigin = "anonymous";
+    musicFrequency.value = new MusicFrequency(
+      avBars.value,
+      $player,
+      setting.getThemeColor,
+      null,
+      50,
+      null,
+      5,
+      setting.musicFrequencyScale
+    );
+    musicFrequency.value.drawSpectrum();
+  }
+};
+
+// 初始化粒子效果
+const initParticleEffect = () => {
+  if (typeof window !== 'undefined') {
+     if (particleEffect.value) {
+       particleEffect.value.dispose();
+       particleEffect.value = null;
+     }
+     if (setting.particleEffect && particleCanvas.value) {
+        particleEffect.value = new ParticleEffect(particleCanvas.value, setting.particleLimit);
+        particleEffect.value.start();
+     }
+  }
+};
+
 onMounted(() => {
   nextTick(() => {
-    if (setting.musicFrequency && typeof $player !== 'undefined' && $player) {
-      $player.crossOrigin = "anonymous";
-      musicFrequency.value = new MusicFrequency(
-        avBars.value,
-        $player,
-        null,
-        50,
-        null,
-        null,
-        5
-      );
-      musicFrequency.value.drawSpectrum();
+    if (setting.musicFrequency) {
+      initMusicFrequency();
+    }
+    if (music.showBigPlayer) {
+      initParticleEffect();
     }
     // 滚动歌词
     lyricsScroll(music.getPlaySongLyricIndex);
   });
 });
+
+onUnmounted(() => {
+  if (particleEffect.value) {
+    particleEffect.value.dispose();
+  }
+});
+
+// 监听主题颜色变化
+watch(
+  () => setting.getThemeColor,
+  (val) => {
+    if (musicFrequency.value) {
+      musicFrequency.value.setColor(val);
+    }
+  }
+);
+
+// 监听频谱幅度变化
+watch(
+  () => setting.musicFrequencyScale,
+  (val) => {
+    if (musicFrequency.value) {
+      musicFrequency.value.setScale(val);
+    }
+  }
+);
+
+// 监听是否显示频谱
+watch(
+  () => setting.musicFrequency,
+  (val) => {
+    if (val) {
+      nextTick(() => {
+        initMusicFrequency();
+      });
+    } else {
+      if (musicFrequency.value) {
+        musicFrequency.value.dispose();
+        musicFrequency.value = null;
+      }
+    }
+  }
+);
+
+// 监听是否显示粒子效果
+watch(
+  () => setting.particleEffect,
+  (val) => {
+    if (val) {
+      nextTick(() => {
+        if (music.showBigPlayer) {
+          initParticleEffect();
+        }
+      });
+    } else {
+      if (particleEffect.value) {
+        particleEffect.value.dispose();
+        particleEffect.value = null;
+      }
+    }
+  }
+);
+
+// 监听粒子数量变化
+watch(
+  () => setting.particleLimit,
+  (val) => {
+    if (particleEffect.value) {
+      particleEffect.value.setLimit(val);
+    }
+  }
+);
 
 // 监听页面是否打开
 watch(
@@ -325,7 +458,12 @@ watch(
       console.log("开启播放器", music.getPlaySongLyricIndex);
       nextTick(() => {
         lyricsScroll(music.getPlaySongLyricIndex);
+        initParticleEffect();
       });
+    } else {
+      if (particleEffect.value) {
+        particleEffect.value.stop();
+      }
     }
   }
 );
@@ -388,8 +526,18 @@ watch(
     width: 100%;
     height: 100%;
     background-color: #00000060;
-    backdrop-filter: blur(80px);
+    // backdrop-filter: blur(80px);
     z-index: -1;
+    transition: backdrop-filter 0.3s;
+  }
+  .particle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
   }
   .close,
   .screenfull {
@@ -428,8 +576,10 @@ watch(
     position: relative;
     &.noLrc {
       .left {
+        width: 100%;
         padding-right: 0;
-        transform: translateX(25vh);
+        transform: none;
+        align-items: center;
       }
       @media (max-width: 768px) {
         .left {
@@ -506,6 +656,7 @@ watch(
           margin-bottom: 8px;
           .name {
             font-size: 3vh;
+            line-clamp: 2;
             -webkit-line-clamp: 2;
             padding-right: 26px;
             span {
@@ -530,10 +681,12 @@ watch(
           }
         }
         .lrc-all {
-          margin-right: 20%;
+          // margin-right: 20%;
+          margin-right: 4vw;
           scrollbar-width: none;
           // max-width: 460px;
-          max-width: 52vh;
+          // max-width: 52vh;
+          width: 90%;
           overflow: auto;
           mask: linear-gradient(
             180deg,
@@ -582,10 +735,22 @@ watch(
             // padding: 12px 20px;
             margin-bottom: 0.8vh;
             padding: 1.8vh 3vh;
+            padding-left: 5vh;
             border-radius: 8px;
             transition: all 0.3s;
             transform-origin: left center;
             cursor: pointer;
+            position: relative;
+            .curr-time {
+              position: absolute;
+              left: 1vh;
+              top: 50%;
+              transform: translateY(-50%);
+              // font-size: 1.2vh;
+              opacity: 0;
+              transition: all 0.3s;
+              font-variant-numeric: tabular-nums;
+            }
             .lrc-text {
               display: flex;
               flex-direction: column;
@@ -606,11 +771,11 @@ watch(
             &.on {
               opacity: 1;
               .lrc-text {
-                transform: scale(1.05);
+                transform: scale(1.3);
                 .lyric, .lyric-fy {
                   color: $mainColor !important;
                   font-weight: 900 !important;
-                  text-shadow: 0 0 20px rgba($mainColor, 0.4) !important;
+                  text-shadow: 0 0 20px var(--main-primary-color-dim, rgba(0, 150, 136, 0.4)) !important;
                   opacity: 1 !important;
                   filter: none !important;
                 }
@@ -619,6 +784,9 @@ watch(
             &:hover {
               @media (min-width: 768px) {
                 background-color: #ffffff20;
+                .curr-time {
+                  opacity: 0.6;
+                }
               }
             }
             &:active {

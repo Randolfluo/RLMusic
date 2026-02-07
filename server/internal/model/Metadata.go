@@ -12,8 +12,7 @@ type Artist struct {
 
 	Name        string `gorm:"type:varchar(255);not null;index" json:"name"` // 艺术家名称
 	Description string `gorm:"type:text" json:"description"`                 // 简介
-	CoverSongID *int   `json:"cover_song_id"`                                // 封面对应的歌曲ID
-	Cover       string `gorm:"-" json:"cover"`                               // 封面URL (计算字段)
+	Cover       string `gorm:"type:varchar(500)" json:"cover"`               // 封面URL
 }
 
 // Album 专辑模型
@@ -24,11 +23,12 @@ type Album struct {
 	Description string     `gorm:"type:text" json:"description"`                  // 专辑简介
 	ReleaseDate *time.Time `json:"release_date"`                                  // 发行日期
 
-	CoverSongID *int   `json:"cover_song_id"`  // 封面对应的歌曲ID
-	Cover       string `gorm:"-" json:"cover"` // 封面URL (计算字段)
+	Cover string `gorm:"type:varchar(500)" json:"cover"` // 封面URL
 
 	ArtistID *int   `gorm:"index" json:"artist_id"`                                                           // 关联艺术家ID
 	Artist   Artist `gorm:"foreignKey:ArtistID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"artist"` // 关联艺术家
+
+	Songs []Song `gorm:"foreignKey:AlbumID" json:"songs,omitempty"` // 专辑包含的歌曲
 }
 
 // FindOrCreateArtist 查找或创建艺术家

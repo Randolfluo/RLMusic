@@ -115,3 +115,8 @@ func RenameSoftDeletedUser(db *gorm.DB, username string) error {
 
 	return nil
 }
+
+// UpdateListeningDuration 增加用户累计听歌时长
+func UpdateListeningDuration(db *gorm.DB, id int, duration int64) error {
+	return db.Model(&User{}).Where("id = ?", id).Update("listening_duration", gorm.Expr("listening_duration + ?", duration)).Error
+}
