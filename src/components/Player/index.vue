@@ -65,6 +65,12 @@
                       : '暂无歌词'
                   "
                 />
+                <!-- 防止 Transition 内部为空导致渲染错误 -->
+                <AllArtists
+                  v-else
+                  class="text-hidden"
+                  :artistsData="music.getPlaySongData.artist"
+                />
               </Transition>
             </template>
             <template v-else>

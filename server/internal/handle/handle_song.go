@@ -238,6 +238,10 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				for _, artist := range songArtists {
 					db.Model(&model.Artist{}).Where("id = ? AND cover_song_id IS NULL", artist.ID).Update("cover_song_id", song.ID)
 				}
+				// 尝试为关联的专辑设置封面
+				if song.AlbumID != nil {
+					db.Model(&model.Album{}).Where("id = ? AND cover_song_id IS NULL", *song.AlbumID).Update("cover_song_id", song.ID)
+				}
 
 				// 累加时长
 				scannedDuration += song.Duration
@@ -412,6 +416,11 @@ func (*SongAuth) GetAlbumDetail(c *gin.Context) {
 		ReturnError(c, g.ErrDbOp, "专辑不存在")
 		return
 	}
+
+	if album.CoverSongID != nil {
+		album.Cover = "/api/song/cover/" + strconv.Itoa(*album.CoverSongID)
+	}
+
 	ReturnSuccess(c, album)
 }
 

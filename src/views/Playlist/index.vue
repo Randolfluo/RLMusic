@@ -35,42 +35,13 @@
     <n-divider />
 
     <div class="songs-list">
-      <div class="list-header" style="display: flex; justify-content: flex-end; margin-bottom: 12px; padding-right: 12px;">
-         <n-button-group size="small">
-          <n-tooltip trigger="hover">
-            <template #trigger>
-              <n-button :type="viewMode === 'thumbnail' ? 'primary' : 'default'" @click="viewMode = 'thumbnail'">
-                <template #icon>
-                  <n-icon :component="Pic" />
-                </template>
-              </n-button>
-            </template>
-            缩略图模式
-          </n-tooltip>
-          <n-tooltip trigger="hover">
-            <template #trigger>
-              <n-button :type="viewMode === 'concise' ? 'primary' : 'default'" @click="viewMode = 'concise'">
-                <template #icon>
-                  <n-icon :component="HamburgerButton" />
-                </template>
-              </n-button>
-            </template>
-            简洁模式
-          </n-tooltip>
-        </n-button-group>
-      </div>
-
       <n-spin :show="loading">
-        <n-data-table
-          :columns="columns"
-          :data="playlist.songs || []"
-          :bordered="false"
-          :row-props="rowProps"
-          :row-class-name="() => 'song-row'"
+        <SongList 
+          :songs="playlist.songs || []" 
+          :loading="loading"
+          :page="page"
+          :page-size="limit"
         />
-        <div v-if="!loading && (!playlist.songs || playlist.songs.length === 0)" class="empty">
-          <n-empty description="暂无歌曲" />
-        </div>
         <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
           <Pagination
             v-if="playlist.songs && playlist.songs.length > 0"
@@ -87,90 +58,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { getPublicPlaylistDetail, getPrivatePlaylistDetail } from "@/api/playlist";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NButton, NIcon, NImage, NTooltip } from "naive-ui";
-import { Play, HamburgerButton, Pic } from "@icon-park/vue-next";
+import { useMessage, NButton, NIcon, NImage, NDivider, NSpin } from "naive-ui";
+import { Play } from "@icon-park/vue-next";
 import { musicStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
+import SongList from "@/components/DataList/SongList.vue";
 
 const route = useRoute();
-const router = useRouter();
 const message = useMessage();
 const music = musicStore();
 
 const loading = ref(false);
 const playlist = ref<any>({});
-const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
 const page = ref(1);
 const limit = ref(30);
-
-const columns = computed(() => {
-  const baseColumns: any[] = [
-    {
-      title: "#",
-      key: "index",
-      width: 60,
-      render: (_: any, index: number) => index + 1 + (page.value - 1) * limit.value,
-    },
-    {
-      title: "标题",
-      key: "title",
-      render: (row: any) => {
-        return h('span', {
-          style: { cursor: 'pointer' },
-          onClick: () => router.push(`/song/${row.id}`),
-          class: 'song-title-link'
-        }, row.title)
-      }
-    },
-    {
-      title: "歌手",
-      key: "artist_name",
-      render: (row: any) => row.artist_name || "Unknown Artist",
-    },
-    {
-      title: "专辑",
-      key: "album_title",
-      render: (row: any) => row.album_title || "Unknown Album",
-    },
-    {
-      title: "时长",
-      key: "duration",
-      width: 100,
-      render: (row: any) => formatDuration(row.duration),
-    },
-  ];
-
-  if (viewMode.value === 'thumbnail') {
-    baseColumns.splice(1, 0, {
-      title: "封面",
-      key: "cover",
-      width: 80,
-      render: (row: any) => {
-        return h(NImage, {
-          src: row.cover_url || playlist.value.cover_url || '/images/logo/favicon.png',
-          width: 50,
-          height: 50,
-          objectFit: 'cover',
-          style: { borderRadius: '4px', verticalAlign: 'middle' },
-          previewDisabled: true
-        });
-      }
-    });
-  }
-
-  return baseColumns;
-});
-
-const formatDuration = (seconds: number) => {
-  if (!seconds) return "00:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-};
 
 onMounted(() => {
   const id = route.params.id as string;

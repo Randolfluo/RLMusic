@@ -1,0 +1,226 @@
+Date : 2026-02-07 16:06:23
+Directory : c:\Users\lrj32\Desktop\music player\localmusicplayer
+Total : 132 files,  18178 codes, 1234 comments, 3052 blanks, all 22464 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| Vue                |         32 |      6,091 |         49 |        464 |      6,604 |
+| YAML               |          3 |      5,718 |          0 |      1,580 |      7,298 |
+| Go                 |         37 |      2,720 |        417 |        590 |      3,727 |
+| TypeScript         |         22 |      1,322 |        337 |        152 |      1,811 |
+| JSON               |          4 |        935 |          3 |          6 |        944 |
+| JavaScript         |          8 |        365 |        113 |         49 |        527 |
+| Go Checksum File   |          1 |        254 |          0 |          1 |        255 |
+| Python             |          2 |        198 |         24 |         52 |        274 |
+| HTTP               |          7 |        196 |        262 |         88 |        546 |
+| SCSS               |          2 |         96 |         23 |         18 |        137 |
+| Go Module File     |          1 |         91 |          0 |          4 |         95 |
+| HTML               |          2 |         86 |          0 |          8 |         94 |
+| Markdown           |          1 |         46 |          0 |         21 |         67 |
+| TOML               |          2 |         45 |          0 |         11 |         56 |
+| JSON with Comments |          1 |          7 |          0 |          1 |          8 |
+| Dotenv             |          2 |          5 |          6 |          5 |         16 |
+| XML                |          3 |          3 |          0 |          0 |          3 |
+| Docker             |          1 |          0 |          0 |          1 |          1 |
+| MS SQL             |          1 |          0 |          0 |          1 |          1 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                               | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                  |        132 |     18,178 |      1,234 |      3,052 |     22,464 |
+| . (Files)                                                                                          |         11 |      6,167 |         29 |      1,619 |      7,815 |
+| electron                                                                                           |          2 |        110 |         30 |         25 |        165 |
+| public                                                                                             |          3 |         72 |          0 |          4 |         76 |
+| public (Files)                                                                                     |          1 |         70 |          0 |          4 |         74 |
+| public\images                                                                                      |          2 |          2 |          0 |          0 |          2 |
+| public\images\ico                                                                                  |          1 |          1 |          0 |          0 |          1 |
+| public\images\logo                                                                                 |          1 |          1 |          0 |          0 |          1 |
+| server                                                                                             |         56 |      4,324 |        703 |        755 |      5,782 |
+| server (Files)                                                                                     |          8 |        561 |        218 |         78 |        857 |
+| server\cmd                                                                                         |          1 |         33 |          6 |         11 |         50 |
+| server\internal                                                                                    |         36 |      2,687 |        411 |        579 |      3,677 |
+| server\internal (Files)                                                                            |          4 |        225 |         38 |         44 |        307 |
+| server\internal\global                                                                             |          3 |        178 |         20 |         31 |        229 |
+| server\internal\handle                                                                             |         10 |      1,323 |        175 |        279 |      1,777 |
+| server\internal\middleware                                                                         |          3 |         72 |         11 |         20 |        103 |
+| server\internal\model                                                                              |          9 |        598 |         92 |        132 |        822 |
+| server\internal\utils                                                                              |          7 |        291 |         75 |         73 |        439 |
+| server\internal\utils\audio                                                                        |          1 |         83 |         36 |         22 |        141 |
+| server\internal\utils\encrypt                                                                      |          3 |        105 |         16 |         26 |        147 |
+| server\internal\utils\imgtool                                                                      |          1 |         50 |         14 |         12 |         76 |
+| server\internal\utils\jwt                                                                          |          2 |         53 |          9 |         13 |         75 |
+| server\start                                                                                       |          3 |          0 |          0 |          3 |          3 |
+| server\test                                                                                        |          8 |      1,043 |         68 |         84 |      1,195 |
+| src                                                                                                |         60 |      7,505 |        472 |        649 |      8,626 |
+| src (Files)                                                                                        |          4 |        221 |         10 |         37 |        268 |
+| src\api                                                                                            |          6 |        266 |        122 |         49 |        437 |
+| src\assets                                                                                         |          1 |          1 |          0 |          0 |          1 |
+| src\components                                                                                     |         14 |      3,383 |         13 |        193 |      3,589 |
+| src\components\DataList                                                                            |          3 |        425 |          0 |         26 |        451 |
+| src\components\DataModel                                                                           |          3 |        334 |          1 |         26 |        361 |
+| src\components\Home                                                                                |          1 |        185 |          0 |         12 |        197 |
+| src\components\Nav                                                                                 |          1 |        393 |          3 |         13 |        409 |
+| src\components\Pagination                                                                          |          1 |        118 |          2 |         10 |        130 |
+| src\components\Player                                                                              |          4 |      1,819 |          4 |         94 |      1,917 |
+| src\components\Provider                                                                            |          1 |        109 |          3 |         12 |        124 |
+| src\router                                                                                         |          2 |        162 |         43 |         18 |        223 |
+| src\store                                                                                          |          4 |        325 |         85 |         13 |        423 |
+| src\style                                                                                          |          2 |         96 |         23 |         18 |        137 |
+| src\utils                                                                                          |         10 |        519 |        146 |         73 |        738 |
+| src\views                                                                                          |         17 |      2,532 |         30 |        248 |      2,810 |
+| src\views\Album                                                                                    |          1 |         16 |          0 |          2 |         18 |
+| src\views\Artist                                                                                   |          1 |         16 |          0 |          3 |         19 |
+| src\views\History                                                                                  |          1 |        213 |          0 |         16 |        229 |
+| src\views\Home                                                                                     |          1 |        117 |          0 |         13 |        130 |
+| src\views\Login                                                                                    |          1 |        236 |          2 |         11 |        249 |
+| src\views\Playlist                                                                                 |          3 |        461 |          0 |         48 |        509 |
+| src\views\Search                                                                                   |          1 |        389 |         14 |         37 |        440 |
+| src\views\Setting                                                                                  |          1 |        279 |          0 |         14 |        293 |
+| src\views\Song                                                                                     |          1 |        423 |         14 |         59 |        496 |
+| src\views\State                                                                                    |          3 |         78 |          0 |          7 |         85 |
+| src\views\System                                                                                   |          1 |         30 |          0 |          5 |         35 |
+| src\views\User                                                                                     |          2 |        274 |          0 |         33 |        307 |
++----------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                                           | language           | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\.env                                          | Dotenv             |          5 |          6 |          4 |         15 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\README.md                                     | Markdown           |         46 |          0 |         21 |         67 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\auto-imports.d.ts                             | TypeScript         |         69 |          8 |          1 |         78 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\components.d.ts                               | TypeScript         |         73 |          8 |          3 |         84 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\electron\main.ts                              | TypeScript         |         91 |         27 |         21 |        139 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\electron\preload.ts                           | TypeScript         |         19 |          3 |          4 |         26 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\index.html                                    | HTML               |         16 |          0 |          4 |         20 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\package.json                                  | JSON               |         97 |          0 |          1 |         98 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\pnpm-lock.yaml                                | YAML               |      5,695 |          0 |      1,574 |      7,269 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\public\images\ico\user-filling.svg            | XML                |          1 |          0 |          0 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\public\images\logo\favicon.svg                | XML                |          1 |          0 |          0 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\public\loading.html                           | HTML               |         70 |          0 |          4 |         74 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\.air.toml                              | TOML               |         22 |          0 |          5 |         27 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\api_test_scan.py                       | Python             |         66 |          8 |         15 |         89 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\cmd\main.go                            | Go                 |         33 |          6 |         11 |         50 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\config.toml                            | TOML               |         23 |          0 |          6 |         29 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\config.yml                             | YAML               |         23 |          0 |          5 |         28 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\dockerfile                             | Docker             |          0 |          0 |          1 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\go.mod                                 | Go Module File     |         91 |          0 |          4 |         95 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\go.sum                                 | Go Checksum File   |        254 |          0 |          1 |        255 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\Helper.go                     | Go                 |        133 |         23 |         22 |        178 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\Helper_test.go                | Go                 |          1 |          0 |          1 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\Manager.go                    | Go                 |         90 |         15 |         20 |        125 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\Manager_test.go               | Go                 |          1 |          0 |          1 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\global\config.go              | Go                 |        106 |         11 |         13 |        130 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\global\keys.go                | Go                 |          6 |          1 |          2 |          9 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\global\result.go              | Go                 |         66 |          8 |         16 |         90 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\base.go                | Go                 |         55 |         10 |         13 |         78 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\cache.go               | Go                 |          1 |          0 |          1 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_auth.go         | Go                 |        233 |         33 |         50 |        316 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_auth_test.go    | Go                 |        103 |         11 |         21 |        135 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_file.go         | Go                 |         42 |          8 |         13 |         63 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_file_test.go    | Go                 |         45 |         15 |         16 |         76 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_history.go      | Go                 |         88 |          6 |         17 |        111 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_search.go       | Go                 |         91 |          4 |         17 |        112 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_song.go         | Go                 |        544 |         75 |        106 |        725 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\handle\handle_system.go       | Go                 |        121 |         13 |         25 |        159 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\middleware\auth.go            | Go                 |         41 |          5 |         11 |         57 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\middleware\base.go            | Go                 |         19 |          5 |          5 |         29 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\middleware\stats.go           | Go                 |         12 |          1 |          4 |         17 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\History.go              | Go                 |         53 |          5 |         11 |         69 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\Metadata.go             | Go                 |         78 |         13 |         18 |        109 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\Playlist.go             | Go                 |        183 |         29 |         32 |        244 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\Search.go               | Go                 |         60 |          9 |         22 |         91 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\Song.go                 | Go                 |         54 |         10 |         16 |         80 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\SystemInfo.go           | Go                 |         68 |          6 |         11 |         85 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\User.go                 | Go                 |         82 |         18 |         18 |        118 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\ZBase.go                | Go                 |         19 |          2 |          3 |         24 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\model\ZBase_test.go           | Go                 |          1 |          0 |          1 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\audio\flac.go           | Go                 |         83 |         36 |         22 |        141 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\encrypt\Aes.go          | Go                 |         44 |          4 |         11 |         59 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\encrypt\Encrypt.go      | Go                 |         25 |         11 |          6 |         42 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\encrypt\Encrypt_test.go | Go                 |         36 |          1 |          9 |         46 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\imgtool\imgtool.go      | Go                 |         50 |         14 |         12 |         76 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\jwt\Jwt.go              | Go                 |         52 |          9 |         12 |         73 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\internal\utils\jwt\Jwt_test.go         | Go                 |          1 |          0 |          1 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\requests.http                          | HTTP               |         82 |        210 |         41 |        333 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\start\.env                             | Dotenv             |          0 |          0 |          1 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\start\docker-compose.yml               | YAML               |          0 |          0 |          1 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\start\init.sql                         | MS SQL             |          0 |          0 |          1 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\apifox_batch_import.json          | JSON               |        797 |          0 |          0 |        797 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\auth.http                         | HTTP               |         26 |          8 |          8 |         42 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\convert_to_postman.py             | Python             |        132 |         16 |         37 |        185 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\playlist.http                     | HTTP               |         27 |         13 |         10 |         50 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\search.http                       | HTTP               |          9 |          5 |          5 |         19 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\song.http                         | HTTP               |         31 |         16 |         16 |         63 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\system.http                       | HTTP               |         20 |          9 |          8 |         37 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\server\test\user.http                         | HTTP               |          1 |          1 |          0 |          2 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\App.vue                                   | Vue                |        176 |          6 |         23 |        205 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\login.ts                              | TypeScript         |         30 |         15 |          7 |         52 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\playlist.ts                           | TypeScript         |         46 |         26 |          9 |         81 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\search.ts                             | TypeScript         |         30 |         12 |         10 |         52 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\song.ts                               | TypeScript         |         91 |         50 |         13 |        154 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\system.ts                             | TypeScript         |         34 |         10 |          5 |         49 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\api\user.ts                               | TypeScript         |         35 |          9 |          5 |         49 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\assets\vue.svg                            | XML                |          1 |          0 |          0 |          1 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataList\AllArtists.vue        | Vue                |         54 |          0 |          5 |         59 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataList\PlayList.vue          | Vue                |        227 |          0 |          8 |        235 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataList\PlaylistGrid.vue      | Vue                |        144 |          0 |         13 |        157 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataModel\AboutSite.vue        | Vue                |         98 |          1 |          7 |        106 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataModel\AddPlaylist.vue      | Vue                |        109 |          0 |         10 |        119 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\DataModel\PlaylistUpdate.vue   | Vue                |        127 |          0 |          9 |        136 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Home\SystemStats.vue           | Vue                |        185 |          0 |         12 |        197 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Nav\index.vue                  | Vue                |        393 |          3 |         13 |        409 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Pagination\index.vue           | Vue                |        118 |          2 |         10 |        130 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Player\BigPlayer.vue           | Vue                |        695 |          3 |         23 |        721 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Player\PlayerCover.vue         | Vue                |        292 |          0 |         35 |        327 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Player\PlayerRecord.vue        | Vue                |         82 |          0 |         11 |         93 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Player\index.vue               | Vue                |        750 |          1 |         25 |        776 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\components\Provider\index.vue             | Vue                |        109 |          3 |         12 |        124 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\main.ts                                   | TypeScript         |         23 |          3 |          8 |         34 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\naive-ui.d.ts                             | TypeScript         |         13 |          0 |          3 |         16 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\router\index.ts                           | TypeScript         |         26 |         29 |          5 |         60 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\router\routes.ts                          | TypeScript         |        136 |         14 |         13 |        163 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\store\index.ts                            | TypeScript         |          6 |          0 |          2 |          8 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\store\musicData.ts                        | TypeScript         |        220 |         65 |          5 |        290 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\store\settingData.ts                      | TypeScript         |         53 |         20 |          4 |         77 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\store\userData.ts                         | TypeScript         |         46 |          0 |          2 |         48 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\style\global.scss                         | SCSS               |         77 |         16 |         13 |        106 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\style\index.scss                          | SCSS               |         19 |          7 |          5 |         31 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\MusicFrequency.js                   | JavaScript         |         74 |         32 |          4 |        110 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\debounce.js                         | JavaScript         |         18 |          9 |          2 |         29 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\encrypt.ts                          | TypeScript         |         11 |          6 |          3 |         20 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\formRules.js                        | JavaScript         |         47 |          7 |          1 |         55 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\lyricFormat.js                      | JavaScript         |         57 |         15 |         11 |         83 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\request.ts                          | TypeScript         |        143 |         27 |         21 |        191 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\test_lyric.js                       | JavaScript         |         37 |          0 |          8 |         45 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\test_lyric_merge.js                 | JavaScript         |         53 |         11 |         13 |         77 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\throttle.js                         | JavaScript         |         21 |          9 |          3 |         33 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\utils\timeTools.js                        | JavaScript         |         58 |         30 |          7 |         95 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Album\index.vue                     | Vue                |         16 |          0 |          2 |         18 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Artist\index.vue                    | Vue                |         16 |          0 |          3 |         19 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\History\HistoryView.vue             | Vue                |        213 |          0 |         16 |        229 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Home\index.vue                      | Vue                |        117 |          0 |         13 |        130 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Login\LoginView.vue                 | Vue                |        236 |          2 |         11 |        249 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Playlist\PrivatePlaylists.vue       | Vue                |         62 |          0 |          7 |         69 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Playlist\PublicPlaylists.vue        | Vue                |         62 |          0 |          7 |         69 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Playlist\index.vue                  | Vue                |        337 |          0 |         34 |        371 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Search\index.vue                    | Vue                |        389 |         14 |         37 |        440 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Setting\SettingView.vue             | Vue                |        279 |          0 |         14 |        293 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\Song\SongView.vue                   | Vue                |        423 |         14 |         59 |        496 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\State\403.vue                       | Vue                |         25 |          0 |          2 |         27 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\State\404.vue                       | Vue                |         28 |          0 |          3 |         31 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\State\500.vue                       | Vue                |         25 |          0 |          2 |         27 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\System\StatsView.vue                | Vue                |         30 |          0 |          5 |         35 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\User\index.vue                      | Vue                |        255 |          0 |         30 |        285 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\views\User\like.vue                       | Vue                |         19 |          0 |          3 |         22 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\src\vite-env.d.ts                             | TypeScript         |          9 |          1 |          3 |         13 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\tsconfig.app.json                             | JSON               |         19 |          1 |          2 |         22 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\tsconfig.json                                 | JSON with Comments |          7 |          0 |          1 |          8 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\tsconfig.node.json                            | JSON               |         22 |          2 |          3 |         27 |
+| c:\Users\lrj32\Desktop\music player\localmusicplayer\vite.config.ts                                | TypeScript         |        118 |          4 |          5 |        127 |
+| Total                                                                                              |                    |     18,178 |      1,234 |      3,052 |     22,464 |
++----------------------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+

@@ -60,123 +60,9 @@
           </div>
           
           <n-tabs type="line" animated v-model:value="searchType">
-            <!-- 综合 Tab -->
-            <n-tab-pane name="all" tab="综合">
-                <div class="loading" v-if="loading">
-                    <n-spin size="medium">
-                        <template #description>搜索中...</template>
-                    </n-spin>
-                </div>
-                <div v-else-if="isEmptyResult" class="empty">
-                    <n-empty description="未找到相关结果" size="large" />
-                </div>
-                <!-- 综合内容展示 -->
-                <div v-else class="result-list">
-                    <!-- 单曲 (综合页显示部分) -->
-                    <n-card 
-                        title="单曲" 
-                        size="small" 
-                        :bordered="false" 
-                        class="result-section"
-                        v-if="searchData.suggest.songs?.length"
-                    >
-                        <template #header-extra>
-                            <n-button text size="small" @click="searchType = 'songs'">查看全部 <n-icon :component="Right" /></n-button>
-                        </template>
-                        <n-list hoverable clickable>
-                            <n-list-item 
-                                v-for="song in searchData.suggest.songs.slice(0, 5)" 
-                                :key="song.id"
-                                @click="playSong(song)"
-                            >
-                                <n-thing :title="song.title" content-style="margin-top: 5px;">
-                                <template #description>
-                                    <n-space size="small" align="center">
-                                        <n-tag size="small" :bordered="false" type="info">{{ song.artist_name || (song.Artist?.name) || '未知歌手' }}</n-tag>
-                                        <span style="font-size: 13px; color: var(--n-text-color-3)">{{ song.album_name || song.Album?.title }}</span>
-                                    </n-space>
-                                </template>
-                                </n-thing>
-                            </n-list-item>
-                        </n-list>
-                    </n-card>
-
-                    <n-grid x-gap="12" y-gap="12" cols="1 600:2 800:3">
-                        <!-- 歌手 -->
-                        <n-gi v-if="searchData.suggest.artists?.length">
-                                <n-card title="歌手" size="small" :bordered="false" class="result-section">
-                                    <n-list hoverable clickable>
-                                        <n-list-item 
-                                            v-for="artist in searchData.suggest.artists.slice(0, 3)" 
-                                            :key="artist.id"
-                                            @click="router.push(`/artist?id=${artist.id}`)"
-                                        >
-                                            <n-thing>
-                                                <template #header>{{ artist.name }}</template>
-                                            </n-thing>
-                                        </n-list-item>
-                                    </n-list>
-                                </n-card>
-                        </n-gi>
-
-                        <!-- 专辑 -->
-                        <n-gi v-if="searchData.suggest.albums?.length">
-                            <n-card title="专辑" size="small" :bordered="false" class="result-section">
-                                    <n-list hoverable clickable>
-                                        <n-list-item 
-                                            v-for="album in searchData.suggest.albums.slice(0, 3)" 
-                                            :key="album.id"
-                                            @click="router.push(`/album?id=${album.id}`)"
-                                        >
-                                            <n-thing :title="album.title" :description="album.Artist?.name" />
-                                        </n-list-item>
-                                    </n-list>
-                                </n-card>
-                        </n-gi>
-                        
-                        <!-- 歌单 -->
-                        <n-gi v-if="searchData.suggest.playlists?.length">
-                            <n-card title="歌单" size="small" :bordered="false" class="result-section">
-                                    <n-list hoverable clickable>
-                                        <n-list-item 
-                                            v-for="playlist in searchData.suggest.playlists.slice(0, 3)" 
-                                            :key="playlist.id"
-                                            @click="router.push(`/playlist/${playlist.id}`)"
-                                        >
-                                            <n-thing :title="playlist.title" :description="playlist.description || '暂无描述'" />
-                                        </n-list-item>
-                                    </n-list>
-                                </n-card>
-                        </n-gi>
-                    </n-grid>
-                </div>
-            </n-tab-pane>
-
             <!-- 单曲 Tab -->
             <n-tab-pane name="songs" tab="单曲">
-                 <div class="loading" v-if="loading"><n-spin /></div>
-                 <n-empty v-else-if="!searchData.suggest.songs?.length" description="暂无单曲" />
-                 <n-list v-else hoverable clickable bordered>
-                      <n-list-item 
-                        v-for="song in searchData.suggest.songs" 
-                        :key="song.id"
-                        @click="playSong(song)"
-                      >
-                         <template #prefix>
-                             <n-icon :component="MusicOne" size="20" color="#18a058" />
-                         </template>
-                         <n-thing :title="song.title">
-                           <template #description>
-                               {{ song.artist_name || (song.Artist?.name) || '未知歌手' }} - {{ song.album_name || song.Album?.title }}
-                           </template>
-                         </n-thing>
-                         <template #suffix>
-                             <n-button text size="medium">
-                                 <n-icon :component="PlayOne" size="20" />
-                             </n-button>
-                         </template>
-                      </n-list-item>
-                 </n-list>
+                 <SongList :songs="searchData.suggest.songs" :loading="loading" />
             </n-tab-pane>
 
             <!-- 歌单 Tab -->
@@ -248,6 +134,7 @@
 import { ref, reactive, onMounted, computed, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMessage, useDialog } from "naive-ui";
+import SongList from "@/components/DataList/SongList.vue";
 import { 
     Search, History, DeleteFour,
     MusicOne, Voice, RecordDisc, Record,
@@ -268,7 +155,7 @@ const dialog = useDialog();
 const inputRef = ref<any>(null); // Use any to support component ref methods
 const inputValue = ref("");
 const loading = ref(false);
-const searchType = ref("all");
+const searchType = ref("songs");
 
 const searchData = reactive<{
     hot: any[];

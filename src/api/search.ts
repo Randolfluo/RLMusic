@@ -41,8 +41,17 @@ export const getSearchSuggest = async (keywords: string) => {
     
     // Extract data from backend response structure: { code: 1000, data: { result: { songs: [] } } }
     // Note: Request interceptor returns response.data, so code/msg/data are available directly.
+    
+    // Process songs to match frontend component expectations (e.g. ID -> id)
+    const rawSongs = (songs as any).data?.result?.songs || [];
+    const processedSongs = rawSongs.map((song: any) => ({
+        ...song,
+        id: song.ID || song.id,
+        album_title: song.album_name || song.album_title,
+    }));
+
     return {
-        songs: (songs as any).data?.result?.songs || [],
+        songs: processedSongs,
         artists: (artists as any).data?.result?.artists || [],
         albums: (albums as any).data?.result?.albums || [],
         playlists: (playlists as any).data?.result?.playlists || []

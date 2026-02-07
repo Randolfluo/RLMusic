@@ -1,2 +1,32 @@
-# 例如转换 user.http
-npx rest-client-to-postman -i user.http -o user_postman.json
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+# 登录请求用于获取 Token
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+### 3. 获取用户信息 (需要登录)
+# @name getUserInfo
+GET {{baseUrl}}/user/info
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 4. 注销用户 (需要登录后获取Token)
+DELETE {{baseUrl}}/user
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 16. 上传用户头像 (需要登录)
+POST {{baseUrl}}/user/avatar
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+

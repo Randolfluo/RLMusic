@@ -17,3 +17,17 @@ export const aesEncrypt = (plaintext: string): string => {
   });
   return encrypted.toString(); // CryptoJS defaults to Base64
 };
+
+/**
+ * AES解密
+ * @param ciphertext 密文
+ * @returns 明文
+ */
+export const aesDecrypt = (ciphertext: string): string => {
+    const decrypted = CryptoJS.AES.decrypt(ciphertext, AES_KEY, {
+        iv: AES_IV,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+    });
+    return decrypted.toString(CryptoJS.enc.Utf8);
+};

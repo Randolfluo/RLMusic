@@ -39,17 +39,48 @@
 <script setup lang="ts">
 import { musicStore, userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
+import { login } from "@/api/login"; // 引入登录api
+import { aesDecrypt } from "@/utils/encrypt"; // 引入解密
 import Provider from "@/components/Provider/index.vue";
 import Nav from "@/components/Nav/index.vue";
 import Player from "@/components/Player/index.vue";
 import BigPlayer from "@/components/Player/BigPlayer.vue";
 import packageJson from "@/../package.json";
 import { ref, onMounted } from 'vue';
+import { ResultCode } from "@/utils/request";
 
 const music = musicStore();
 const user = userStore();
 const router = useRouter();
 const setting = settingStore();
+
+// 自动登录逻辑
+onMounted(() => {
+    const savedUser = localStorage.getItem("remember_user");
+    const savedPass = localStorage.getItem("remember_pass");
+    if (savedUser && savedPass && !user.userLogin) {
+        try {
+            const password = aesDecrypt(savedPass);
+            login({ username: savedUser, password: password }).then(res => {
+                if (res.code === ResultCode.SUCCESS) {
+                    const userData = {
+                        userId: res.data.id,
+                        nickname: res.data.username,
+                        email: res.data.email,
+                        avatarUrl: res.data.avatar || "" 
+                    };
+                    user.setUserData(userData);
+                    localStorage.setItem("token", res.data.token); 
+                    console.log("Auto login success");
+                }
+            }).catch(e => {
+                console.error("Auto login failed", e);
+            });
+        } catch (e) {
+            console.error("Auto login decrypt failed", e);
+        }
+    }
+});
 
 // 监听空格键控制播放暂停
 onMounted(() => {

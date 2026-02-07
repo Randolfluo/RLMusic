@@ -25,8 +25,6 @@ export const useSettingDataStore = defineStore("settingData", {
       showTransl: true,
       // 歌曲音质
       songLevel: "exhigh",
-      // 歌词位置
-      lyricsPosition: "left",
       // 歌词滚动位置
       lyricsBlock: "center",
       // 歌词大小

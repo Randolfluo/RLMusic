@@ -68,9 +68,6 @@
           :class="n === 2 ? 'lrc on' : 'lrc'"
           :style="{
             margin: n === 2 ? '12px 0' : null,
-            alignItems: lyricsPosition == 'center' ? 'center' : null,
-            transformOrigin:
-              lyricsPosition == 'center' ? 'center' : 'center left',
           }"
         >
           <span :style="{ fontSize: lyricsFontSize + 'vh' }"
@@ -81,14 +78,6 @@
           </span>
         </div>
       </div>
-    </n-card>
-    <n-card class="set-item">
-      <div class="name">默认歌词位置</div>
-      <n-select
-        class="set"
-        v-model:value="lyricsPosition"
-        :options="lyricsPositionOptions"
-      />
     </n-card>
     <n-card class="set-item">
       <div class="name">
@@ -133,7 +122,6 @@ const {
   lrcMousePause,
   playerStyle,
   lyricsFontSize,
-  lyricsPosition,
   lyricsBlock,
   lyricsBlur,
   musicFrequency,
@@ -148,20 +136,6 @@ const darkOptions = [
   {
     label: "深色模式",
     value: "dark",
-  },
-];
-
-
-
-// 歌词位置
-const lyricsPositionOptions = [
-  {
-    label: "居左",
-    value: "left",
-  },
-  {
-    label: "居中",
-    value: "center",
   },
 ];
 
@@ -278,6 +252,7 @@ const changeMusicFrequency = () => {
           display: flex;
           flex-direction: column;
           transform: scale(0.95);
+          transform-origin: left;
           transition: all 0.3s;
           &.on {
             font-weight: bold;

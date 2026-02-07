@@ -154,24 +154,9 @@ const userDataRender = () => {
 
 // 下拉框数据
 const discoverOptions = ref([
-  {
-    label: "",
-    key: "/discover/playlist",
-  },
-  {
-    label: "歌手",
-    key: "/discover/artists",
-  },
-  {
-    label: "专辑",
-    key: "/discover/albums",
-  },
+  
 ]);
 const userOptions = computed(() => [
-   {
-    label: "歌单管理",
-    key: "/history",
-  },
   {
     label: "红心歌曲",
     key: "/like",
@@ -184,9 +169,6 @@ const userOptions = computed(() => [
     label: "上传歌曲",
     key: "/user/like",
   },
-
-
-
 ]);
 const dropdownOptions = computed(() => [
   {
@@ -209,15 +191,6 @@ const dropdownOptions = computed(() => [
     icon: () => {
       return h(NIcon, null, {
         default: () => (setting.getSiteTheme == "light" ? h(Moon) : h(SunOne)),
-      });
-    },
-  },
-  {
-    label: "播放历史",
-    key: "history",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(History),
       });
     },
   },

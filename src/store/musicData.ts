@@ -97,6 +97,10 @@ export const useMusicDataStore = defineStore("musicData", {
     getPlaySongMode(state) {
       return state.persistData.playSongMode;
     },
+    // 获取当前歌曲索引
+    getPlaySongIndex(state) {
+        return state.persistData.playSongIndex;
+    },
     // 获取当前歌曲
     getPlaySongData(state): any {
       return state.persistData.playlists[state.persistData.playSongIndex];

@@ -10,7 +10,7 @@ func SearchSongs(db *gorm.DB, keyword string, page int, limit int) ([]Song, int6
 	var total int64
 	offset := (page - 1) * limit
 
-	query := db.Model(&Song{}).Where("title LIKE ? OR artist_name LIKE ? OR album_name LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	query := db.Model(&Song{}).Where("title LIKE ?", "%"+keyword+"%")
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

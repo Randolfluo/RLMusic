@@ -24,6 +24,9 @@ type Album struct {
 	Description string     `gorm:"type:text" json:"description"`                  // 专辑简介
 	ReleaseDate *time.Time `json:"release_date"`                                  // 发行日期
 
+	CoverSongID *int   `json:"cover_song_id"`  // 封面对应的歌曲ID
+	Cover       string `gorm:"-" json:"cover"` // 封面URL (计算字段)
+
 	ArtistID *int   `gorm:"index" json:"artist_id"`                                                           // 关联艺术家ID
 	Artist   Artist `gorm:"foreignKey:ArtistID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"artist"` // 关联艺术家
 }

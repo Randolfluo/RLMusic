@@ -49,6 +49,10 @@
               </template>
             </n-input>
           </n-form-item>
+          <!-- 记住密码 -->
+          <n-form-item>
+            <n-checkbox v-model:checked="rememberMe">记住密码</n-checkbox>
+          </n-form-item>
           <n-form-item>
             <n-button style="width: 100%" type="primary" @click="handleLogin" :loading="loading">
               登录
@@ -110,18 +114,20 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { userStore } from "@/store";
 import { login, register } from "@/api/login";
 import { PersonRound, PasswordRound, EmailRound } from "@vicons/material";
 import { useMessage } from "naive-ui";
 import { ResultCode } from "@/utils/request";
+import { aesEncrypt, aesDecrypt } from "@/utils/encrypt"; // 引入加密/解密工具
 
 const router = useRouter();
 const user = userStore();
 const message = useMessage();
 const loading = ref(false);
+const rememberMe = ref(false); // 记住密码
 
 const loginFormRef = ref(null);
 const registerFormRef = ref(null);
@@ -148,8 +154,18 @@ const loginForm = reactive({
 
 const registerForm = reactive({
   username: "",
-  password: "",
-  email: ""
+onMounted(() => {
+    const savedUser = localStorage.getItem("remember_user");
+    const savedPass = localStorage.getItem("remember_pass");
+    if (savedUser && savedPass) {
+        loginForm.username = savedUser;
+        try {
+            loginForm.password = aesDecrypt(savedPass);
+            rememberMe.value = true;
+        } catch (e) {
+            console.error("解密失败", e);
+        }
+    }
 });
 
 // Handlers
@@ -168,6 +184,19 @@ const handleLogin = (e) => {
              userId: res.data.id,
              nickname: res.data.username,
              email: res.data.email,
+             avatarUrl: res.data.avatar || "" 
+          };
+          user.setUserData(userData);
+          localStorage.setItem("token", res.data.token); 
+          
+          if (rememberMe.value) {
+              localStorage.setItem("remember_user", loginForm.username);
+              localStorage.setItem("remember_pass", aesEncrypt(loginForm.password));
+          } else {
+              localStorage.removeItem("remember_user");
+              localStorage.removeItem("remember_pass");
+          }
+
              avatarUrl: res.data.avatar || "" 
           };
           user.setUserData(userData);

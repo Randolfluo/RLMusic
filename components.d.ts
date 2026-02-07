@@ -78,6 +78,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchInp: typeof import('./src/components/SearchInp/index.vue')['default']
+    SongList: typeof import('./src/components/DataList/SongList.vue')['default']
     SystemStats: typeof import('./src/components/Home/SystemStats.vue')['default']
   }
 }
