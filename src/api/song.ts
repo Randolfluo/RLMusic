@@ -119,3 +119,35 @@ export function getSongDetail(id: number | string) {
 export function getSongCover(id: number | string) {
   return `/api/song/cover/${id}`;
 }
+
+/**
+ * 扫描用户音乐
+ */
+export const scanMusic = () => {
+    return request({
+        method: "POST",
+        url: "/song/scan"
+    });
+};
+
+/**
+ * 获取歌手详情
+ * @param {Number|String} id
+ */
+export const getArtistDetail = (id: number | string) => {
+    return request({
+        method: "GET",
+        url: `/song/artist/${id}`
+    });
+};
+
+/**
+ * 获取专辑详情
+ * @param {Number|String} id
+ */
+export const getAlbumDetail = (id: number | string) => {
+    return request({
+        method: "GET",
+        url: `/song/album/${id}`
+    });
+};

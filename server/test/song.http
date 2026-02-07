@@ -1,0 +1,62 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+# 登录请求用于获取 Token
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+### 8. 扫描用户音乐 (需要登录)
+# !!! 必须先运行上面的 "2. 用户登录" 请求，获取到 Token 后才能运行此请求 !!!
+POST {{baseUrl}}/song/scan
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 11. 播放歌曲 (无需登录，替换 ID)
+GET {{baseUrl}}/song/stream/1
+
+### 11-1. 获取歌曲详情
+GET {{baseUrl}}/song/detail/1
+
+### 11-2. 获取歌曲封面
+GET {{baseUrl}}/song/cover/1
+
+### 11-3. 点赞/取消点赞歌曲 (需要登录)
+POST {{baseUrl}}/song/like/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 17. 记录播放历史
+POST {{baseUrl}}/song/history
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+    "song_id": 1
+}
+
+### 18. 获取播放历史
+GET {{baseUrl}}/song/history?page=1&limit=20
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 19. 清空播放历史
+DELETE {{baseUrl}}/song/history
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 24. 获取歌词
+GET {{baseUrl}}/song/lyric/1
+
+### 25. 获取歌手详情
+GET {{baseUrl}}/song/artist/1
+
+### 26. 获取专辑详情
+GET {{baseUrl}}/song/album/1
+

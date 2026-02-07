@@ -1,0 +1,18 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+### 20. 搜索歌曲
+GET {{baseUrl}}/search/song?keywords=miku&offset=1&limit=30
+
+### 21. 搜索歌手
+GET {{baseUrl}}/search/artist?keywords=miku&offset=1&limit=30
+
+### 22. 搜索专辑
+GET {{baseUrl}}/search/album?keywords=miku&offset=1&limit=30
+
+### 23. 搜索歌单
+GET {{baseUrl}}/search/playlist?keywords=miku&offset=1&limit=30

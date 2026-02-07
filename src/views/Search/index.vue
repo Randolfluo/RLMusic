@@ -1,187 +1,257 @@
 <template>
   <div class="search-page">
     <div class="search-header">
-      <n-input-group style="max-width: 600px; width: 100%">
-        <n-select
-          :style="{ width: '25%' }"
-          v-model:value="searchType"
-          :options="typeOptions"
-          size="large"
-          class="type-select"
-        />
-        <n-input
-          ref="inputRef"
-          v-model:value="inputValue"
-          class="main-input"
-          size="large"
-          placeholder="搜索音乐、歌手、歌单、专辑"
-          clearable
-          @input="handleInput"
-          @keydown.enter="handleEnter"
-        >
-          <template #prefix>
-            <n-icon :component="Search" />
-          </template>
-        </n-input>
-      </n-input-group>
+      <n-card :bordered="false" class="header-card">
+        <n-input-group>
+            <!-- 移除选择框，直接展示输入框 -->
+            <n-input
+            ref="inputRef"
+            v-model:value="inputValue"
+            class="main-input"
+            size="large"
+            round
+            placeholder="搜索音乐、歌手、歌单、专辑"
+            clearable
+            @input="handleInput"
+            @keydown.enter="handleEnter"
+            >
+            <template #prefix>
+                <n-icon :component="Search" />
+            </template>
+            </n-input>
+            <n-button size="large" type="primary" ghost @click="handleEnter">
+                搜索
+            </n-button>
+        </n-input-group>
+      </n-card>
     </div>
 
     <div class="search-content">
-      <!-- 默认显示：历史记录和热搜 -->
+      <!-- 默认显示：历史记录 -->
       <div v-if="!inputValue" class="default-content">
-        <!-- 历史记录 -->
-        <div class="section history" v-if="music.getSearchHistory[0] && setting.searchHistory">
-           <div class="section-title">
-              <div class="left">
-                  <n-icon :component="History" />
-                  <span>搜索历史</span>
-              </div>
+        <n-card class="section history" title="搜索历史" :bordered="false" size="small" v-if="music.getSearchHistory[0] && setting.searchHistory">
+           <template #header-extra>
                <n-button text size="small" @click="delHistory">
                    <template #icon>
                        <n-icon :component="DeleteFour" />
                    </template>
                    清空
                </n-button>
-           </div>
+           </template>
            <n-space>
               <n-tag
                 v-for="item in music.getSearchHistory"
                 :key="item"
                 round
                 checkable
+                type="primary"
                 @click="clickHistory(item)"
               >
                 {{ item }}
               </n-tag>
            </n-space>
-        </div>
-
-        <!-- 热搜 (Placeholder for now as API returns empty) -->
-        <!-- <div class="section hot" v-if="searchData.hot.length > 0">
-             <div class="section-title">
-                  <div class="left">
-                      <n-icon :component="Fire" color="#d03050" />
-                      <span>热搜榜</span>
-                  </div>
-             </div>
-             <div class="hot-grid">
-                 <div
-                  v-for="(item, index) in searchData.hot"
-                  :key="index"
-                  class="hot-item"
-                  @click="clickHistory(item.searchWord)"
-                 >
-                    <span :class="['index', index < 3 ? 'top' : '']">{{ index + 1 }}</span>
-                    <div class="info">
-                        <span class="word">{{ item.searchWord }}</span>
-                        <span class="desc" v-if="item.content">{{ item.content }}</span>
-                    </div>
-                 </div>
-             </div>
-        </div> -->
+        </n-card>
       </div>
 
-      <!-- 搜索建议结果 -->
+      <!-- 搜索结果区域 -->
       <div v-else class="suggest-content">
-          <div class="loading" v-if="loading">
-              <n-spin size="small" />
-              <span>搜索中...</span>
+          <div class="search-title-bar">
+              <h2>{{ inputValue }} 的相关搜索</h2>
           </div>
           
-          <div v-else-if="isEmptyResult" class="empty">
-              <n-empty description="未找到相关结果" />
-          </div>
+          <n-tabs type="line" animated v-model:value="searchType">
+            <!-- 综合 Tab -->
+            <n-tab-pane name="all" tab="综合">
+                <div class="loading" v-if="loading">
+                    <n-spin size="medium">
+                        <template #description>搜索中...</template>
+                    </n-spin>
+                </div>
+                <div v-else-if="isEmptyResult" class="empty">
+                    <n-empty description="未找到相关结果" size="large" />
+                </div>
+                <!-- 综合内容展示 -->
+                <div v-else class="result-list">
+                    <!-- 单曲 (综合页显示部分) -->
+                    <n-card 
+                        title="单曲" 
+                        size="small" 
+                        :bordered="false" 
+                        class="result-section"
+                        v-if="searchData.suggest.songs?.length"
+                    >
+                        <template #header-extra>
+                            <n-button text size="small" @click="searchType = 'songs'">查看全部 <n-icon :component="Right" /></n-button>
+                        </template>
+                        <n-list hoverable clickable>
+                            <n-list-item 
+                                v-for="song in searchData.suggest.songs.slice(0, 5)" 
+                                :key="song.id"
+                                @click="playSong(song)"
+                            >
+                                <n-thing :title="song.title" content-style="margin-top: 5px;">
+                                <template #description>
+                                    <n-space size="small" align="center">
+                                        <n-tag size="small" :bordered="false" type="info">{{ song.artist_name || (song.Artist?.name) || '未知歌手' }}</n-tag>
+                                        <span style="font-size: 13px; color: var(--n-text-color-3)">{{ song.album_name || song.Album?.title }}</span>
+                                    </n-space>
+                                </template>
+                                </n-thing>
+                            </n-list-item>
+                        </n-list>
+                    </n-card>
 
-          <div v-else class="result-list">
-              <!-- 单曲 -->
-              <div class="result-section" v-if="shouldShow('songs') && searchData.suggest.songs?.length">
-                  <div class="section-header">
-                      <n-icon :component="MusicOne" />
-                      <span>单曲</span>
-                  </div>
-                  <div class="list-items">
-                      <div 
-                        class="item song-item" 
+                    <n-grid x-gap="12" y-gap="12" cols="1 600:2 800:3">
+                        <!-- 歌手 -->
+                        <n-gi v-if="searchData.suggest.artists?.length">
+                                <n-card title="歌手" size="small" :bordered="false" class="result-section">
+                                    <n-list hoverable clickable>
+                                        <n-list-item 
+                                            v-for="artist in searchData.suggest.artists.slice(0, 3)" 
+                                            :key="artist.id"
+                                            @click="router.push(`/artist?id=${artist.id}`)"
+                                        >
+                                            <n-thing>
+                                                <template #header>{{ artist.name }}</template>
+                                            </n-thing>
+                                        </n-list-item>
+                                    </n-list>
+                                </n-card>
+                        </n-gi>
+
+                        <!-- 专辑 -->
+                        <n-gi v-if="searchData.suggest.albums?.length">
+                            <n-card title="专辑" size="small" :bordered="false" class="result-section">
+                                    <n-list hoverable clickable>
+                                        <n-list-item 
+                                            v-for="album in searchData.suggest.albums.slice(0, 3)" 
+                                            :key="album.id"
+                                            @click="router.push(`/album?id=${album.id}`)"
+                                        >
+                                            <n-thing :title="album.title" :description="album.Artist?.name" />
+                                        </n-list-item>
+                                    </n-list>
+                                </n-card>
+                        </n-gi>
+                        
+                        <!-- 歌单 -->
+                        <n-gi v-if="searchData.suggest.playlists?.length">
+                            <n-card title="歌单" size="small" :bordered="false" class="result-section">
+                                    <n-list hoverable clickable>
+                                        <n-list-item 
+                                            v-for="playlist in searchData.suggest.playlists.slice(0, 3)" 
+                                            :key="playlist.id"
+                                            @click="router.push(`/playlist/${playlist.id}`)"
+                                        >
+                                            <n-thing :title="playlist.title" :description="playlist.description || '暂无描述'" />
+                                        </n-list-item>
+                                    </n-list>
+                                </n-card>
+                        </n-gi>
+                    </n-grid>
+                </div>
+            </n-tab-pane>
+
+            <!-- 单曲 Tab -->
+            <n-tab-pane name="songs" tab="单曲">
+                 <div class="loading" v-if="loading"><n-spin /></div>
+                 <n-empty v-else-if="!searchData.suggest.songs?.length" description="暂无单曲" />
+                 <n-list v-else hoverable clickable bordered>
+                      <n-list-item 
                         v-for="song in searchData.suggest.songs" 
                         :key="song.id"
                         @click="playSong(song)"
                       >
-                          <div class="name">{{ song.title }}</div>
-                          <div class="artist">{{ song.artist_name || (song.Artist?.name) || '未知歌手' }}</div>
-                          <div class="album" v-if="song.album_name || song.Album?.title">
-                              - {{ song.album_name || song.Album?.title }}
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                         <template #prefix>
+                             <n-icon :component="MusicOne" size="20" color="#18a058" />
+                         </template>
+                         <n-thing :title="song.title">
+                           <template #description>
+                               {{ song.artist_name || (song.Artist?.name) || '未知歌手' }} - {{ song.album_name || song.Album?.title }}
+                           </template>
+                         </n-thing>
+                         <template #suffix>
+                             <n-button text size="medium">
+                                 <n-icon :component="PlayOne" size="20" />
+                             </n-button>
+                         </template>
+                      </n-list-item>
+                 </n-list>
+            </n-tab-pane>
 
-               <!-- 歌手 -->
-              <div class="result-section" v-if="shouldShow('artists') && searchData.suggest.artists?.length">
-                  <div class="section-header">
-                      <n-icon :component="Voice" />
-                      <span>歌手</span>
-                  </div>
-                  <div class="list-items">
-                      <div 
-                        class="item" 
-                        v-for="artist in searchData.suggest.artists" 
-                        :key="artist.id"
-                        @click="router.push(`/artist?id=${artist.id}`)"
-                      >
-                          <div class="name" v-html="artist.name"></div>
-                      </div>
-                  </div>
-              </div>
+            <!-- 歌单 Tab -->
+            <n-tab-pane name="playlists" tab="歌单">
+                <div class="loading" v-if="loading"><n-spin /></div>
+                <n-empty v-else-if="!searchData.suggest.playlists?.length" description="暂无歌单" />
+                <n-grid v-else cols="2 600:3 900:4" x-gap="20" y-gap="20">
+                     <n-gi v-for="playlist in searchData.suggest.playlists" :key="playlist.id">
+                         <n-card hoverable class="playlist-card" @click="router.push(`/playlist/${playlist.id}`)">
+                             <template #cover>
+                                 <!-- placeholder cover -->
+                                 <div style="height: 120px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                                     <n-icon :component="Record" size="40" color="#ccc" />
+                                 </div>
+                             </template>
+                             <n-thing :title="playlist.title">
+                                 <template #description>{{ playlist.description || '暂无描述' }}</template>
+                             </n-thing>
+                         </n-card>
+                     </n-gi>
+                </n-grid>
+            </n-tab-pane>
 
-               <!-- 专辑 -->
-              <div class="result-section" v-if="shouldShow('albums') && searchData.suggest.albums?.length">
-                  <div class="section-header">
-                      <n-icon :component="RecordDisc" />
-                      <span>专辑</span>
-                  </div>
-                  <div class="list-items">
-                      <div 
-                        class="item" 
+            <!-- 歌手 Tab -->
+             <n-tab-pane name="artists" tab="歌手">
+                <div class="loading" v-if="loading"><n-spin /></div>
+                <n-empty v-else-if="!searchData.suggest.artists?.length" description="暂无歌手" />
+                 <n-grid v-else cols="2 600:4 900:6" x-gap="20" y-gap="20">
+                     <n-gi v-for="artist in searchData.suggest.artists" :key="artist.id">
+                         <n-card hoverable @click="router.push(`/artist?id=${artist.id}`)" content-style="text-align: center;">
+                             <n-avatar round :size="80" :src="artist.pic_url || undefined" fallback-src="/images/logo/logo.png">
+                                 <n-icon :component="Voice" />
+                             </n-avatar>
+                             <div style="margin-top: 10px; font-weight: bold;">{{ artist.name }}</div>
+                         </n-card>
+                     </n-gi>
+                </n-grid>
+            </n-tab-pane>
+
+             <!-- 专辑 Tab -->
+             <n-tab-pane name="albums" tab="专辑">
+                 <div class="loading" v-if="loading"><n-spin /></div>
+                 <n-empty v-else-if="!searchData.suggest.albums?.length" description="暂无专辑" />
+                 <n-list v-else hoverable clickable bordered>
+                      <n-list-item 
                         v-for="album in searchData.suggest.albums" 
                         :key="album.id"
                         @click="router.push(`/album?id=${album.id}`)"
                       >
-                          <div class="name">{{ album.title }}</div>
-                          <div class="sub">- {{ album.Artist?.name }}</div>
-                      </div>
-                  </div>
-              </div>
-              
-                <!-- 歌单 -->
-               <div class="result-section" v-if="shouldShow('playlists') && searchData.suggest.playlists?.length">
-                  <div class="section-header">
-                      <n-icon :component="Record" />
-                      <span>歌单</span>
-                  </div>
-                  <div class="list-items">
-                      <div 
-                        class="item" 
-                        v-for="playlist in searchData.suggest.playlists" 
-                        :key="playlist.id"
-                        @click="router.push(`/playlist/${playlist.id}`)"
-                      >
-                          <div class="name">{{ playlist.title }}</div>
-                      </div>
-                  </div>
-              </div>
-          </div>
+                         <template #prefix>
+                             <n-icon :component="RecordDisc" size="40" color="#888" />
+                         </template>
+                         <n-thing :title="album.title">
+                           <template #description>
+                               {{ album.Artist?.name }}
+                           </template>
+                         </n-thing>
+                      </n-list-item>
+                 </n-list>
+            </n-tab-pane>
+
+          </n-tabs>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
+import { ref, reactive, onMounted, computed, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMessage, useDialog } from "naive-ui";
 import { 
-    Search, History, DeleteFour, Fire, 
-    MusicOne, Voice, RecordDisc, Record 
+    Search, History, DeleteFour,
+    MusicOne, Voice, RecordDisc, Record,
+    Right, PlayOne
 } from "@icon-park/vue-next";
 import { getSearchHot, getSearchSuggest } from "@/api/search";
 import { useMusicDataStore } from "@/store/musicData";
@@ -195,11 +265,20 @@ const setting = useSettingDataStore();
 const message = useMessage();
 const dialog = useDialog();
 
-const inputRef = ref(null);
+const inputRef = ref<any>(null); // Use any to support component ref methods
 const inputValue = ref("");
 const loading = ref(false);
+const searchType = ref("all");
 
-const searchData = reactive({
+const searchData = reactive<{
+    hot: any[];
+    suggest: {
+        songs: any[];
+        artists: any[];
+        albums: any[];
+        playlists: any[];
+    }
+}>({
     hot: [],
     suggest: {
         songs: [],
@@ -218,11 +297,13 @@ const isEmptyResult = computed(() => {
 onMounted(() => {
     // 聚焦输入框
     nextTick(() => {
-        inputRef.value?.focus();
+        setTimeout(() => {
+             inputRef.value?.focus();
+        }, 300);
     });
     
     // 获取热搜
-    getSearchHot().then(res => {
+    getSearchHot().then((res: any) => {
         if(res.data) searchData.hot = res.data;
     });
 
@@ -286,8 +367,8 @@ const delHistory = () => {
 
 const playSong = (song: any) => {
     // 兼容 pinia store 方法名: setPlaylists vs setPlayList
-    if (typeof music.setPlayList === 'function') {
-        music.setPlayList([song]);
+    if (typeof (music as any).setPlayList === 'function') {
+        (music as any).setPlayList([song]);
     } else if (typeof music.setPlaylists === 'function') {
         music.setPlaylists([song]);
     }
@@ -301,121 +382,58 @@ const playSong = (song: any) => {
 
 <style lang="scss" scoped>
 .search-page {
-    padding: 20px;
-    max-width: 1000px;
+    padding: 30px;
+    max-width: 1200px;
     margin: 0 auto;
     
     .search-header {
         margin-bottom: 30px;
         display: flex;
         justify-content: center;
-        .main-input {
+        
+        .header-card {
             width: 100%;
-            max-width: 600px;
-            font-size: 16px;
+            max-width: 800px;
+            background-color: transparent !important; // Blend in
+        }
+
+        .main-input {
+            flex: 1;
         }
     }
 
-    .section {
-        margin-bottom: 30px;
-        .section-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            .left {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-weight: bold;
-                font-size: 16px;
+    .search-content {
+        .default-content, .suggest-content {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .search-title-bar {
+            margin-bottom: 20px;
+            h2 {
+                font-size: 22px;
+                font-weight: 600;
+                color: var(--n-text-color-1);
             }
         }
-    }
-    
-    .hot-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 16px;
-        .hot-item {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            &:hover {
-                background-color: var(--n-color-hover);
-            }
-            .index {
-                font-weight: bold;
-                margin-right: 12px;
-                width: 20px;
-                text-align: center;
-                &.top {
-                    color: #d03050;
-                }
-            }
-            .info {
-                display: flex;
-                flex-direction: column;
-                .word {
-                    font-weight: 500;
-                }
-                .desc {
-                    font-size: 12px;
-                    opacity: 0.6;
-                }
-            }
-        }
-    }
 
-    .result-list {
         .result-section {
-            margin-bottom: 24px;
-            background-color: var(--n-card-color);
-            border-radius: 12px;
-            padding: 16px;
-            
-            .section-header {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 12px;
-                color: var(--n-text-color-2);
-                padding-bottom: 8px;
-                border-bottom: 1px solid var(--n-border-color);
-            }
-            
-            .list-items {
-                .item {
-                    padding: 10px 8px;
-                    cursor: pointer;
-                    border-radius: 6px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    
-                    &:hover {
-                        background-color: var(--n-color-hover);
-                    }
-                    
-                    &.song-item {
-                         .artist, .album {
-                             opacity: 0.6;
-                             font-size: 13px;
-                         }
-                    }
-                }
-            }
+            margin-bottom: 20px;
+        }
+
+        .section.history {
+           margin-bottom: 20px;
         }
     }
     
     .loading, .empty {
         text-align: center;
-        padding: 40px 0;
-        opacity: 0.7;
+        padding: 60px 0;
+        opacity: 0.8;
     }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>

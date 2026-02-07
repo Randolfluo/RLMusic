@@ -112,6 +112,7 @@ service.interceptors.response.use(
         ResultCode.ERR_TOKEN_RUNTIME,
         ResultCode.ERR_TOKEN_WRONG,
         ResultCode.ERR_TOKEN_TYPE,
+        ResultCode.ERR_USER_NOT_EXIST,
       ];
       if (tokenErrors.includes(res.code)) {
         if (window.$message) window.$message.error('登录失效，请重新登录');

@@ -24,3 +24,25 @@ export const getSystemStats = () => {
         url: "/system/stats"
     }) as Promise<{ code: number, msg: string, data: SystemStats }>;
 };
+
+/**
+ * 初始化基础文件夹
+ */
+export const initFolder = () => {
+    return axios({
+        method: "POST",
+        url: "/file/initFolder"
+    });
+};
+
+/**
+ * 更新系统配置
+ * @param {object} data
+ */
+export const updateConfig = (data: { filepath: string }) => {
+    return axios({
+        method: "POST",
+        url: "/system/config",
+        data
+    });
+};

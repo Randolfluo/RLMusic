@@ -21,7 +21,7 @@
             :key="index"
           >
             {{ artist.name }}
-            <span v-if="index < (Number(songData?.artist?.length) || 0) - 1"> / </span>
+            <span v-if="Number(index) < (Number(songData?.artist?.length) || 0) - 1"> / </span>
           </span>
           <span v-if="!songData?.artist && songData?.artist_name">
             {{ songData.artist_name }}

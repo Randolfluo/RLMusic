@@ -75,8 +75,15 @@ func CreateUser(db *gorm.DB, username string, password string, email string) (*U
 // GetUserAuthInfoById 根据ID获取用户信息
 func GetUserAuthInfoById(db *gorm.DB, id int) (*User, error) {
 	var user User
-	err := db.Where("id = ? AND is_delete = ?", id, false).First(&user).Error
-	return &user, err
+	// 使用 Limit(1).Find 避免 gorm.First 的 "record not found" 错误日志
+	result := db.Where("id = ? AND is_delete = ?", id, false).Limit(1).Find(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &user, nil
 }
 
 // DeleteUser 删除用户 (软删除)

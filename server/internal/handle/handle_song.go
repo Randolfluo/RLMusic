@@ -233,6 +233,12 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				} else {
 					updatedCount++
 				}
+
+				// 尝试为关联的艺术家设置封面（如果没有封面，则使用当前歌曲ID）
+				for _, artist := range songArtists {
+					db.Model(&model.Artist{}).Where("id = ? AND cover_song_id IS NULL", artist.ID).Update("cover_song_id", song.ID)
+				}
+
 				// 累加时长
 				scannedDuration += song.Duration
 			} else {
@@ -388,6 +394,12 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 		ReturnError(c, g.ErrDbOp, "歌手不存在")
 		return
 	}
+
+	// 填充封面URL
+	if artist.CoverSongID != nil {
+		artist.Cover = "/api/song/cover/" + strconv.Itoa(*artist.CoverSongID)
+	}
+
 	ReturnSuccess(c, artist)
 }
 

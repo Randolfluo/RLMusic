@@ -1,7 +1,7 @@
 <template>
   <div class="playlist-grid">
     <n-spin :show="loading">
-      <div v-if="!loading && playlists.length === 0" class="empty">
+      <div v-if="!loading && (!playlists || playlists.length === 0)" class="empty">
         <n-empty :description="emptyText" />
       </div>
       <n-grid
@@ -13,7 +13,7 @@
         :collapsed="collapsed"
         :collapsed-rows="collapsedRows"
       >
-        <n-grid-item v-for="item in playlists" :key="item.id">
+        <n-grid-item v-for="item in (playlists || [])" :key="item.id">
           <n-card
             hoverable
             class="playlist-card"

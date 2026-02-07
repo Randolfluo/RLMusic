@@ -12,6 +12,8 @@ type Artist struct {
 
 	Name        string `gorm:"type:varchar(255);not null;index" json:"name"` // 艺术家名称
 	Description string `gorm:"type:text" json:"description"`                 // 简介
+	CoverSongID *int   `json:"cover_song_id"`                                // 封面对应的歌曲ID
+	Cover       string `gorm:"-" json:"cover"`                               // 封面URL (计算字段)
 }
 
 // Album 专辑模型

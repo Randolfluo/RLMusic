@@ -1,0 +1,2 @@
+# 例如转换 user.http
+npx rest-client-to-postman -i user.http -o user_postman.json

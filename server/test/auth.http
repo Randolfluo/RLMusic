@@ -1,0 +1,41 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+### 1. 用户注册
+# 如果遇到 "数据库操作异常 (9004)" 或 "User exist"，说明用户已存在，请直接运行第 2 步 "用户登录"
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}",
+    "email": "{{email}}"
+}
+
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+### 12. 管理员登录
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "admin",
+    "password": "123456"
+}
+
+### 16. 退出登录 (需要登录)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{login.response.body.data.token}}

@@ -1,0 +1,797 @@
+{
+    "info": {
+        "name": "LocalMusicPlayer API Export",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "auth",
+            "item": [
+                {
+                    "name": "用户注册",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "如果遇到 \"数据库操作异常 (9004)\" 或 \"User exist\"，说明用户已存在，请直接运行第 2 步 \"用户登录\"",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\",\n    \"email\": \"{{email}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "用户登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "管理员登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: adminLogin",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "退出登录 (需要登录)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "playlist",
+            "item": [
+                {
+                    "name": "用户登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "获取公共歌单详情 (无需登录，验证 is_public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlist/public/1?page=1&limit=90",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取私有歌单详情 (需要登录，验证 owner_id)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlist/private/1?page=1&limit=90",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取所有公开歌单 (无需登录)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlists/public",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取我的公开歌单 (需要登录)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlists/user/public",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取我的私有歌单 (需要登录)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlists/user/private",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "更新歌单信息(包括权限) (需要登录)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/playlist/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"已修改的歌单名称\",\n    \"description\": \"这是新的描述\",\n    \"is_public\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "search",
+            "item": [
+                {
+                    "name": "搜索歌曲",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/search/song?keywords=miku&offset=1&limit=30",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "搜索歌手",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/search/artist?keywords=miku&offset=1&limit=30",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "搜索专辑",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/search/album?keywords=miku&offset=1&limit=30",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "搜索歌单",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/search/playlist?keywords=miku&offset=1&limit=30",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "song",
+            "item": [
+                {
+                    "name": "用户登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "扫描用户音乐 (需要登录)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/scan",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "!!! 必须先运行上面的 \"2. 用户登录\" 请求，获取到 Token 后才能运行此请求 !!!"
+                    }
+                },
+                {
+                    "name": "播放歌曲 (无需登录，替换 ID)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/stream/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取歌曲详情",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/detail/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取歌曲封面",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/cover/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "点赞/取消点赞歌曲 (需要登录)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/like/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "记录播放历史",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"song_id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "获取播放历史",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/history?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "清空播放历史",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取歌词",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/lyric/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取歌手详情",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/artist/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取专辑详情",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/song/album/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "system",
+            "item": [
+                {
+                    "name": "管理员登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: adminLogin",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"123456\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "初始化基础文件夹 (不需要认证)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/file/initFolder",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "获取系统统计信息 (无需登录) (系统设置+时长统计)",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/system/stats",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "更新系统配置 (仅管理员)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminLogin.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/system/config",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"filepath\": 'C:\\Users\\lrj32\\Desktop\\music player\\localmusicplayerFoleder'\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "user",
+            "item": [
+                {
+                    "name": "用户登录",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "{{contentType}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "text"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "获取用户信息 (需要登录)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/user/info",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "Internal ID: getUserInfo"
+                    }
+                },
+                {
+                    "name": "注销用户 (需要登录后获取Token)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/user",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "上传用户头像 (需要登录)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "multipart/form-data; boundary=MyBoundary",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/user/avatar",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": ""
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000/api",
+            "type": "string"
+        },
+        {
+            "key": "contentType",
+            "value": "application/json",
+            "type": "string"
+        },
+        {
+            "key": "username",
+            "value": "testuser001",
+            "type": "string"
+        },
+        {
+            "key": "password",
+            "value": "password123",
+            "type": "string"
+        },
+        {
+            "key": "email",
+            "value": "test001@example.com",
+            "type": "string"
+        }
+    ]
+}

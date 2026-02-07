@@ -1,0 +1,36 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+# 管理员登录获取 Token
+### 12. 管理员登录
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "admin",
+    "password": "123456"
+}
+
+### 5. 初始化基础文件夹 (不需要认证)
+POST {{baseUrl}}/file/initFolder
+Content-Type: {{contentType}}
+
+### 6. 初始化用户目录 (内部调用，已移除接口)
+# (用户注册时自动调用，不再提供独立接口)
+
+### 7. 获取系统统计信息 (无需登录) (系统设置+时长统计)
+GET {{baseUrl}}/system/stats
+
+### 13. 更新系统配置 (仅管理员)
+POST {{baseUrl}}/system/config
+Content-Type: {{contentType}}
+Authorization: Bearer {{adminLogin.response.body.data.token}}
+
+{
+    "filepath": 'C:\Users\lrj32\Desktop\music player\localmusicplayerFoleder'
+}

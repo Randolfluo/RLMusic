@@ -38,7 +38,7 @@
             <n-text>点击选中的歌词以调整播放进度</n-text>
           </div>
         </Transition>
-        <div class="left">
+        <div class="left" @click="changePlayerStyle">
           <PlayerCover v-if="setting.playerStyle === 'cover'" />
           <PlayerRecord v-else />
         </div>
@@ -158,11 +158,6 @@
                   :component="GTranslateFilled"
                   @click="setting.setShowTransl(!setting.getShowTransl)"
                 />
-                <n-icon
-                  class="open"
-                  :component="MessageFilled"
-                  @click="toComment"
-                />
                 <div class="lyric-offset-control">
                   <n-icon class="btn" :component="RemoveOutlined" @click="changeOffset(-0.1)" />
                   <span class="text">{{ offsetText }}</span>
@@ -185,7 +180,6 @@
 import {
   KeyboardArrowDownFilled,
   GTranslateFilled,
-  MessageFilled,
   FullscreenRound,
   FullscreenExitRound,
   AddOutlined,
@@ -216,6 +210,11 @@ const menuShow = ref(false);
 
 // ... rest of script ...
 
+
+// 切换播放器样式
+const changePlayerStyle = () => {
+  setting.playerStyle = setting.playerStyle === "cover" ? "record" : "cover";
+};
 
 // 音乐频谱
 const avBars = ref(null);
@@ -491,6 +490,7 @@ watch(
       transition: all 0.3s ease-in-out;
       padding-right: 3.8vw;
       box-sizing: border-box;
+      cursor: pointer; // 添加鼠标指针样式
     }
     .right {
       flex: 1;

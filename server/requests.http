@@ -46,6 +46,27 @@ Content-Type: {{contentType}}
 # }
 
 
+### 3. 获取用户信息 (需要登录)
+# @name getUserInfo
+GET {{baseUrl}}/user/info
+Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "id": 2,
+#     "username": "testuser001",
+#     "email": "test1@example.com",
+#     "avatar": "",
+#     "last_login": "2026-02-06T16:10:40.3265431+08:00",
+#     "total_songs": 1166,
+#     "total_albums": 680,
+#     "total_artists": 536,
+#     "total_duration": 0,
+#     "favorite_song": ""
+#   }
+# }
+
 ### 4. 注销用户 (需要登录后获取Token)
 DELETE {{baseUrl}}/user
 Authorization: Bearer {{login.response.body.data.token}}

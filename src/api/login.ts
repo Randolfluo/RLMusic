@@ -38,3 +38,14 @@ export const login = (data: LoginParams) => {
   });
 };
 
+/**
+ * 退出登录
+ * POST /auth/logout
+ */
+export const logout = () => {
+  return axios({
+    method: "POST",
+    url: "/auth/logout",
+  });
+};
+

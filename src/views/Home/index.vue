@@ -73,7 +73,7 @@ const getPublicList = async () => {
   try {
     const res = await getPublicPlaylists();
     if (res.code === ResultCode.SUCCESS) {
-      publicPlaylists.value = res.data;
+      publicPlaylists.value = res.data || [];
     }
   } catch (error) {
     message.error("获取公共歌单失败");
@@ -87,7 +87,7 @@ const getPrivateList = async () => {
   try {
     const res = await getUserPrivatePlaylists();
     if (res.code === ResultCode.SUCCESS) {
-      privatePlaylists.value = res.data;
+      privatePlaylists.value = res.data || [];
     }
   } catch (error) {
     // 可能是未登录或权限问题，这里简单处理
