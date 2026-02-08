@@ -150,7 +150,7 @@ func (*UserAuth) Login(c *gin.Context) {
 	}
 
 	// 更新登录信息
-	if err := model.UpdateUserLoginInfo(db, user.ID); err != nil {
+	if err := model.UpdateUserLoginInfo(db, user.ID, c.ClientIP()); err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
@@ -192,11 +192,8 @@ type UserInfoVO struct {
 	Email         string     `json:"email"`
 	Avatar        string     `json:"avatar"`
 	LastLogin     *time.Time `json:"last_login"`
-	TotalSongs    int64      `json:"total_songs"`
-	TotalAlbums   int64      `json:"total_albums"`
-	TotalArtists  int64      `json:"total_artists"`
+	IPSrc         string     `json:"ip_src"`
 	TotalDuration int64      `json:"total_duration"`
-	FavoriteSong  string     `json:"favorite_song"`
 }
 
 // GetUserInfo 获取当前登录用户的详细信息
@@ -216,22 +213,14 @@ func (*UserAuth) GetUserInfo(c *gin.Context) {
 		return
 	}
 
-	sysInfo, _ := model.GetSystemInfoStruct(db)
-	if sysInfo == nil {
-		sysInfo = &model.SystemInfoStruct{}
-	}
-
 	ReturnSuccess(c, UserInfoVO{
 		ID:            user.ID,
 		Username:      user.Username,
 		Email:         user.Email,
 		Avatar:        user.Avatar,
 		LastLogin:     user.LastLogin,
-		TotalSongs:    sysInfo.TotalSongs,
-		TotalAlbums:   sysInfo.TotalAlbums,
-		TotalArtists:  sysInfo.TotalArtists,
+		IPSrc:         c.ClientIP(),           // 显示用户当前的IP地址，而非数据库中存储的最后登录IP
 		TotalDuration: user.ListeningDuration, // 保持为用户的听歌时长
-		FavoriteSong:  user.FavoriteSong,
 	})
 }
 

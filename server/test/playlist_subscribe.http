@@ -1,0 +1,40 @@
+### 全局变量
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+@username = testuser001
+@password = password123
+@email = test001@example.com
+
+# 登录请求用于获取 Token
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+###
+@authToken = {{login.response.body.data.token}}
+
+
+### 获取所有公开歌单 (作为测试数据源)
+GET {{baseUrl}}/song/playlists/public
+
+
+### 收藏歌单 (例如 ID 为 1)
+POST {{baseUrl}}/song/playlist/subscribe/1
+Authorization: Bearer {{authToken}}
+
+
+### 获取收藏的歌单列表
+GET {{baseUrl}}/song/playlists/subscribed
+Authorization: Bearer {{authToken}}
+
+
+### 取消收藏歌单 (例如 ID 为 1)
+POST {{baseUrl}}/song/playlist/unsubscribe/1
+Authorization: Bearer {{authToken}}
+

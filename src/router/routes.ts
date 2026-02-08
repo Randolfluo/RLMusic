@@ -70,6 +70,26 @@ const routes: any = [
     },
     component: () => import("@/views/Playlist/PrivatePlaylists.vue"),
   },
+  // 收藏歌单
+  {
+    path: "/likeplaylist",
+    name: "like-playlist",
+    meta: {
+      title: "收藏歌单",
+      needLogin: true,
+    },
+    component: () => import("@/views/Playlist/SubscribedPlaylists.vue"),
+  },
+  // 我喜欢的歌曲
+  {
+    path: "/like",
+    name: "like",
+    meta: {
+      title: "我喜欢的歌曲",
+      needLogin: true,
+    },
+    component: () => import("@/views/User/like.vue"),
+  },
   // 历史记录
   {
     path: "/history",

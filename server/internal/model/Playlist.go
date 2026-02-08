@@ -144,6 +144,10 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		return nil, err
 	}
 
+	// 增加播放计数
+	db.Model(&playlist).UpdateColumn("play_count", gorm.Expr("play_count + ?", 1))
+	playlist.PlayCount++
+
 	// 2. 获取该歌单下的歌曲总数
 	total := db.Model(&playlist).Association("Songs").Count()
 

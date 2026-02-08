@@ -1,0 +1,33 @@
+services:
+  # ---------------- Redis：房间时间线 / PubSub / 歌曲缓存 ----------------
+  redis:
+    image: redis:7-alpine          # 使用轻量级 Redis 7 镜像
+    container_name: music_redis    # 容器名字，方便 docker exec 进入
+    ports:
+      - "6379:6379"                # 映射端口，程序通过 localhost:6379 访问
+    volumes:
+      - redis_data:/data           # 持久化 Redis 数据（AOF 文件会存在这里）
+    # 开启 AOF 持久化（非常关键）
+    # 否则 Redis 重启后，你的“房间时间线”会全部丢失
+    command: redis-server --appendonly yes
+    restart: always                # Docker 重启时自动恢复容器
+
+  # ---------------- MongoDB：歌曲信息 / 聊天记录持久化 ----------------
+  mongo:
+    image: mongo:7                 # 官方 MongoDB 7 镜像
+    container_name: music_mongo
+    ports:
+      - "27017:27017"              # 映射端口，程序通过 localhost:27017 访问
+    environment:
+      # 初始化 root 账号（第一次启动时生效）
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpass
+    volumes:
+      - mongo_data:/data/db        # 持久化 MongoDB 数据
+    restart: always
+
+# ---------------- Docker 管理的持久化卷 ----------------
+# 不会因为容器删除而丢失数据
+volumes:
+  redis_data:
+  mongo_data:

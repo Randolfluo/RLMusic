@@ -522,6 +522,40 @@
                     }
                 },
                 {
+                    "name": "更新用户听歌时长",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{login.response.body.data.token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/user/duration",
+                            "host": [
+                                "{{baseUrl}}"
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"duration\": 60\n}\n\nDELETE {{baseUrl}}/song/history\nAuthorization: Bearer {{login.response.body.data.token}}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "获取歌词",
                     "request": {
                         "method": "GET",

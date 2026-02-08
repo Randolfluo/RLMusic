@@ -11,9 +11,10 @@
       </div>
     </div>
     <div class="center">
-      <router-link class="link" to="/">发现</router-link>
-      <router-link class="link" to="/search">搜索</router-link>
+      <router-link class="link link-home" to="/">发现</router-link>
+      <router-link class="link link-search" to="/search">搜索</router-link>
       <n-dropdown
+        class="link-discover-wrap"
         trigger="hover"
         size="large"
         :options="discoverOptions"
@@ -21,8 +22,9 @@
       >
         <router-link class="link" to="/discover">一起听歌</router-link>
       </n-dropdown>
-      <router-link class="link" to="/system-stats">系统信息</router-link>
+      <router-link class="link link-system" to="/system-stats">系统信息</router-link>
       <n-dropdown
+        class="link-user-wrap"
         trigger="hover"
         size="large"
         :options="userOptions"
@@ -158,17 +160,18 @@ const discoverOptions = ref([
 ]);
 const userOptions = computed(() => [
   {
-    label: "红心歌曲",
+    label: "我喜欢的音乐",
     key: "/like",
-  },
+  },  
+{
+    label: "收藏的歌单",
+    key: "/likeplaylist",
+  },  
   {
     label: "播放历史",
     key: "/history",
   },
-  {
-    label: "上传歌曲",
-    key: "/user/like",
-  },
+
 ]);
 const dropdownOptions = computed(() => [
   {
@@ -297,6 +300,13 @@ nav {
     @media (max-width: 990px) {
       flex: initial;
     }
+    // 移动端固定宽度，确保中间内容绝对居中
+    @media (max-width: 768px) {
+      flex: 0 0 auto; // 不再锁定宽度，允许根据内容收缩，或者设为 auto
+      min-width: 0;   // 允许缩小
+      margin-right: 8px; // 给一点间距
+      justify-content: flex-start;
+    }
     .logo {
       width: 30px;
       height: 30px;
@@ -335,24 +345,63 @@ nav {
     flex-direction: row;
     align-items: center;
     justify-content: center;
+    // 允许内容收缩，防止撑开
+    min-width: 0; 
+
     @media (max-width: 768px) {
-      display: none;
+      // 改为靠左对齐，这是解决左侧项目被遮挡的关键
+      // 配合 overflow-x: auto，用户可以滑动查看所有内容
+      justify-content: flex-start; 
+      flex: 1;                 
+      overflow-x: auto;        
+      scrollbar-width: none;   
+      &::-webkit-scrollbar {
+        display: none;         
+      }
     }
+    
     .link {
       display: block;
       text-decoration: none;
       color: var(--n-text-color);
       padding: 6px 16px;
-      margin: 0 2px;
+      margin: 0 4px; // 增加一点间距
       border-radius: 8px;
       transition: all 0.3s;
       cursor: pointer;
+      white-space: nowrap; // 强制不换行，防止文字竖排
+      flex-shrink: 0; // 防止在小屏幕被挤压消失
+
       &:hover {
         background-color: $mainColor;
         color: var(--n-color);
       }
       &:active {
         transform: scale(0.95);
+      }
+      /* 移动端缩小间距和字号 */
+      @media (max-width: 768px) {
+        padding: 6px 8px;  // 稍微减小内边距，以便放下更多内容
+        font-size: 15px;
+        font-weight: bold;
+        margin: 0 1px;     // 减小外边距
+        // 选中状态添加底部边框效果，看起来更像移动端 App
+        &.router-link-active {
+            background-color: transparent !important;
+            color: $mainColor !important;
+            position: relative;
+            &::after {
+                content: "";
+                position: absolute;
+                bottom: 2px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 16px;
+                height: 3px;
+                background-color: $mainColor;
+                border-radius: 2px;
+            }
+        }
       }
     }
 
@@ -368,6 +417,12 @@ nav {
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
+    // 移动端固定宽度，与左侧保持一致，实现平衡
+    @media (max-width: 768px) {
+      flex: 0 0 auto; // 同上，取消固定宽度
+      min-width: 0;
+      margin-left: 8px; // 给一点间距
+    }
     .avatar {
       width: 30px;
       min-width: 30px;

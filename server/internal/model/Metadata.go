@@ -13,6 +13,8 @@ type Artist struct {
 	Name        string `gorm:"type:varchar(255);not null;index" json:"name"` // 艺术家名称
 	Description string `gorm:"type:text" json:"description"`                 // 简介
 	Cover       string `gorm:"type:varchar(500)" json:"cover"`               // 封面URL
+
+	Songs []Song `gorm:"many2many:song_artists;" json:"songs,omitempty"`
 }
 
 // Album 专辑模型

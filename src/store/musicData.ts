@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { getSongTime } from "@/utils/timeTools";
 import { useUserDataStore } from "./userData";
-import { recordHistory } from "@/api/song";
+import { recordHistory, toggleLike, getLikedSongs } from "@/api/song";
+import { ResultCode } from "@/utils/request";
 
 export const useMusicDataStore = defineStore("musicData", {
   state: () => {
@@ -15,11 +16,11 @@ export const useMusicDataStore = defineStore("musicData", {
       // 播放状态
       playState: false,
       // 当前歌曲播放链接
-      playSongLink: null,
+      playSongLink: null as string | null,
       // 歌词偏移时间 (秒)
       lyricOffset: 0,
       // 当前歌曲歌词
-      playSongLyric: [],
+      playSongLyric: [] as any[],
       // 当前歌曲歌词播放索引
       playSongLyricIndex: 0,
       // 当前歌曲是否拥有翻译
@@ -33,7 +34,7 @@ export const useMusicDataStore = defineStore("musicData", {
       // 持久化数据
       persistData: {
         // 搜索历史
-        searchHistory: [],
+        searchHistory: [] as string[],
         // 是否处于私人 FM 模式
         personalFmMode: false,
         // 私人 FM 数据
@@ -41,7 +42,7 @@ export const useMusicDataStore = defineStore("musicData", {
         // 播放列表类型
         playListMode: "list",
         // 喜欢音乐列表
-        likeList: [],
+        likeList: [] as number[],
         // 播放列表
         playlists: [] as any[],
         // 当前歌曲索引
@@ -64,7 +65,7 @@ export const useMusicDataStore = defineStore("musicData", {
         // 列表状态
         playlistState: 0, // 0 顺序 1 单曲循环 2 随机
         // 播放历史
-        playHistory: [],
+        playHistory: [] as any[],
       },
     };
   },
@@ -234,7 +235,7 @@ export const useMusicDataStore = defineStore("musicData", {
     },
     // 更改当前歌曲播放链接
     setPlaySongLink(value: string) {
-      this.playSongLink = value;
+      this.playSongLink = value as string | null;
     },
     // 更改当前歌曲歌词
     setPlaySongLyric(value: any[]) {
@@ -246,19 +247,46 @@ export const useMusicDataStore = defineStore("musicData", {
         // TODO: Implement API logic
     },
     // 更改喜欢列表
-    changeLikeList(id: number, like: boolean) {
+    async changeLikeList(id: number, like: boolean) {
       const list = this.persistData.likeList;
+      // 乐观更新
       if (like) {
-        list.push(id);
+        if (!list.includes(id)) list.push(id);
       } else {
         const index = list.indexOf(id);
         if (index !== -1) list.splice(index, 1);
       }
       this.persistData.likeList = list;
+      
+      // 调用 API
+      try {
+        await toggleLike(id);
+      } catch (error) {
+        console.error("Toggle like failed", error);
+        // 回滚 (可选，这里简化处理暂不回滚，或者提示用户)
+        $message.error("操作失败");
+        // 实际应用中应该回滚状态
+        if (like) {
+            const index = list.indexOf(id);
+            if (index !== -1) list.splice(index, 1);
+        } else {
+            list.push(id);
+        }
+        this.persistData.likeList = list;
+      }
     },
     // 获取喜欢列表
-    setLikeList() {
-        // TODO: Implement API logic
+    async setLikeList() {
+        try {
+            // 获取所有喜欢的歌曲 (假设 limit 足够大)
+            const res: any = await getLikedSongs(1, 10000);
+            if (res.code === ResultCode.SUCCESS) {
+                const ids = res.data.list.map((song: any) => song.id);
+                this.persistData.likeList = ids;
+            }
+        } catch (error) {
+            console.error("Fetch liked songs failed", error);
+        }
     },
     setSearchHistory(text: string | null, clean: boolean = false) {
       if (clean) {

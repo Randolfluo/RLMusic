@@ -31,6 +31,49 @@ export const getUserPrivatePlaylists = () => {
 };
 
 /**
+ * 获取收藏的歌单列表
+ */
+export const getSubscribedPlaylists = () => {
+    return axios({
+        method: "GET",
+        url: "/song/playlists/subscribed",
+    });
+};
+
+/**
+ * 收藏歌单
+ * @param {string|number} id - 歌单ID
+ */
+export const subscribePlaylist = (id: string | number) => {
+    return axios({
+        method: "POST",
+        url: `/song/playlist/subscribe/${id}`,
+    });
+};
+
+/**
+ * 取消收藏歌单
+ * @param {string|number} id - 歌单ID
+ */
+export const unsubscribePlaylist = (id: string | number) => {
+    return axios({
+        method: "POST",
+        url: `/song/playlist/unsubscribe/${id}`,
+    });
+};
+
+/**
+ * 检查歌单是否已收藏
+ * @param {string|number} id - 歌单ID
+ */
+export const checkIsSubscribed = (id: string | number) => {
+    return axios({
+        method: "GET",
+        url: `/song/playlist/isSubscribed/${id}`,
+    });
+};
+
+/**
  * 获取公共歌单详情
  * @param {string|number} id - 歌单ID
  * @param {number} page - 页码

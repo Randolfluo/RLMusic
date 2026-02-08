@@ -39,8 +39,8 @@
 - [ ] 行为设置：完善最小化到托盘和关闭应用的相关选项
 
 //支持更多音乐拓展格式
-// 解决歌曲乱码
-//适应窗口大小
+// 专辑播放模式
+
 
 
 服务端运行
@@ -52,6 +52,11 @@ go run .\cmd\main.go
 pnpm dev
 客户端构建
 pnpm 
+
+用户添加的我喜欢的歌单字段，扫描时创建的我喜欢的歌单自动加入收藏歌单
+
+
+
 
 //添加歌曲播放组件跳转，组件在comoenent/player，接口位于request.http。bigplayer.vue是全屏播放组件
 
@@ -73,3 +78,81 @@ pnpm
 //支持多关键词匹配
 
 //修复自动登录功能
+
+
+
+
+聊天室模型：
+房主点击播放
+    ↓
+发送 NewTimeline 给服务器
+    ↓
+服务器写 Redis (version++)
+    ↓
+服务器 PUBLISH timeline
+    ↓
+所有客户端（含房主）收到
+    ↓
+Sync Scheduler 计算播放时间
+    ↓
+在未来精确时间点启动
+
+新用户加入房间：
+
+1. 从 Redis GET room timeline
+2. 立即开始对齐播放
+3. 再加入 websocket 广播
+
+同步数据结构
+RoomTimeline {
+  song_id: "xxx",
+  start_timestamp: 1700000000.235,   // 服务器时间
+  offset: 12.5,
+  paused: false,
+  owner_id: "u1001",
+  version: 42
+}
+不是请求-响应模型（Request/Response Thinking），而是状态广播模型（State Broadcast Model）
+房主 提交 新时间线
+服务器 覆盖 时间线
+服务器 广播 时间线
+
+HTTP与WebSocket
+HTTP 是“请求-响应”
+WebSocket 是“长连接、双向实时通信”
+
+Redis 时间线读写
+PubSub 广播:允许消息的发送者（发布者）将消息发送给多个接收者（订阅者）。用于服务器间同步
+房主操作
+   ↓
+服务器写 Timeline 到 Redis
+   ↓
+PUBLISH 通知
+   ↓
+所有 WebSocket 服务器收到
+   ↓
+读取 Timeline
+   ↓
+推给客户端
+
+
+| 领域           | 技术                       | 用途     | 是否关键 |
+| ------------ | ------------------------ | ------ | ---- |
+| WebSocket    | Gorilla / ws / socket.io | 实时连接   | ✅ 核心 |
+| Redis        | Timeline + Pub/Sub       | 时间线权威源 | ✅ 核心 |
+| MongoDB      | 歌曲 / 聊天持久化               | 数据存储   | ✅    |
+| NTP 时间校准     | 自实现                      | 播放精确同步 | ✅ 核心 |
+| 本地 Scheduler | 播放调度器                    | 精确启动播放 | ✅ 核心 |
+| JWT          | 鉴权                       | 房间权限   | ✅    |
+| Docker       | 部署                       | 环境一致   | ✅    |
+| k8s（未来）      | 扩展                       | 横向扩容   | ⭐    |
+
+1. 房间系统（Room）
+2. 时间线系统（Timeline）⭐最核心
+3. 聊天系统（Chat）
+4. 播放调度系统（Client Scheduler）⭐最难
+
+https://chatgpt.com/s/t_69875e32fe7c8191a6c1594adc92ccb5
+
+
+异步实现

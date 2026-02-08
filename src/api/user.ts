@@ -6,11 +6,8 @@ export interface UserInfo {
   email: string;
   avatar: string;
   last_login: string;
-  total_songs: number;
-  total_albums: number;
-  total_artists: number;
+  ip_src: string;
   total_duration: number;
-  favorite_song: string;
 }
 
 /**

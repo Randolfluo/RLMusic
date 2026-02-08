@@ -11,6 +11,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // 这个警告通常出现在开发环境中，因为 Vite 等构建工具需要使用 'unsafe-eval'
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
 
+// 屏蔽 Autofill 相关的终端报错
+app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Autofill')
+
 // 目录结构说明
 //
 // ├─┬ dist-electron
@@ -34,6 +37,10 @@ if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
 
 // Win10+ 通知设置应用ID
 if (process.platform === 'win32') app.setAppUserModelId('LocalMusicPlayer')
+
+// 屏蔽 Electron 常见的 Autofill 相关的终端报错
+// "Request Autofill.enable failed", "Request Autofill.setAddresses failed"
+app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Autofill,PasswordManager')
 
 // 单例模式锁，防止启动多个实例
 if (!app.requestSingleInstanceLock()) {

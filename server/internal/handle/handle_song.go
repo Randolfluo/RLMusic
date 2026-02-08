@@ -396,7 +396,12 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	db := GetDB(c)
 	var artist model.Artist
-	if err := db.First(&artist, idStr).Error; err != nil {
+	// 预加载歌曲及其关联信息
+	if err := db.Preload("Songs.Album").
+		Preload("Songs.Artists").
+		Preload("Songs.Cover").
+		Preload("Songs").
+		First(&artist, idStr).Error; err != nil {
 		ReturnError(c, g.ErrDbOp, "歌手不存在")
 		return
 	}
@@ -575,6 +580,56 @@ func (*SongAuth) ToggleLike(c *gin.Context) {
 	}
 }
 
+// GetLikedSongs 获取用户喜欢的歌曲列表
+func (*SongAuth) GetLikedSongs(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
+	db := GetDB(c)
+
+	// 1. Find "我喜欢的音乐" playlist
+	var playlist model.Playlist
+	err := db.Where("owner_id = ? AND title = ?", user.ID, "我喜欢的音乐").First(&playlist).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// No liked songs yet
+			ReturnSuccess(c, gin.H{
+				"list":  []model.Song{},
+				"total": 0,
+			})
+			return
+		}
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 2. Get songs in playlist
+	playlistDetail, err := model.GetPlaylistDetail(db, strconv.Itoa(playlist.ID), page, limit)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"list":  playlistDetail.Songs,
+		"total": playlistDetail.Total,
+	})
+}
+
 // GetPublicPlaylistDetail 获取公共歌单详情
 func (*SongAuth) GetPublicPlaylistDetail(c *gin.Context) {
 	idStr := c.Param("id")
@@ -723,4 +778,109 @@ func (*SongAuth) GetSongLyric(c *gin.Context) {
 		"tlyric": gin.H{"lyric": ""},
 		"source": "tag",
 	})
+}
+
+// SubscribePlaylist 收藏歌单
+func (*SongAuth) SubscribePlaylist(c *gin.Context) {
+	idStr := c.Param("id")
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	playlistID, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的歌单ID")
+		return
+	}
+
+	db := GetDB(c)
+	var playlist model.Playlist
+	if err := db.First(&playlist, playlistID).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	if err := db.Model(user).Association("SubscribedPlaylists").Append(&playlist); err != nil {
+		ReturnError(c, g.ErrDbOp, "收藏失败")
+		return
+	}
+
+	ReturnSuccess(c, gin.H{"message": "收藏成功"})
+}
+
+// UnsubscribePlaylist 取消收藏歌单
+func (*SongAuth) UnsubscribePlaylist(c *gin.Context) {
+	idStr := c.Param("id")
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	playlistID, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的歌单ID")
+		return
+	}
+
+	db := GetDB(c)
+	var playlist model.Playlist
+	if err := db.First(&playlist, playlistID).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	if err := db.Model(user).Association("SubscribedPlaylists").Delete(&playlist); err != nil {
+		ReturnError(c, g.ErrDbOp, "取消收藏失败")
+		return
+	}
+
+	ReturnSuccess(c, gin.H{"message": "取消收藏成功"})
+}
+
+// GetSubscribedPlaylists 获取收藏的歌单
+func (*SongAuth) GetSubscribedPlaylists(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	db := GetDB(c)
+	var playlists []model.Playlist
+
+	if err := db.Model(user).Association("SubscribedPlaylists").Find(&playlists); err != nil {
+		ReturnError(c, g.ErrDbOp, "获取收藏列表失败")
+		return
+	}
+
+	ReturnSuccess(c, playlists)
+}
+
+// CheckIsSubscribed 检查是否已收藏
+func (*SongAuth) CheckIsSubscribed(c *gin.Context) {
+	idStr := c.Param("id")
+	user := GetCurrentUser(c)
+	if user == nil {
+		// 未登录视为未收藏，但不报错，方便前端处理
+		ReturnSuccess(c, gin.H{"is_subscribed": false})
+		return
+	}
+
+	playlistID, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的歌单ID")
+		return
+	}
+
+	db := GetDB(c)
+	isSubscribed, err := model.IsPlaylistSubscribed(db, user.ID, playlistID)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, gin.H{"is_subscribed": isSubscribed})
 }

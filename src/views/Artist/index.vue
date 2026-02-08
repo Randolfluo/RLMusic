@@ -26,6 +26,12 @@
           </div>
         </div>
       </div>
+
+      <!-- 歌手歌曲列表 -->
+      <div class="artist-songs" v-if="artistInfo">
+        <n-divider title-placement="left">歌曲列表</n-divider>
+        <SongList :songs="artistInfo.songs || []" />
+      </div>
     </n-spin>
   </div>
 </template>
@@ -33,9 +39,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { useMessage, NImage, NEllipsis, NSpin } from "naive-ui";
+import { useMessage, NImage, NEllipsis, NSpin, NDivider } from "naive-ui";
 import { getArtistDetail } from "@/api/song";
 import { ResultCode } from "@/utils/request";
+import SongList from "@/components/DataList/SongList.vue";
 
 const route = useRoute();
 const message = useMessage();
@@ -121,6 +128,10 @@ onMounted(() => {
             max-width: 600px;
         }
     }
+  }
+
+  .artist-songs {
+    margin-top: 32px;
   }
 }
 </style>

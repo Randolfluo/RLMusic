@@ -95,9 +95,9 @@ func registerAuthHandler(r *gin.Engine) {
 	// 用户相关
 	user := auth.Group("/user")
 	{
-		user.DELETE("", userAuthAPI.DeleteUser)        // 注销用户
-		user.GET("/info", userAuthAPI.GetUserInfo)     // 获取用户信息
-		user.POST("/avatar", userAuthAPI.UploadAvatar) // 上传头像
+		user.DELETE("", userAuthAPI.DeleteUser)                     // 注销用户
+		user.GET("/info", userAuthAPI.GetUserInfo)                  // 获取用户信息
+		user.POST("/avatar", userAuthAPI.UploadAvatar)              // 上传头像
 		user.POST("/duration", userAuthAPI.UpdateListeningDuration) // 更新听歌时长
 	}
 
@@ -110,10 +110,19 @@ func registerAuthHandler(r *gin.Engine) {
 		song.GET("/playlists/user/public", songAuthAPI.GetUserPublicPlaylists)   // 获取用户公开歌单
 		song.GET("/playlists/user/private", songAuthAPI.GetUserPrivatePlaylists) // 获取用户私有歌单
 		song.GET("/playlist/private/:id", songAuthAPI.GetPrivatePlaylistDetail)  // 获取私有歌单详情
-		song.POST("/like/:id", songAuthAPI.ToggleLike)                           // 点赞/取消点赞
-		song.POST("/history", songAuthAPI.AddHistory)                            // 记录播放历史
-		song.GET("/history", songAuthAPI.GetHistory)                             // 获取播放历史
-		song.DELETE("/history", songAuthAPI.ClearHistory)                        // 清空播放历史
+
+		// 收藏歌单相关
+		song.POST("/playlist/subscribe/:id", songAuthAPI.SubscribePlaylist)     // 收藏歌单
+		song.POST("/playlist/unsubscribe/:id", songAuthAPI.UnsubscribePlaylist) // 取消收藏歌单
+		song.GET("/playlist/isSubscribed/:id", songAuthAPI.CheckIsSubscribed)   // 检查是否收藏
+		song.GET("/playlists/subscribed", songAuthAPI.GetSubscribedPlaylists)   // 获取收藏的歌单
+
+		song.POST("/like/:id", songAuthAPI.ToggleLike) // 点赞/取消点赞
+		song.GET("/like", songAuthAPI.GetLikedSongs)   // 获取喜欢的歌曲列表
+		song.POST("/history", songAuthAPI.AddHistory)  // 记录播放历史
+
+		song.GET("/history", songAuthAPI.GetHistory)      // 获取播放历史
+		song.DELETE("/history", songAuthAPI.ClearHistory) // 清空播放历史
 	}
 
 	// 系统相关

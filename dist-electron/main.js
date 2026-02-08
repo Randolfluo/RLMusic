@@ -6,6 +6,7 @@ import os from "node:os";
 const require$1 = createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
+app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill");
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
@@ -13,6 +14,7 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 if (os.release().startsWith("6.1")) app.disableHardwareAcceleration();
 if (process.platform === "win32") app.setAppUserModelId("LocalMusicPlayer");
+app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill,PasswordManager");
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);

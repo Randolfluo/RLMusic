@@ -31,41 +31,10 @@
 
       <n-divider />
 
-      <n-grid x-gap="24" y-gap="24" cols="2 600:4" style="margin-bottom: 24px;">
+      <n-grid x-gap="24" y-gap="24" cols="1 600:2" style="margin-bottom: 24px;">
         <n-gi>
-          <n-card size="small" :bordered="false" class="stat-card">
-              <n-statistic label="累计歌曲">
-                <template #prefix>
-                    <n-icon :component="Music" color="#18a058" />
-                </template>
-                {{ userInfoDetails.total_songs || 0 }}
-                <template #suffix>首</template>
-              </n-statistic>
-          </n-card>
-        </n-gi>
-        <n-gi>
-          <n-card size="small" :bordered="false" class="stat-card">
-            <n-statistic label="累计专辑">
-                <template #prefix>
-                    <n-icon :component="RecordDisc" color="#2080f0" />
-                </template>
-                {{ userInfoDetails.total_albums || 0 }}
-            </n-statistic>
-          </n-card>
-        </n-gi>
-        <n-gi>
-          <n-card size="small" :bordered="false" class="stat-card">
-             <n-statistic label="累计歌手">
-                <template #prefix>
-                    <n-icon :component="Voice" color="#f0a020" />
-                </template>
-                {{ userInfoDetails.total_artists || 0 }}
-            </n-statistic>
-          </n-card>
-        </n-gi>
-         <n-gi>
            <n-card size="small" :bordered="false" class="stat-card">
-              <n-statistic label="累计时长">
+              <n-statistic label="累计听歌时长">
                 <template #prefix>
                     <n-icon :component="Time" color="#d03050" />
                 </template>
@@ -73,27 +42,24 @@
               </n-statistic>
            </n-card>
         </n-gi>
+         <n-gi>
+           <n-card size="small" :bordered="false" class="stat-card">
+              <n-statistic label="IP 地址">
+                <template #prefix>
+                    <n-icon :component="Connection" color="#2080f0" />
+                </template>
+                {{ userInfoDetails.ip_src || '未知' }}
+              </n-statistic>
+           </n-card>
+        </n-gi>
       </n-grid>
+
       
-      <div class="favorite-section">
-         <n-card size="small" embedded :bordered="false" class="fav-card">
-             <n-space align="center" justify="center" vertical>
-                 <n-text depth="3">最喜爱的歌曲</n-text>
-                 <n-space align="center">
-                    <n-icon :component="Like" color="#d03050" size="24" />
-                    <span class="fav-song-name">{{ userInfoDetails.favorite_song || '暂无数据' }}</span>
-                 </n-space>
-             </n-space>
-         </n-card>
-      </div>
-      
+    
       <n-divider />
       
       <div class="actions">
         <n-space justify="center" size="large">
-          <n-button strong secondary type="primary" size="large" @click="$router.push('/user/like')">
-              我的喜欢/上传
-          </n-button>
           <n-button strong secondary type="error" size="large" @click="handleLogout">
               退出登录
           </n-button>
@@ -103,16 +69,15 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import { userStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useMessage, type UploadCustomRequestOptions } from "naive-ui";
 import { 
     Camera, 
-    Music, 
-    RecordDisc, 
-    Voice, 
     Time,
+    Connection,
     Like
 } from "@icon-park/vue-next";
 import axios from "@/utils/request"; 
@@ -263,22 +228,5 @@ const handleLogout = () => {
 .stat-card:hover {
     background: var(--n-color-target);
     transform: translateY(-2px);
-}
-
-.favorite-section {
-    text-align: center; 
-    margin-bottom: 24px;
-    padding: 0 20px;
-}
-
-.fav-card {
-    background-color: rgba(240, 160, 32, 0.05); 
-    border-radius: 12px;
-}
-
-.fav-song-name {
-    font-size: 18px;
-    font-weight: 600;
-    color: #d03050; 
 }
 </style>

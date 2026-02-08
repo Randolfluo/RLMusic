@@ -102,6 +102,22 @@ export function toggleLike(id: number | string) {
 }
 
 /**
+ * 获取我喜欢的歌曲列表
+ * @param {Number} page
+ * @param {Number} limit
+ */
+export const getLikedSongs = (page = 1, limit = 20) => {
+    return request({
+        method: "GET",
+        url: "/song/like",
+        params: {
+            page,
+            limit
+        }
+    });
+};
+
+/**
  * 获取歌曲详情
  * @param {Number|String} id - 歌曲 id
  */

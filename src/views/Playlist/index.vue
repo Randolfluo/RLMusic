@@ -28,6 +28,20 @@
             </template>
             播放全部
           </n-button>
+
+          <n-button 
+            v-if="user.userLogin && playlist.owner_id !== user.userData.userId"
+            round size="large" 
+            style="margin-left: 12px;" 
+            @click="handleSubscribe"
+            :loading="subLoading"
+          >
+            <template #icon>
+              <n-icon :component="Like" :color="isSubscribed ? '#d03050' : undefined" v-if="isSubscribed" />
+              <n-icon :component="Like" v-else />
+            </template>
+            {{ isSubscribed ? '取消收藏' : '收藏' }}
+          </n-button>
         </div>
       </div>
     </div>
@@ -60,19 +74,28 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { getPublicPlaylistDetail, getPrivatePlaylistDetail } from "@/api/playlist";
+import { 
+  getPublicPlaylistDetail, 
+  getPrivatePlaylistDetail,
+  subscribePlaylist,
+  unsubscribePlaylist,
+  checkIsSubscribed
+} from "@/api/playlist";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NButton, NIcon, NImage, NDivider, NSpin } from "naive-ui";
-import { Play } from "@icon-park/vue-next";
-import { musicStore } from "@/store";
+import { Play, Like } from "@icon-park/vue-next";
+import { musicStore, userStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
 
 const route = useRoute();
 const message = useMessage();
 const music = musicStore();
+const user = userStore();
 
 const loading = ref(false);
+const subLoading = ref(false); // 收藏按钮loading
+const isSubscribed = ref(false); // 是否已收藏
 const playlist = ref<any>({});
 const page = ref(1);
 const limit = ref(30);
@@ -94,6 +117,7 @@ const fetchPlaylistDetail = async (id: string) => {
       const res = await getPublicPlaylistDetail(id, page.value, limit.value);
       if (res.code === ResultCode.SUCCESS) {
         playlist.value = res.data;
+        checkSubscribedStatus(id);
         return;
       }
     } catch (e) {
@@ -104,6 +128,7 @@ const fetchPlaylistDetail = async (id: string) => {
     const res = await getPrivatePlaylistDetail(id, page.value, limit.value);
     if (res.code === ResultCode.SUCCESS) {
       playlist.value = res.data;
+      checkSubscribedStatus(id);
     } else {
       // 如果都失败了
       message.error(res.message || "获取歌单详情失败");
@@ -114,6 +139,50 @@ const fetchPlaylistDetail = async (id: string) => {
     loading.value = false;
   }
 };
+
+const checkSubscribedStatus = async (id: string) => {
+  if (!user.userLogin) return;
+  // 如果是自己的歌单，不需要检查（也不显示按钮）
+  // 但此时 playlist.value 已经赋值，可以判断。不过 api 调用是异步的，不影响
+  try {
+      const res = await checkIsSubscribed(id);
+      if (res.code === ResultCode.SUCCESS) {
+          isSubscribed.value = res.data.is_subscribed;
+      }
+  } catch (e) {
+      console.error(e);
+  }
+}
+
+const handleSubscribe = async () => {
+    if (!user.userLogin) {
+        message.warning("请先登录");
+        return;
+    }
+    const id = playlist.value.id;
+    subLoading.value = true;
+    try {
+        let res;
+        if (isSubscribed.value) {
+            // 取消收藏
+            res = await unsubscribePlaylist(id);
+        } else {
+            // 收藏
+            res = await subscribePlaylist(id);
+        }
+        
+        if (res.code === ResultCode.SUCCESS) {
+            isSubscribed.value = !isSubscribed.value;
+            message.success(isSubscribed.value ? "收藏成功" : "已取消收藏");
+        } else {
+            message.error(res.message || "操作失败");
+        }
+    } catch (e) {
+        message.error("操作失败");
+    } finally {
+        subLoading.value = false;
+    }
+}
 
 const onPageChange = (val: number) => {
   page.value = val;

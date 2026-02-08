@@ -21,12 +21,12 @@ type User struct {
 	Avatar            string `gorm:"type:varchar(255)"` // 头像
 	ListeningDuration int64  `gorm:"default:0"`         // 累计听歌时长 (播放产生)
 	TotalDuration     int64  `gorm:"default:0"`         // 歌曲总时长 (扫描产生)
-	FavoriteSong      string `gorm:"type:varchar(255)"` // 最喜爱的歌曲
+
+	SubscribedPlaylists []Playlist `gorm:"many2many:user_subscribed_playlists;" json:"subscribed_playlists,omitempty"` // 收藏的歌单
 
 	LastLogin *time.Time
 	IsDelete  bool
-	// IPAddr    string    `gorm:"type:varchar(20)" json:"ip_addr"`
-	// IPSrc     string    `gorm:"type:varchar(50)" json:"ip_src"`
+	IPSrc     string `gorm:"type:varchar(50)" json:"ip_src"`
 }
 
 // GetUserAuthInfoByName 根据用户名获取用户信息
@@ -44,9 +44,14 @@ func GetUserAuthInfoByName(db *gorm.DB, name string) (*User, error) {
 }
 
 // UpdateUserLoginInfo 更新用户登录信息
-func UpdateUserLoginInfo(db *gorm.DB, id int) error {
+func UpdateUserLoginInfo(db *gorm.DB, id int, ip string) error {
 	now := time.Now()
-	return db.Model(&User{}).Where("id = ? AND is_delete = ?", id, false).Update("last_login", now).Error
+	// 更新 LastLogin 和 IPSrc
+	return db.Model(&User{}).Where("id = ? AND is_delete = ?", id, false).
+		Updates(map[string]interface{}{
+			"last_login": now,
+			"ip_src":     ip,
+		}).Error
 }
 
 // UpdateUserAvatar 更新用户头像
@@ -119,4 +124,17 @@ func RenameSoftDeletedUser(db *gorm.DB, username string) error {
 // UpdateListeningDuration 增加用户累计听歌时长
 func UpdateListeningDuration(db *gorm.DB, id int, duration int64) error {
 	return db.Model(&User{}).Where("id = ?", id).Update("listening_duration", gorm.Expr("listening_duration + ?", duration)).Error
+}
+
+// IsPlaylistSubscribed 检查用户是否收藏了指定歌单
+func IsPlaylistSubscribed(db *gorm.DB, userID int, playlistID int) (bool, error) {
+	var count int64
+	// 关联表名为 user_subscribed_playlists (在 User 结构体 tag 中定义)
+	err := db.Table("user_subscribed_playlists").
+		Where("user_id = ? AND playlist_id = ?", userID, playlistID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

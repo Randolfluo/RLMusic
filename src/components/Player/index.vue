@@ -489,6 +489,19 @@ watch(
   }
 );
 
+// 监听用户登录状态
+watch(
+  () => user.userLogin,
+  (val) => {
+    if (val) {
+      music.setLikeList();
+    } else {
+      music.persistData.likeList = [];
+    }
+  },
+  { immediate: true }
+);
+
 // 监听歌曲进度更新
 // watch(
 //   () => music.getPlaySongTime,
