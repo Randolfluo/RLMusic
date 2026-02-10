@@ -90,6 +90,7 @@ export default ({ mode }: ConfigEnv) => {
         "/api": {
           target: VITE_MUSIC_API,  // 从环境变量读取API地址
           changeOrigin: true,  // 改变请求源
+          ws: true, // 开启 WebSocket 代理支持
           // rewrite: (path) => path.replace(/^\/api/, "")  // 重写路径
         },
         "/covers": {

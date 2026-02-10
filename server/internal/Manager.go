@@ -5,6 +5,7 @@ import (
 	"server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/swag/example/basic/docs"
@@ -20,10 +21,14 @@ var (
 	fileAuthAPI   = &handle.FileAuth{}
 	systemAuthAPI = &handle.SystemAuth{}
 	songAuthAPI   = &handle.SongAuth{}
+	wsAuthAPI     *handle.WSAuth
 )
 
 // RegisterHandlers 注册所有路由处理器
-func RegisterHandlers(r *gin.Engine) {
+func RegisterHandlers(r *gin.Engine, rdb *redis.Client) {
+	// 初始化 WebSocket 处理器
+	wsAuthAPI = handle.NewWSAuth(rdb)
+
 	// 配置Swagger
 	docs.SwaggerInfo.BasePath = apiBasePath
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -79,6 +84,12 @@ func registerBaseHandler(r *gin.Engine) {
 	{
 		system.GET("/stats", systemAuthAPI.GetStats) // 合并后的接口
 	}
+
+	// WebSocket
+	ws := base.Group("/ws")
+	{
+		ws.GET("/chat", wsAuthAPI.HandleWS)
+	}
 }
 
 // registerAuthHandler 注册需要JWT认证的路由
@@ -130,5 +141,4 @@ func registerAuthHandler(r *gin.Engine) {
 	{
 		system.POST("/config", systemAuthAPI.UpdateConfig)
 	}
-
 }

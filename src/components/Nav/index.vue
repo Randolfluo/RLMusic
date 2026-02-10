@@ -20,7 +20,7 @@
         :options="discoverOptions"
         @select="menuSelect"
       >
-        <router-link class="link" to="/discover">一起听歌</router-link>
+        <router-link class="link" to="/listen-together">一起听歌</router-link>
       </n-dropdown>
       <router-link class="link link-system" to="/system-stats">系统信息</router-link>
       <n-dropdown

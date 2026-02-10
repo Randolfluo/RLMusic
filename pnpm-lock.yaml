@@ -14,6 +14,9 @@ importers:
       '@ivanv/vue-collapse-transition':
         specifier: ^1.0.2
         version: 1.0.2
+      '@vicons/carbon':
+        specifier: ^0.13.0
+        version: 0.13.0
       artplayer:
         specifier: ^5.3.0
         version: 5.3.0
@@ -1227,6 +1230,9 @@ packages:
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
+
+  '@vicons/carbon@0.13.0':
+    resolution: {integrity: sha512-Z/jExyyS4gsXJc66oTqV/j98nsaiX2JlQ0IUwu9Ms3rztf8VOHEQRuX8Jey1/zbxJpFY/tU+bWvKPRFYGIvCWQ==}
 
   '@vicons/material@0.13.0':
     resolution: {integrity: sha512-lKVxFNprM+CaBkUH3gt6VjIeiMsKQl2zARQMwTCZruQl2vRHzyeZiKeCflWS99CEfv2JzX/6y697smxlzyxcVw==}
@@ -4643,6 +4649,8 @@ snapshots:
     dependencies:
       '@types/node': 24.10.9
     optional: true
+
+  '@vicons/carbon@0.13.0': {}
 
   '@vicons/material@0.13.0': {}
 

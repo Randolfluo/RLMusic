@@ -57,5 +57,15 @@ Thumbs.db
 server/data/
 server/basic/
 server/logs/
+server/log/
+server/config.yml
+server/config.toml
+server/.env
 
+# IDEs
+.trae/*
+.VsCodeCounter/*
 
+# Temporary
+tmp/
+temp/

@@ -1,5 +1,14 @@
 <template>
   <div class="home">
+    <div class="banner-section" :style="bannerStyle" @click="router.push('/listen-together')">
+      <div class="banner-content">
+        <h3>一起听歌</h3>
+        <p>与好友实时同步听歌，分享音乐的快乐</p>
+      </div>
+      <div class="banner-icon">
+        <n-icon :component="MusicOne" size="48" />
+      </div>
+    </div>
 
     <div class="section-title">
       <h2>公共歌单</h2>
@@ -46,14 +55,23 @@ import { getPublicPlaylists, getUserPrivatePlaylists } from "@/api/playlist";
 import SystemStats from "@/components/Home/SystemStats.vue";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import { ResultCode } from "@/utils/request";
-import { Right } from "@icon-park/vue-next";
-import { useMessage } from "naive-ui";
+import { Right, MusicOne } from "@icon-park/vue-next";
+import { useMessage, NIcon } from "naive-ui";
 import { useRouter } from "vue-router";
 import { useUserDataStore } from "@/store/userData";
+import { useThemeVars } from "naive-ui";
+import { computed } from "vue";
 
 const router = useRouter();
 const message = useMessage();
 const userStore = useUserDataStore();
+const themeVars = useThemeVars();
+
+const bannerStyle = computed(() => {
+  return {
+    background: `linear-gradient(135deg, ${themeVars.value.primaryColor} 0%, ${themeVars.value.infoColor} 100%)`
+  };
+});
 
 const publicLoading = ref(false);
 const publicPlaylists = ref<any[]>([]);
@@ -101,28 +119,66 @@ const getPrivateList = async () => {
 <style scoped lang="scss">
 .home {
   padding: 24px;
-  .section-title {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    h2 {
+}
+
+.banner-section {
+  /* background: linear-gradient(135deg, var(--n-color-primary) 0%, color-mix(in srgb, var(--n-color-primary), black 10%) 100%); */
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .banner-content {
+    h3 {
       font-size: 24px;
+      margin: 0 0 8px 0;
       font-weight: bold;
+    }
+    p {
       margin: 0;
-      position: relative;
-      padding-left: 10px;
-      &::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 4px;
-        height: 18px;
-        background-color: var(--n-color-primary);
-        border-radius: 2px;
-      }
+      opacity: 0.9;
+      font-size: 14px;
+    }
+  }
+
+  .banner-icon {
+    opacity: 0.8;
+  }
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  
+  h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    position: relative;
+    padding-left: 12px;
+    
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 16px;
+      background-color: var(--n-color-primary);
+      border-radius: 2px;
     }
   }
 }

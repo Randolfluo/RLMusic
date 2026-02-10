@@ -1,5 +1,15 @@
+<!-- 
+  SongList.vue
+  功能：歌曲列表组件
+  说明：
+    - 展示歌曲列表，支持多种视图模式（缩略图、简洁）
+    - 提供歌曲播放、跳转歌手/专辑详情等功能
+    - 支持分页加载
+    - 支持右键菜单操作（播放、喜欢、下载等）
+-->
 <template>
   <div class="song-list-component">
+    <!-- 列表控制栏（右上角视图切换） -->
     <div class="list-control">
       <div class="left">
         <!-- Slot for left side controls (e.g. Play All button if moved here, or just empty) -->
@@ -31,6 +41,7 @@
       </div>
     </div>
 
+    <!-- 歌曲数据表格 -->
     <n-data-table
       :columns="columns"
       :data="songs"
@@ -40,19 +51,33 @@
       :loading="loading"
     />
     
+    <!-- 空状态显示 -->
     <div v-if="!loading && songs.length === 0" class="empty">
       <n-empty description="暂无歌曲" />
     </div>
+
+    <!-- 右键菜单 -->
+    <n-dropdown
+      placement="bottom-start"
+      trigger="manual"
+      :x="dropdownX"
+      :y="dropdownY"
+      :options="menuOptions"
+      :show="showDropdown"
+      :on-clickoutside="onClickOutside"
+      @select="handleSelect"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h } from "vue";
+import { ref, computed, h, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty } from "naive-ui";
-import { HamburgerButton, Pic } from "@icon-park/vue-next";
+import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage } from "naive-ui";
+import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, Download, FolderPlus, Copy } from "@icon-park/vue-next";
 import { musicStore, settingStore } from "@/store";
 
+// Props 定义
 const props = defineProps({
   songs: {
     type: Array as () => any[],
@@ -76,7 +101,116 @@ const router = useRouter();
 const music = musicStore();
 const setting = settingStore();
 const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
+const message = useMessage();
+const showDropdown = ref(false);
+const dropdownX = ref(0);
+const dropdownY = ref(0);
+const currentSong = ref<any>(null);
 
+// 渲染图标辅助函数
+const renderIcon = (icon: any, color?: string) => {
+  return () => h(NIcon, { color }, { default: () => h(icon) });
+};
+
+// 右键菜单选项配置
+const menuOptions = computed(() => {
+    if (!currentSong.value) return [];
+    const isLiked = music.getSongIsLike(currentSong.value.id);
+    return [
+        {
+            label: '播放',
+            key: 'play',
+            icon: renderIcon(PlayOne)
+        },
+        {
+            label: '下一首播放',
+            key: 'play-next',
+            icon: renderIcon(PlayTwo)
+        },
+        {
+            type: 'divider',
+            key: 'd1'
+        },
+        {
+            label: isLiked ? '取消喜欢' : '喜欢',
+            key: 'like',
+            icon: renderIcon(Like, isLiked ? '#d03050' : undefined)
+        },
+        {
+            label: '添加到歌单',
+            key: 'add-to-playlist',
+            icon: renderIcon(FolderPlus)
+        },
+        {
+            label: '下载',
+            key: 'download',
+            icon: renderIcon(Download)
+        },
+        {
+            label: '复制链接',
+            key: 'copy-link',
+            icon: renderIcon(Copy)
+        }
+    ];
+});
+
+// 处理右键点击事件
+const handleContextMenu = (e: MouseEvent, row: any) => {
+    e.preventDefault();
+    showDropdown.value = false;
+    nextTick(() => {
+        currentSong.value = row;
+        showDropdown.value = true;
+        dropdownX.value = e.clientX;
+        dropdownY.value = e.clientY;
+    });
+};
+
+// 点击外部关闭右键菜单
+const onClickOutside = () => {
+    showDropdown.value = false;
+};
+
+// 处理右键菜单选择
+const handleSelect = (key: string) => {
+    showDropdown.value = false;
+    const song = currentSong.value;
+    if (!song) return;
+
+    switch (key) {
+        case 'play':
+            // 播放当前歌曲
+            const index = props.songs.findIndex(s => s.id === song.id);
+            if (index !== -1) {
+                 const tracks = mapSongsToPlayer(props.songs);
+                 music.setPlaylists(tracks);
+                 music.setPlaySongIndex(index);
+                 music.setPlayState(true);
+            }
+            break;
+        case 'play-next':
+            message.info('已添加到下一首播放 (功能开发中)');
+            break;
+        case 'like':
+            const isLiked = music.getSongIsLike(song.id);
+            music.changeLikeList(song.id, !isLiked);
+            break;
+        case 'add-to-playlist':
+            message.info('添加到歌单 (功能开发中)');
+            break;
+        case 'download':
+            message.info('开始下载 (功能开发中)');
+            break;
+        case 'copy-link':
+             const link = `${window.location.origin}/song/${song.id}`;
+             navigator.clipboard.writeText(link).then(() => {
+                 message.success('链接已复制');
+             });
+            break;
+    }
+};
+
+// 表格列配置
 const columns = computed(() => {
   const baseColumns: any[] = [
     {
@@ -199,6 +333,7 @@ const columns = computed(() => {
   return baseColumns;
 });
 
+// 格式化时长
 const formatDuration = (seconds: number) => {
   if (!seconds) return "00:00";
   const m = Math.floor(seconds / 60);
@@ -206,7 +341,8 @@ const formatDuration = (seconds: number) => {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
-const rowProps = (_: any, index: number) => {
+// 行属性配置 (点击播放、右键菜单)
+const rowProps = (row: any, index: number) => {
   return {
     style: "cursor: pointer;",
     onClick: () => {

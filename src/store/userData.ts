@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { useChatDataStore } from "./chatData";
 
 export const useUserDataStore = defineStore("userData", {
   state: () => {
@@ -23,6 +24,9 @@ export const useUserDataStore = defineStore("userData", {
   },
   actions: {
     userLogOut() {
+      const chatStore = useChatDataStore();
+      chatStore.stopListen();
+      
       this.userLogin = false;
       this.userData = {
         avatarUrl: "",

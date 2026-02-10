@@ -83,5 +83,6 @@ declare module 'vue' {
     SearchInp: typeof import('./src/components/SearchInp/index.vue')['default']
     SongList: typeof import('./src/components/DataList/SongList.vue')['default']
     SystemStats: typeof import('./src/components/Home/SystemStats.vue')['default']
+    WebSocketDebug: typeof import('./src/components/WebSocketDebug.vue')['default']
   }
 }

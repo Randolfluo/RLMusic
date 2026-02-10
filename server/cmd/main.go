@@ -20,7 +20,7 @@ func main() {
 
 	_ = server.InitLogger(conf)     // 初始化日志
 	db := server.InitDatabase(conf) // 初始化数据库
-	//rdb := server.InitRedis(conf)   // 初始化缓存
+	rdb := server.InitRedis(conf)   // 初始化缓存
 
 	gin.SetMode(conf.Server.Mode)
 	r := gin.New()
@@ -30,13 +30,13 @@ func main() {
 
 	//r.Use(middleware.CORS())
 	r.Use(middleware.WithGormDB(db))
-	//r.Use(middleware.WithRedisDB(rdb))
+	r.Use(middleware.WithRedisDB(rdb))
 	//r.Use(middleware.WithCookieStore(conf.Session.Name, conf.Session.Salt))
 
 	// 静态资源: 封面图
 	r.Static("/covers", "./data/covers")
 
-	server.RegisterHandlers(r)
+	server.RegisterHandlers(r, rdb)
 
 	//运行服务
 	serverAddr := conf.Server.Port

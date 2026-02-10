@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -159,19 +161,19 @@ func initAdminUser(db *gorm.DB) {
 	}
 }
 
-// // 根据配置文件初始化 Redis
-// func InitRedis(conf *g.Config) *redis.Client {
-// 	rdb := redis.NewClient(&redis.Options{
-// 		Addr:     conf.Redis.Addr,
-// 		Password: conf.Redis.Password,
-// 		DB:       conf.Redis.DB,
-// 	})
+// 根据配置文件初始化 Redis
+func InitRedis(conf *g.Config) *redis.Client {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     conf.Redis.Addr,
+		Password: conf.Redis.Password,
+		DB:       conf.Redis.DB,
+	})
 
-// 	ctx := context.Background()
-// 	if err := rdb.Ping(ctx).Err(); err != nil {
-// 		log.Fatal("Redis 连接失败:", err)
-// 	}
+	ctx := context.Background()
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		log.Fatal("Redis 连接失败:", err)
+	}
 
-// 	log.Printf("Redis 连接成功 地址:%s DB:%d", conf.Redis.Addr, conf.Redis.DB)
-// 	return rdb
-// }
+	log.Printf("Redis 连接成功 地址:%s DB:%d", conf.Redis.Addr, conf.Redis.DB)
+	return rdb
+}

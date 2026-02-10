@@ -17,23 +17,25 @@ type History struct {
 // AddHistory 添加或更新播放历史
 func AddHistory(db *gorm.DB, userID int, songID int) error {
 	var history History
-	err := db.Where("user_id = ? AND song_id = ?", userID, songID).First(&history).Error
-	switch err {
-	case nil:
+	// 使用 Find 替代 First，避免记录不存在时打印错误日志
+	result := db.Where("user_id = ? AND song_id = ?", userID, songID).Limit(1).Find(&history)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected > 0 {
 		// Update existing record
 		history.CreatedAt = time.Now()
 		return db.Save(&history).Error
-	case gorm.ErrRecordNotFound:
-		// Create new record
-		history = History{
-			UserID:    userID,
-			SongID:    songID,
-			CreatedAt: time.Now(),
-		}
-		return db.Create(&history).Error
-	default:
-		return err
 	}
+
+	// Create new record
+	history = History{
+		UserID:    userID,
+		SongID:    songID,
+		CreatedAt: time.Now(),
+	}
+	return db.Create(&history).Error
 }
 
 // GetUserHistory 获取用户播放历史
