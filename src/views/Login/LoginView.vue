@@ -49,9 +49,12 @@
               </template>
             </n-input>
           </n-form-item>
-          <!-- 记住密码 -->
+          <!-- 记住密码 / 自动登录 -->
           <n-form-item>
-            <n-checkbox v-model:checked="rememberMe">记住密码</n-checkbox>
+            <div style="display: flex; gap: 16px;">
+              <n-checkbox v-model:checked="rememberMe">记住密码</n-checkbox>
+              <n-checkbox v-model:checked="autoLogin">自动登录</n-checkbox>
+            </div>
           </n-form-item>
           <n-form-item>
             <n-button style="width: 100%" type="primary" @click="handleLogin" :loading="loading">
@@ -128,6 +131,7 @@ const user = userStore();
 const message = useMessage();
 const loading = ref(false);
 const rememberMe = ref(false); // 记住密码
+const autoLogin = ref(false);  // 自动登录
 
 const loginFormRef = ref(null);
 const registerFormRef = ref(null);
@@ -161,6 +165,12 @@ const registerForm = reactive({
 onMounted(() => {
     const savedUser = localStorage.getItem("remember_user");
     const savedPass = localStorage.getItem("remember_pass");
+    const savedAutoLogin = localStorage.getItem("auto_login");
+    
+    if (savedAutoLogin === 'true') {
+        autoLogin.value = true;
+    }
+
     if (savedUser && savedPass) {
         loginForm.username = savedUser;
         try {
@@ -194,13 +204,17 @@ const handleLogin = (e) => {
           // 使用 sessionStorage 存储 token，这样每次关闭应用后 token 会自动清除，实现“每次打开由于没有token需要重新登录”
           sessionStorage.setItem("token", res.data.token); 
           
-          if (rememberMe.value) {
+          // 如果勾选了自动登录，则强制记住密码
+          if (rememberMe.value || autoLogin.value) {
             localStorage.setItem("remember_user", loginForm.username);
             localStorage.setItem("remember_pass", aesEncrypt(loginForm.password));
           } else {
             localStorage.removeItem("remember_user");
             localStorage.removeItem("remember_pass");
           }
+          
+          localStorage.setItem("auto_login", String(autoLogin.value));
+
           router.push("/");
         } else {
           message.error(res.msg || "登录失败");

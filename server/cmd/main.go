@@ -14,7 +14,7 @@ import (
 
 func main() {
 	g.StartTime = time.Now()
-	configPath := flag.String("c", "config.toml", "配置文件路径")
+	configPath := flag.String("c", "config.yml", "配置文件路径")
 	flag.Parse()
 	conf := g.ReadConfig(*configPath)
 

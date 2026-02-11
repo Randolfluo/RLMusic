@@ -46,6 +46,56 @@ type WSServer struct {
 	RDB *redis.Client  // Redis 客户端
 }
 
+// leaveRoom 处理用户离开房间的逻辑
+func (wsServer *WSServer) leaveRoom(s *melody.Session, roomIdStr string, userObj interface{}) {
+	userId, _ := s.Get("userId")
+	userIdStr := fmt.Sprintf("%v", userId)
+
+	// 从 Redis 中移除用户
+	wsServer.RDB.HDel(context.Background(), fmt.Sprintf("room:%s:members", roomIdStr), userIdStr)
+
+	// 检查是否是房主离开
+	ownerKey := fmt.Sprintf("room:%s:owner", roomIdStr)
+	currentOwner, _ := wsServer.RDB.Get(context.Background(), ownerKey).Result()
+	if currentOwner == userIdStr {
+		// 房主离开，删除房主键
+		wsServer.RDB.Del(context.Background(), ownerKey)
+
+		// 尝试移交房主给房间内其他人
+		// 获取所有成员
+		membersMap, _ := wsServer.RDB.HGetAll(context.Background(), fmt.Sprintf("room:%s:members", roomIdStr)).Result()
+		if len(membersMap) > 0 {
+			// 随机选取一个新房主
+			for newOwnerId := range membersMap {
+				wsServer.RDB.Set(context.Background(), ownerKey, newOwnerId, 0)
+				break
+			}
+		} else {
+			// 房间没人了，清理时间线和活跃房间列表
+			wsServer.RDB.Del(context.Background(), fmt.Sprintf("room:%s:timeline", roomIdStr))
+			wsServer.RDB.SRem(context.Background(), "active_rooms", roomIdStr)
+		}
+	}
+
+	// 构造离开房间消息
+	leaveMsg := WSMessage{
+		Type: MsgTypeLeaveRoom,
+		Payload: map[string]interface{}{
+			"roomId": roomIdStr,
+			"user":   userObj,
+		},
+	}
+
+	// 广播离开消息
+	if msgBytes, err := json.Marshal(leaveMsg); err == nil {
+		wsServer.M.Broadcast(msgBytes)
+	}
+
+	// 广播更新后的成员列表和房间信息
+	wsServer.BroadcastRoomMembers(roomIdStr)
+	wsServer.BroadcastRoomInfo(roomIdStr)
+}
+
 // NewWSServer 创建并初始化一个新的 WebSocket 服务端
 func NewWSServer(rdb *redis.Client) *WSServer {
 	m := melody.New()
@@ -66,7 +116,6 @@ func NewWSServer(rdb *redis.Client) *WSServer {
 
 		if userId != nil && exists {
 			rooms := roomsInterface.([]string)
-			userIdStr := fmt.Sprintf("%v", userId)
 
 			var userObj interface{}
 			if userJson != nil {
@@ -75,49 +124,7 @@ func NewWSServer(rdb *redis.Client) *WSServer {
 
 			// 遍历用户所在的所有房间，执行离开逻辑
 			for _, roomIdStr := range rooms {
-				// 从 Redis 中移除用户
-				wsServer.RDB.HDel(context.Background(), fmt.Sprintf("room:%s:members", roomIdStr), userIdStr)
-
-				// 检查是否是房主离开
-				ownerKey := fmt.Sprintf("room:%s:owner", roomIdStr)
-				currentOwner, _ := wsServer.RDB.Get(context.Background(), ownerKey).Result()
-				if currentOwner == userIdStr {
-					// 房主离开，删除房主键
-					wsServer.RDB.Del(context.Background(), ownerKey)
-
-					// 尝试移交房主给房间内其他人
-					// 获取所有成员
-					membersMap, _ := wsServer.RDB.HGetAll(context.Background(), fmt.Sprintf("room:%s:members", roomIdStr)).Result()
-					if len(membersMap) > 0 {
-						// 随机选取一个新房主
-						for newOwnerId := range membersMap {
-							wsServer.RDB.Set(context.Background(), ownerKey, newOwnerId, 0)
-							break
-						}
-					} else {
-						// 房间没人了，清理时间线和活跃房间列表
-						wsServer.RDB.Del(context.Background(), fmt.Sprintf("room:%s:timeline", roomIdStr))
-						wsServer.RDB.SRem(context.Background(), "active_rooms", roomIdStr)
-					}
-				}
-
-				// 构造离开房间消息
-				leaveMsg := WSMessage{
-					Type: MsgTypeLeaveRoom,
-					Payload: map[string]interface{}{
-						"roomId": roomIdStr,
-						"user":   userObj,
-					},
-				}
-
-				// 广播离开消息
-				if msgBytes, err := json.Marshal(leaveMsg); err == nil {
-					m.Broadcast(msgBytes)
-				}
-
-				// 广播更新后的成员列表和房间信息
-				wsServer.BroadcastRoomMembers(roomIdStr)
-				wsServer.BroadcastRoomInfo(roomIdStr)
+				wsServer.leaveRoom(s, roomIdStr, userObj)
 			}
 		}
 	})
@@ -261,18 +268,16 @@ func NewWSServer(rdb *redis.Client) *WSServer {
 							rooms = []string{}
 						}
 
-						// 避免重复加入
-						alreadyIn := false
+						// 单房间模式：如果已经在其他房间，先离开
 						for _, r := range rooms {
-							if r == roomId {
-								alreadyIn = true
-								break
+							if r != roomId {
+								wsServer.leaveRoom(s, r, user)
 							}
 						}
-						if !alreadyIn {
-							rooms = append(rooms, roomId)
-							s.Set("rooms", rooms)
-						}
+
+						// 重置房间列表，仅包含当前新加入的房间
+						rooms = []string{roomId}
+						s.Set("rooms", rooms)
 
 						s.Set("userId", userId)
 

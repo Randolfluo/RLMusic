@@ -88,7 +88,7 @@ export const useChatDataStore = defineStore("chatData", {
       
       switch (msg.type) {
         case MsgType.ROOM_LIST_RES:
-          this.availableRooms = msg.payload;
+          this.availableRooms = Array.isArray(msg.payload) ? msg.payload : [];
           break;
 
         case MsgType.CHAT:
@@ -137,13 +137,27 @@ export const useChatDataStore = defineStore("chatData", {
         case MsgType.LEAVE_ROOM:
           if (msg.payload && msg.payload.roomId) {
             const rid = msg.payload.roomId;
-            this.initRoomData(rid);
-            this.roomData[rid].messages.push({
-              type: 'system',
-              content: `${msg.payload.user?.nickname || 'Someone'} 离开了群聊`,
-              sender: 'System',
-              isMine: false
-            });
+            const leavingUser = msg.payload.user;
+            const myId = user.getUserData.userId;
+
+            // 检查是否是自己离开
+            if (leavingUser && String(leavingUser.id) === String(myId)) {
+               this.joinedRooms = this.joinedRooms.filter(id => id !== rid);
+               delete this.roomData[rid];
+               if (this.currentRoomId === rid) {
+                   this.currentRoomId = '';
+               }
+               // if (window.$message) window.$message.info(`已退出房间: ${rid}`);
+            } else {
+                // 别人离开
+                this.initRoomData(rid);
+                this.roomData[rid].messages.push({
+                  type: 'system',
+                  content: `${leavingUser?.nickname || 'Someone'} 离开了群聊`,
+                  sender: 'System',
+                  isMine: false
+                });
+            }
           }
           break;
           
@@ -157,6 +171,12 @@ export const useChatDataStore = defineStore("chatData", {
     createRoom(name: string) {
       if (!name.trim()) return;
       this.joinRoom(name);
+    },
+
+    getRoomList() {
+      if (socket.isConnected.value) {
+        socket.sendGetRoomList();
+      }
     },
 
     joinRoom(roomId: string) {
@@ -184,7 +204,14 @@ export const useChatDataStore = defineStore("chatData", {
         avatarUrl: userStore.getUserData.avatarUrl
       });
       
-      this.joinedRooms.push(roomId);
+      // 单房间模式：清理其他房间数据
+      this.joinedRooms.forEach(r => {
+        if (r !== roomId) {
+          delete this.roomData[r];
+        }
+      });
+
+      this.joinedRooms = [roomId];
       this.currentRoomId = roomId;
       this.initRoomData(roomId);
       if (window.$message) window.$message.success(`加入房间: ${roomId}`);

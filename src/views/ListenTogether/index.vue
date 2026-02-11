@@ -1,125 +1,263 @@
 <!--
   ListenTogether/index.vue
-  功能：一起听歌页面（多人实时聊天室）
+  功能：一起听歌页面（多人实时聊天室 + 播放器控制）
   说明：
-    - 使用 WebSocket 实现实时通信
-    - 支持发送/接收聊天消息（包含头像、昵称）
-    - 支持时间同步、心跳保活
-    - 支持加入/离开房间事件，并以系统通知形式展示
-    - 提供左侧调试面板（显示连接状态、延迟等）
+    - 左侧：手机端风格播放器 UI
+    - 右侧：聊天室/成员列表/房间大厅
 -->
 <template>
   <div class="listen-together">
-    <!-- 房间列表侧边栏 -->
-    <div class="room-sidebar">
-      <div class="sidebar-header">
-        <h3>房间列表</h3>
-        <n-space>
-           <n-button size="tiny" secondary type="info" @click="showDebug = !showDebug">Debug</n-button>
-           <n-button size="tiny" type="primary" @click="showCreateRoomModal = true">创建</n-button>
-        </n-space>
-      </div>
-      <div class="room-list">
-        <!-- 活跃房间列表 (Lobby) -->
-        <div class="section-label">大厅</div>
-        <div 
-          v-for="room in availableRooms" 
-          :key="room.id" 
-          class="room-item"
-          @click="joinRoom(room.id)"
-        >
-          <span class="room-name">{{ room.id }}</span>
-          <span class="room-count">{{ room.count }}人</span>
+    <!-- 左侧：播放器区域 -->
+    <div class="lt-player">
+      <div class="player-content">
+        <!-- 歌曲信息 -->
+        <div class="song-info">
+          <div class="song-name text-hidden" :title="music.getPlaySongData?.name">
+            {{ music.getPlaySongData?.name || '暂无歌曲' }}
+          </div>
+          <div class="artist-name text-hidden" :title="getArtistNames(music.getPlaySongData?.artist)">
+            {{ getArtistNames(music.getPlaySongData?.artist) }}
+          </div>
         </div>
 
-        <!-- 已加入的房间 -->
-        <div class="section-label" style="margin-top: 12px;">我的房间</div>
-        <div 
-          v-for="roomId in joinedRooms" 
-          :key="roomId" 
-          class="room-item"
-          :class="{ active: currentRoomId === roomId }"
-          @click="currentRoomId = roomId"
-        >
-          <span class="room-name">{{ roomId }}</span>
-          <n-button size="tiny" text type="error" @click.stop="leaveRoom(roomId)">退出</n-button>
+        <!-- 封面 / 歌词 -->
+        <div class="cover-wrapper" @click="showLyric = !showLyric" :class="{ 'show-lyric': showLyric }">
+          <!-- 封面 -->
+          <n-image
+            v-show="!showLyric"
+            :src="coverUrl"
+            class="cover-img"
+            object-fit="cover"
+            fallback-src="/images/logo/logo.png"
+            preview-disabled
+          />
+          <!-- 歌词 -->
+          <div v-show="showLyric" class="lyric-full-view" ref="lyricViewRef">
+             <div v-if="!music.getPlaySongLyric || music.getPlaySongLyric.length === 0" class="no-lyric">
+               暂无歌词
+             </div>
+             <div v-else class="lyric-scroll">
+               <div 
+                 v-for="(line, index) in music.getPlaySongLyric" 
+                 :key="index"
+                 class="lyric-line"
+                 :class="{ active: index === music.getPlaySongLyricIndex }"
+                 :id="'lyric-' + index"
+                 @click.stop="handleLyricClick(line.time)"
+               >
+                 <div class="text">{{ line.lyric }}</div>
+                 <div class="trans" v-if="line.lyricFy && setting.getShowTransl">{{ line.lyricFy }}</div>
+               </div>
+             </div>
+          </div>
+        </div>
+        
+        <!-- 歌词/提示 (简化版) -->
+        <div class="lyric-preview text-hidden" :style="{ opacity: showLyric ? 0 : 0.8 }">
+           {{ currentLyricLine }}
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-area">
+          <span class="time">{{ music.getPlaySongTime.songTimePlayed }}</span>
+          <n-slider
+            v-model:value="music.getPlaySongTime.barMoveDistance"
+            class="progress-slider"
+            :step="0.01"
+            :tooltip="false"
+            @update:value="handleSliderChange"
+          />
+          <span class="time">{{ music.getPlaySongTime.songTimeDuration }}</span>
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="controls">
+          <n-icon size="32" :component="SkipPreviousRound" class="control-btn" @click="music.setPlaySongIndex('prev')" />
+          <n-icon 
+            size="56" 
+            :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled" 
+            class="control-btn play-btn" 
+            @click="music.setPlayState(!music.getPlayState)" 
+          />
+          <n-icon size="32" :component="SkipNextRound" class="control-btn" @click="music.setPlaySongIndex('next')" />
+        </div>
+        
+        <!-- 额外功能区 -->
+        <div class="extra-actions">
+           <n-tooltip trigger="hover">
+             <template #trigger>
+               <n-icon size="24" :component="FavoriteBorderRound" class="action-icon" />
+             </template>
+             喜欢
+           </n-tooltip>
+           <n-tooltip trigger="hover">
+             <template #trigger>
+               <n-icon size="24" :component="PlaylistPlayRound" class="action-icon" />
+             </template>
+             播放列表
+           </n-tooltip>
+           <n-tooltip trigger="hover">
+             <template #trigger>
+               <n-icon 
+                 size="24" 
+                 :component="GTranslateFilled" 
+                 class="action-icon" 
+                 :class="{ active: setting.getShowTransl }" 
+                 @click="setting.setShowTransl(!setting.getShowTransl)" 
+               />
+             </template>
+             {{ setting.getShowTransl ? '关闭翻译' : '开启翻译' }}
+           </n-tooltip>
+           
+           <n-popover trigger="click" placement="top" style="padding: 0; background: transparent;">
+              <template #trigger>
+                 <n-icon size="24" :component="SlowMotionVideoRound" class="action-icon" />
+              </template>
+              <div class="speed-popup">
+                  <div class="val">{{ music.getPlayRate }}x</div>
+                  <n-slider
+                     v-model:value="music.persistData.playRate"
+                     :tooltip="false"
+                     :min="0.5"
+                     :max="2.0"
+                     :step="0.1"
+                     vertical
+                     class="speed-slider"
+                     @update:value="(v) => music.setPlayRate(v)"
+                     @click.stop
+                   />
+              </div>
+           </n-popover>
+
+           <n-tooltip trigger="hover">
+             <template #trigger>
+               <n-icon size="24" :component="FullscreenRound" class="action-icon" @click="music.setBigPlayerState(true)" />
+             </template>
+             全屏模式
+           </n-tooltip>
         </div>
       </div>
     </div>
 
-    <!-- 中间：控制面板 + 在线用户 (针对当前选中的房间) -->
-    <div class="control-panel" v-if="currentRoomId">
-      <h3>{{ currentRoomId }}</h3>
-      <!-- 房间状态 -->
-      <div class="status">
-        <div class="status-item">
-          <span class="label">Status:</span>
-          <span :class="['value', socket.isConnected.value ? 'connected' : 'disconnected']">
-            {{ socket.isConnected.value ? 'Connected' : 'Disconnected' }}
-          </span>
+    <!-- 右侧：房间/聊天区域 -->
+    <div class="lt-room">
+      <!-- 顶部栏 -->
+      <div class="room-header">
+        <div class="left">
+          <h2 v-if="currentRoomId">
+            {{ currentRoomId }} 
+            <n-tag size="small" type="success" round v-if="currentRoomId">在线: {{ currentRoomUsers.length }}</n-tag>
+          </h2>
+          <h2 v-else>大厅</h2>
         </div>
-        <div class="status-item">
-          <span class="label">Owner:</span>
-          <span class="value">{{ currentRoomOwnerId || '-' }}</span>
-        </div>
-      </div>
-      
-      <!-- 在线用户列表 -->
-      <div class="online-users">
-        <h3>Online Users ({{ currentRoomUsers.length }})</h3>
-        <div class="user-list">
-          <div v-for="u in currentRoomUsers" :key="u.id" class="user-item">
-            <n-avatar round size="small" :src="u.avatarUrl || '/images/ico/user-filling.svg'" />
-            <span class="nickname">{{ u.nickname }}</span>
-            <span v-if="String(u.id) === String(currentRoomOwnerId)" class="owner-tag">房主</span>
-          </div>
+        <div class="right">
+          <n-space>
+             <n-button size="small" secondary @click="showDebug = !showDebug">Debug</n-button>
+             <n-button v-if="!currentRoomId" type="primary" size="small" @click="showCreateRoomModal = true">创建房间</n-button>
+             <n-button v-else type="error" size="small" secondary @click="leaveRoom(currentRoomId)">退出房间</n-button>
+          </n-space>
         </div>
       </div>
-    </div>
 
-    <!-- 右侧聊天区域 -->
-    <div class="chat-container" v-if="currentRoomId">
-      <!-- 消息列表 -->
-      <div class="messages" ref="messagesRef">
-        <div v-for="(msg, index) in currentRoomMessages" :key="index">
-          
-          <!-- 系统消息 -->
-          <div v-if="msg.type === 'system'" class="system-message">
-            <span class="content">{{ msg.content }}</span>
+      <!-- 内容区 -->
+      <div class="room-content">
+        <!-- 未加入房间：显示大厅列表 -->
+        <div v-if="!currentRoomId" class="lobby-container">
+          <div class="section-title">
+             <n-icon :component="ExploreRound" />
+             <span>活跃房间</span>
           </div>
+          <div v-if="!availableRooms || availableRooms.length === 0" class="empty-rooms">
+             <n-empty description="暂无活跃房间，快去创建一个吧" />
+          </div>
+          <div class="room-grid" v-else>
+            <div 
+              v-for="room in availableRooms" 
+              :key="room.id" 
+              class="room-card"
+              @click="joinRoom(room.id)"
+            >
+              <div class="room-card-icon">
+                <n-icon size="32" :component="MusicNoteFilled" />
+              </div>
+              <div class="room-card-info">
+                <div class="name">{{ room.id }}</div>
+                <div class="count">{{ room.count }} 人在线</div>
+              </div>
+              <n-button size="small" type="primary" ghost class="join-btn">加入</n-button>
+            </div>
+          </div>
+        </div>
 
-          <!-- 聊天消息 -->
-          <div v-else class="message-item" :class="{ 'my-message': msg.isMine }">
-            <n-avatar round size="small" :src="msg.avatarUrl || '/images/ico/user-filling.svg'" class="avatar" />
-            <div class="message-content-wrapper">
-              <span class="sender">{{ msg.sender }}</span>
-              <div class="message-content">
-                <div class="text">{{ msg.content }}</div>
+        <!-- 已加入房间：显示聊天和成员 -->
+        <div v-else class="active-room-container">
+          <div class="room-split-layout">
+            <!-- Chat Area -->
+            <div class="chat-section">
+              <div class="messages-list" ref="messagesRef">
+                 <div v-for="(msg, index) in currentRoomMessages" :key="index">
+                    <!-- 系统消息 -->
+                    <div v-if="msg.type === 'system'" class="system-message">
+                      <span class="content">{{ msg.content }}</span>
+                    </div>
+                    <!-- 聊天消息 -->
+                    <div v-else class="message-item" :class="{ 'my-message': msg.isMine }">
+                      <n-avatar round size="small" :src="msg.avatarUrl || '/images/ico/user-filling.svg'" class="avatar" />
+                      <div class="message-content-wrapper">
+                        <span class="sender">{{ msg.sender }}</span>
+                        <div class="message-bubble">
+                          {{ msg.content }}
+                        </div>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+              <div class="chat-input" :style="{ height: inputHeight + 'px' }">
+                <div class="resize-handle-horizontal" @mousedown="startResizeInput"></div>
+                <n-input
+                  v-model:value="inputValue"
+                  type="textarea"
+                  placeholder=""
+                  :autosize="false"
+                  :bordered="false"
+                  class="chat-textarea"
+                  @keydown.enter.prevent="handleSendMessage"
+                />
+                <div class="action-bar">
+                   <n-button type="primary" size="small" @click="handleSendMessage" class="send-btn">发送(S)</n-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resize Handle Vertical -->
+            <div class="resize-handle-vertical" @mousedown="startResizeMembers"></div>
+
+            <!-- Members Sidebar -->
+            <div class="members-section" :style="{ width: membersWidth + 'px' }">
+              <div class="members-header">
+                群聊成员 {{ currentRoomUsers.length }}
+              </div>
+              <div class="members-list">
+                 <div v-for="u in currentRoomUsers" :key="u.id" class="member-item">
+                    <n-avatar round size="medium" :src="u.avatarUrl || '/images/ico/user-filling.svg'" />
+                    <div class="member-info">
+                       <div class="nickname">
+                         {{ u.nickname }}
+                         <n-tag v-if="String(u.id) === String(currentRoomOwnerId)" type="warning" size="tiny" round>房主</n-tag>
+                       </div>
+                       <!-- <div class="status">在线</div> -->
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
-      <!-- 输入区域 -->
-      <div class="input-area">
-        <n-input
-          v-model:value="inputValue"
-          type="text"
-          placeholder="发送消息..."
-          @keyup.enter="handleSendMessage"
-        />
-        <n-button type="primary" @click="handleSendMessage">发送</n-button>
-      </div>
-    </div>
-
-    <div v-else class="empty-state">
-      <n-empty description="请选择或加入一个房间" />
     </div>
 
     <!-- 创建房间弹窗 -->
     <n-modal v-model:show="showCreateRoomModal" preset="dialog" title="创建房间">
-      <n-input v-model:value="newRoomName" placeholder="请输入房间名称" />
+      <n-input v-model:value="newRoomName" placeholder="请输入房间名称" @keyup.enter="handleCreateRoom" />
       <template #action>
         <n-button @click="showCreateRoomModal = false">取消</n-button>
         <n-button type="primary" @click="handleCreateRoom">确定</n-button>
@@ -132,18 +270,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch, defineAsyncComponent } from 'vue';
-import { NInput, NButton, NAvatar, NModal, NEmpty, NSpace } from 'naive-ui';
-import { chatStore } from '@/store';
+import { ref, onMounted, onUnmounted, nextTick, watch, defineAsyncComponent, computed } from 'vue';
+import { NInput, NButton, NAvatar, NModal, NEmpty, NSpace, NSlider, NIcon, NTabs, NTabPane, NTag, NTooltip, NImage, useThemeVars } from 'naive-ui';
+import { 
+  PlayCircleFilled, 
+  PauseCircleFilled, 
+  SkipPreviousRound, 
+  SkipNextRound,
+  MusicNoteFilled,
+  FavoriteBorderRound,
+  PlaylistPlayRound,
+  GTranslateFilled,
+  FullscreenRound,
+  ExploreRound,
+  SlowMotionVideoRound,
+} from "@vicons/material";
+import { chatStore, musicStore, settingStore } from '@/store';
 import { storeToRefs } from 'pinia';
-import { socket } from '@/core/realtime/socket';
+import { getSongCover } from "@/api/song";
 
 const WebSocketDebug = defineAsyncComponent(() => import('@/components/WebSocketDebug.vue'));
 
 const chat = chatStore();
+const music = musicStore();
+const setting = settingStore();
+const themeVars = useThemeVars();
+
 const { 
   availableRooms, 
-  joinedRooms, 
   currentRoomId, 
   currentRoomMessages, 
   currentRoomUsers, 
@@ -156,31 +310,144 @@ const showDebug = ref(false);
 const newRoomName = ref('');
 const inputValue = ref('');
 const messagesRef = ref<HTMLElement | null>(null);
+const showLyric = ref(false);
+const lyricViewRef = ref<HTMLElement | null>(null);
 
-// 创建房间
+// 拖拽调整大小逻辑
+const membersWidth = ref(240);
+const inputHeight = ref(160);
+const isResizingMembers = ref(false);
+const isResizingInput = ref(false);
+
+const startResizeMembers = () => {
+  isResizingMembers.value = true;
+  document.addEventListener('mousemove', handleResizeMembers);
+  document.addEventListener('mouseup', stopResizeMembers);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+};
+
+const handleResizeMembers = (e: MouseEvent) => {
+  if (!isResizingMembers.value) return;
+  const container = document.querySelector('.room-split-layout');
+  if (container) {
+    const rect = container.getBoundingClientRect();
+    const newWidth = rect.right - e.clientX;
+    // 限制最小和最大宽度
+    if (newWidth >= 180 && newWidth <= 400) {
+      membersWidth.value = newWidth;
+    }
+  }
+};
+
+const stopResizeMembers = () => {
+  isResizingMembers.value = false;
+  document.removeEventListener('mousemove', handleResizeMembers);
+  document.removeEventListener('mouseup', stopResizeMembers);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+};
+
+const startResizeInput = () => {
+  isResizingInput.value = true;
+  document.addEventListener('mousemove', handleResizeInput);
+  document.addEventListener('mouseup', stopResizeInput);
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+};
+
+const handleResizeInput = (e: MouseEvent) => {
+  if (!isResizingInput.value) return;
+  const container = document.querySelector('.chat-section');
+  if (container) {
+    const rect = container.getBoundingClientRect();
+    const newHeight = rect.bottom - e.clientY;
+    // 限制最小和最大高度
+    if (newHeight >= 100 && newHeight <= 500) {
+      inputHeight.value = newHeight;
+    }
+  }
+};
+
+const stopResizeInput = () => {
+  isResizingInput.value = false;
+  document.removeEventListener('mousemove', handleResizeInput);
+  document.removeEventListener('mouseup', stopResizeInput);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+};
+
+// 辅助函数：获取歌手名
+const getArtistNames = (artists: any[]) => {
+  if (!artists || artists.length === 0) return 'Unknown Artist';
+  return artists.map(a => a.name).join(' / ');
+};
+
+// 辅助函数：获取当前歌词
+const currentLyricLine = computed(() => {
+  const lyric = music.getPlaySongLyric;
+  const index = music.getPlaySongLyricIndex;
+  if (lyric && lyric.length > 0 && index >= 0 && index < lyric.length) {
+    return lyric[index].lyric || '...';
+  }
+  return '...';
+});
+
+const coverUrl = computed(() => {
+  if (music.getPlaySongData?.id) {
+    return getSongCover(music.getPlaySongData.id);
+  }
+  return "/images/logo/logo.png";
+});
+
+// 播放器逻辑
+const handleSliderChange = (val: number) => {
+   if ((window as any).$player && music.getPlaySongTime.duration) {
+      (window as any).$player.currentTime = (music.getPlaySongTime.duration / 100) * val;
+   }
+};
+
+const handleLyricClick = (time: number) => {
+   if ((window as any).$player) {
+      (window as any).$player.currentTime = time;
+   }
+};
+
+// 监听歌词滚动
+watch(() => music.getPlaySongLyricIndex, (index) => {
+  if (showLyric.value && index >= 0) {
+    nextTick(() => {
+      const el = document.getElementById(`lyric-${index}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
+});
+
+// 房间逻辑
 const handleCreateRoom = () => {
+  if (!newRoomName.value.trim()) return;
   chat.createRoom(newRoomName.value);
   showCreateRoomModal.value = false;
   newRoomName.value = '';
 };
 
-// 加入房间
 const joinRoom = (roomId: string) => {
   chat.joinRoom(roomId);
 };
 
-// 离开房间
 const leaveRoom = (roomId: string) => {
   chat.leaveRoom(roomId);
 };
 
-// 发送消息
 const handleSendMessage = () => {
+  if (!inputValue.value.trim()) return;
   chat.sendMessage(inputValue.value);
   inputValue.value = '';
 };
 
-// 滚动到底部
+// 滚动逻辑
 const scrollToBottom = () => {
   nextTick(() => {
     if (messagesRef.value) {
@@ -189,202 +456,537 @@ const scrollToBottom = () => {
   });
 };
 
-// 监听 currentRoomId 变化，自动滚动
-watch(currentRoomId, () => {
-  scrollToBottom();
-});
-
-// 监听消息列表变化，自动滚动
+watch(currentRoomId, scrollToBottom);
 watch(() => currentRoomMessages.value.length, () => {
-  if (currentRoomId.value) {
-      scrollToBottom();
-  }
+  if (currentRoomId.value) scrollToBottom();
 });
 
 onMounted(() => {
-  // 启动监听 (如果不在这里调用，chatStore.startListen() 也会处理)
-  // 如果已经连接且 joinedRooms > 0，这里会保持连接
-  // 如果未连接，这里会发起连接
   chat.startListen();
-  
   if (currentRoomId.value) {
-      scrollToBottom();
+    scrollToBottom();
+  } else {
+    // 未加入房间时，主动获取一次房间列表
+    chat.getRoomList();
   }
+  // 隐藏底部播放栏
+  music.showPlayBar = false;
 });
 
 onUnmounted(() => {
-  // 如果没有加入任何房间，则断开连接以节省资源
-  // 用户需求：只有关闭页面或注销才断开。
-  // 但为了不浪费资源，如果用户没在任何房间里，断开也是合理的？
-  // 也可以根据 joinedRooms 长度判断
-  if (joinedRooms.value.length === 0) {
-     chat.stopListen();
-  }
-  // 如果有加入房间，则保持连接，不调用 stopListen
+  // chat.stopListen(); // 根据需求决定是否断开
+  // 恢复底部播放栏
+  music.showPlayBar = true;
 });
 </script>
 
 <style scoped lang="scss">
 .listen-together {
-  padding: 20px;
-  height: calc(100vh - 100px); 
+  height: calc(100vh - 100px); // 减去顶部导航和底部播放条的高度
   display: flex;
-  gap: 20px;
+  gap: 24px;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* 房间侧边栏样式 */
-.room-sidebar {
-  width: 220px;
+/* 左侧播放器 */
+.lt-player {
+  width: 380px;
+  flex-shrink: 0;
   background: var(--n-color-modal);
-  border-radius: 8px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  border: 1px solid var(--n-border-color);
 
-  .sidebar-header {
-    padding: 16px;
+  .player-content {
+    flex: 1;
+    padding: 32px 24px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    border-bottom: 1px solid var(--n-border-color);
+    justify-content: space-between;
+  }
 
-    h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: bold;
+  .cover-wrapper {
+    width: 260px;
+    height: 260px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    background: #000;
+    transition: all 0.3s;
+    
+    &.show-lyric {
+      background: transparent;
+      box-shadow: none;
+      border: 1px solid var(--n-border-color);
+      width: 100%;
+      height: 360px;
+    }
+    
+    .cover-img {
+       width: 100%;
+       height: 100%;
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       
+       :deep(img) {
+         width: 100%;
+         height: 100%;
+         transition: opacity 0.3s;
+       }
+    }
+
+    .lyric-full-view {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 20px;
+      // 隐藏滚动条
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+      &::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+      }
+      
+      .no-lyric {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: var(--n-text-color-3);
+      }
+
+      .lyric-scroll {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 0; // 留出上下空间以便滚动
+        
+        .lyric-line {
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          opacity: 0.6;
+          
+          &:hover {
+            opacity: 0.8;
+          }
+          
+          &.active {
+            opacity: 1;
+            transform: scale(1.1);
+            color: var(--n-color-primary);
+            font-weight: bold;
+          }
+          
+          .text {
+            font-size: 14px;
+            line-height: 1.5;
+          }
+          
+          .trans {
+            font-size: 12px;
+            margin-top: 4px;
+            opacity: 0.8;
+          }
+        }
+      }
     }
   }
 
-  .room-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    
-    .section-label {
-      font-size: 12px;
-      color: var(--n-text-color-3);
-      margin-bottom: 8px;
+  .song-info {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 16px;
+
+    .song-name {
+      font-size: 20px;
       font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--n-text-color);
     }
 
-    .room-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      border-radius: 6px;
+    .artist-name {
+      font-size: 14px;
+      color: var(--n-text-color-3);
+    }
+  }
+
+  .lyric-preview {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--n-text-color-2);
+    font-size: 14px;
+    margin-bottom: 24px;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  .progress-area {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+
+    .time {
+      font-size: 12px;
+      color: var(--n-text-color-3);
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .progress-slider {
+      flex: 1;
+    }
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 32px;
+
+    .control-btn {
       cursor: pointer;
-      margin-bottom: 4px;
-      transition: background-color 0.2s;
+      opacity: 0.8;
+      transition: all 0.2s;
       
       &:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+        opacity: 1;
+        transform: scale(1.1);
+      }
+      
+      &.play-btn {
+        color: var(--n-color-primary);
+        opacity: 1;
+      }
+    }
+  }
+
+  .extra-actions {
+    display: flex;
+    gap: 24px;
+    
+    .action-icon {
+      cursor: pointer;
+      color: var(--n-text-color-3);
+      transition: all 0.3s;
+      
+      &:hover {
+        color: var(--n-text-color);
+        transform: scale(1.1);
       }
       
       &.active {
-        background-color: var(--n-color-primary);
-        color: white;
-        
-        .room-count {
-          color: rgba(255, 255, 255, 0.8);
-        }
+        color: var(--n-color-primary);
       }
+    }
+  }
+  
+  .speed-popup {
+     width: 44px;
+     height: 140px;
+     background: var(--n-color-modal);
+     backdrop-filter: blur(10px);
+     border-radius: 18px;
+     padding: 12px 0;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+     border: 1px solid var(--n-border-color);
+     z-index: 10000;
+     
+     .val {
+        font-size: 10px;
+        margin-bottom: 8px;
+        font-weight: bold;
+     }
+     
+     .speed-slider {
+        height: 100%;
+        --n-handle-size: 12px;
+        --n-rail-width: 4px;
+        
+        :deep(.n-slider-rail) {
+          background-color: var(--n-border-color);
+          .n-slider-rail__fill {
+            background-color: var(--n-color-primary);
+          }
+        }
+        :deep(.n-slider-handle) {
+          background-color: #fff;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+     }
+  }
+}
 
-      .room-name {
-        font-size: 14px;
-        font-weight: 500;
+/* 右侧房间区域 */
+.lt-room {
+  flex: 1;
+  background: var(--n-color-modal);
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--n-border-color);
+
+  .room-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--n-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  }
+
+  .room-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+/* 大厅视图 */
+.lobby-container {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+
+  .section-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    color: var(--n-text-color-2);
+  }
+
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .room-card {
+    background: var(--n-card-color);
+    border: 1px solid var(--n-border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: var(--n-color-primary);
+    }
+
+    .room-card-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(var(--n-primary-color-rgb), 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      color: var(--n-color-primary);
+    }
+
+    .room-card-info {
+      margin-bottom: 16px;
+      .name {
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 4px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--n-text-color);
+        max-width: 100%;
       }
-
-      .room-count {
+      .count {
         font-size: 12px;
         color: var(--n-text-color-3);
       }
     }
+    
+    .join-btn {
+      width: 100%;
+    }
+  }
+  
+  .empty-rooms {
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     height: 300px;
   }
 }
 
-/* 左侧控制面板样式 */
-.control-panel {
-  width: 250px;
-  background: var(--n-color-modal);
-  border-radius: 8px;
-  padding: 20px;
+/* 活跃房间视图 */
+.active-room-container {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
-  h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: bold;
-  }
+.room-split-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
 
-  .status {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      
-      .label {
-        opacity: 0.7;
-      }
-      
-      .value {
-        font-weight: 500;
-        font-family: monospace;
-        
-        &.connected { color: #18a058; }
-        &.disconnected { color: #d03050; }
-      }
-    }
-  }
-
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .online-users {
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  // border-right: 3px solid var(--n-border-color); // Replaced by resizer
+  
+  .messages-list {
     flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.01);
+  }
+
+  .chat-input {
+    padding: 12px 16px;
+    background: var(--n-card-color);
+    // border-top: 3px solid var(--n-border-color); // Replaced by resizer
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-
-    h3 {
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: var(--n-text-color-2);
+    gap: 8px;
+    position: relative;
+    min-height: 100px;
+    
+    .resize-handle-horizontal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: v-bind('themeVars.primaryColor');
+      cursor: row-resize;
+      transition: height 0.2s;
+      z-index: 10;
+      
+      &:hover {
+        height: 5px;
+      }
     }
 
-    .user-list {
+    .chat-textarea {
+      background: transparent;
+      padding: 0;
       flex: 1;
-      overflow-y: auto;
+      
+      :deep(.n-input-wrapper) {
+         padding: 0;
+         height: 100%;
+      }
+      :deep(.n-input__textarea-el) {
+         padding: 0;
+         height: 100%;
+      }
+      :deep(.n-input__placeholder) {
+         padding: 0;
+      }
+    }
+
+    .action-bar {
+       display: flex;
+       justify-content: flex-end;
+       flex-shrink: 0;
+       
+       .send-btn {
+          padding: 0 20px;
+       }
+    }
+  }
+}
+
+.resize-handle-vertical {
+  width: 3px;
+  background-color: v-bind('themeVars.primaryColor');
+  cursor: col-resize;
+  transition: width 0.2s;
+  z-index: 10;
+  
+  &:hover {
+    width: 5px;
+  }
+}
+
+.members-section {
+  width: 240px; // Default, overridden by inline style
+  display: flex;
+  flex-direction: column;
+  background: var(--n-card-color);
+  
+  .members-header {
+    padding: 16px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--n-border-color);
+    color: var(--n-text-color);
+  }
+
+  .members-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    
+    .member-item {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      
+      &:hover {
+        background: var(--n-color-embedded);
+      }
 
-      .user-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px;
-        border-radius: 6px;
-        background-color: rgba(0, 0, 0, 0.02);
-
+      .member-info {
+        flex: 1;
+        overflow: hidden;
+        
         .nickname {
-          font-size: 13px;
-          color: var(--n-text-color);
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -394,103 +996,68 @@ onUnmounted(() => {
   }
 }
 
-/* 右侧聊天容器样式 */
-.chat-container {
-  flex: 1;
-  max-width: 800px;
-  background: var(--n-color-modal);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* 消息气泡 */
+.system-message {
+  text-align: center;
+  margin: 16px 0;
+  .content {
+    font-size: 12px;
+    color: var(--n-text-color-3);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 10px;
+    border-radius: 10px;
+  }
 }
 
-.empty-state {
-  flex: 1;
-  max-width: 800px;
+.message-item {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background: var(--n-color-modal);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: flex-start;
 
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  
-  /* 系统通知消息样式 */
-  .system-message {
-    display: flex;
-    justify-content: center;
-    margin: 16px 0;
+  &.my-message {
+    flex-direction: row-reverse;
     
-    .content {
-      background-color: rgba(0, 0, 0, 0.05);
-      color: var(--n-text-color-3);
-      font-size: 12px;
-      padding: 4px 12px;
-      border-radius: 12px;
+    .message-content-wrapper {
+      align-items: flex-end;
+      
+      .message-bubble {
+        background: v-bind('themeVars.primaryColor');
+        color: white;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 2px;
+      }
     }
   }
 
-  /* 聊天消息气泡样式 */
-  .message-item {
-    margin-bottom: 16px;
+  .message-content-wrapper {
     display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 8px;
-
-    /* 自己发送的消息样式（右对齐） */
-    &.my-message {
-      flex-direction: row-reverse;
-      
-      .message-content-wrapper {
-        align-items: flex-end;
-      }
-    }
-
-    .avatar {
-      flex-shrink: 0;
-    }
-
-    .message-content-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      max-width: 80%;
-    }
-
+    flex-direction: column;
+    max-width: 70%;
+    
     .sender {
       font-size: 12px;
-      color: var(--n-text-color-3); // 适配主题色
+      color: var(--n-text-color-3);
       margin-bottom: 4px;
       padding: 0 4px;
     }
 
-    .message-content {
-      background-color: var(--n-color-embedded);
-      color: var(--n-text-color); // 适配主题色
-      padding: 8px 12px;
-      border-radius: 8px;
+    .message-bubble {
+      background: var(--n-card-color);
+      border: 1px solid var(--n-border-color);
+      padding: 10px 14px;
+      border-radius: 12px;
+      border-top-left-radius: 2px;
+      line-height: 1.5;
       word-break: break-all;
-      
-      .text {
-        line-height: 1.5;
-        color: inherit; // 继承父元素颜色，确保深色/浅色模式一致
-      }
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
   }
 }
 
-.input-area {
-  padding: 20px;
-  border-top: 1px solid var(--n-border-color);
-  display: flex;
-  gap: 10px;
+.text-hidden {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

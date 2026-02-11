@@ -60,6 +60,8 @@ export const useMusicDataStore = defineStore("musicData", {
         },
         // 播放音量
         playVolume: 0.7,
+        // 播放速率
+        playRate: 1.0,
         // 静音前音量
         playVolumeMute: 0,
         // 列表状态
@@ -98,7 +100,11 @@ export const useMusicDataStore = defineStore("musicData", {
     getPlaySongMode(state) {
       return state.persistData.playSongMode;
     },
-    // 获取当前歌曲索引
+    // 获取播放速率
+    getPlayRate(state) {
+      return state.persistData.playRate || 1.0;
+    },
+    // 获取播放时间获取当前歌曲索引
     getPlaySongIndex(state) {
         return state.persistData.playSongIndex;
     },
@@ -304,17 +310,24 @@ export const useMusicDataStore = defineStore("musicData", {
       }
       this.persistData.searchHistory = history;
     },
-    // 更改播放模式
+    // 设置播放模式
     setPlaySongMode() {
-      const mode = this.persistData.playSongMode;
-      if (mode === "normal") {
+      if (this.persistData.playSongMode === "normal") {
         this.persistData.playSongMode = "random";
-      } else if (mode === "random") {
+        window.$message.info("随机播放");
+      } else if (this.persistData.playSongMode === "random") {
         this.persistData.playSongMode = "single";
+        window.$message.info("单曲循环");
       } else {
         this.persistData.playSongMode = "normal";
+        window.$message.info("列表循环");
       }
     },
+    // 设置播放速率
+    setPlayRate(rate: number) {
+      this.persistData.playRate = rate;
+    },
+    // 设置播放列表状态
   }
 });
 

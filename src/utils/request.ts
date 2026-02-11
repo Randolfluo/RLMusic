@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from "axios";
+import { aesDecrypt } from "@/utils/encrypt";
 
 // 对应 server/internal/global/result.go
 export const ResultCode = {
@@ -27,6 +28,7 @@ export const ResultCode = {
 declare module 'axios' {
   export interface AxiosRequestConfig {
     hiddenBar?: boolean;
+    _retry?: boolean;
   }
   // 扩展 AxiosResponse 以使返回值通过 TS 检查 (因为我们在 interceptor 中返回了 response.data)
   // 如果您想覆盖默认的 AxiosResponse 行为，这可能有点 tricky，
@@ -116,10 +118,47 @@ service.interceptors.response.use(
         ResultCode.ERR_USER_NOT_EXIST,
       ];
       if (tokenErrors.includes(res.code)) {
+        const config = response.config;
+        // 尝试自动登录
+        if (!config._retry && localStorage.getItem("auto_login") === 'true') {
+           const savedUser = localStorage.getItem("remember_user");
+           const savedPass = localStorage.getItem("remember_pass");
+           
+           if (savedUser && savedPass) {
+               config._retry = true;
+               try {
+                   const password = aesDecrypt(savedPass);
+                   // 使用默认 axios 实例发送请求，避免死循环
+                   // 假设 api 代理为 /api
+                   return axios.post("/api/auth/login", { 
+                       username: savedUser, 
+                       password: password 
+                   }).then(loginRes => {
+                       const loginData = loginRes.data;
+                       if (loginData.code === ResultCode.SUCCESS) {
+                           const newToken = loginData.data.token;
+                           sessionStorage.setItem("token", newToken);
+                           if (window.$message) window.$message.success('已自动重新登录');
+                           
+                           // 更新 Authorization 头并重试原请求
+                           config.headers.Authorization = `Bearer ${newToken}`;
+                           return service(config);
+                       }
+                       throw new Error("Auto login failed");
+                   }).catch(() => {
+                       sessionStorage.removeItem('token');
+                       window.location.href = '/login';
+                       return Promise.reject(response.data); // 返回原错误
+                   });
+               } catch (e) {
+                   console.error("Auto login error", e);
+               }
+           }
+        }
+
         if (window.$message) window.$message.error('登录失效，请重新登录');
-        localStorage.removeItem('token');
-        // 可以选择跳转登录页，或者依赖路由守卫
-        // window.location.href = '/login'; 
+        sessionStorage.removeItem('token');
+        window.location.href = '/login'; 
       }
       // 这里不统一 reject，交给业务层自己判断 res.code
     }

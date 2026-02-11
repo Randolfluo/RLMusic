@@ -163,6 +163,27 @@
             @click.stop="music.showPlayList = !music.showPlayList"
           />
         </div>
+        <!-- 播放速度 -->
+        <div class="speed">
+          <n-icon
+            size="26"
+            :component="SlowMotionVideoRound"
+          />
+          <div class="speed-box">
+             <div class="speed-value">{{ music.getPlayRate }}x</div>
+             <n-slider
+              v-model:value="music.persistData.playRate"
+              :tooltip="false"
+              :min="0.5"
+              :max="2.0"
+              :step="0.1"
+              vertical
+              class="speed-slider"
+              @update:value="(v) => { music.setPlayRate(v); if(player) player.playbackRate = v; }"
+              @click.stop
+            />
+          </div>
+        </div>
         <div class="volume">
           <n-icon
             size="28"
@@ -227,6 +248,7 @@ import {
   FavoriteBorderRound,
   FavoriteRound,
   PlaylistAddRound,
+  SlowMotionVideoRound,
 } from "@vicons/material";
 import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
 import { storeToRefs } from "pinia";
@@ -303,6 +325,9 @@ const songUpdate = (e) => {
 // 歌曲缓冲完毕
 const songCanplay = () => {
   console.log("缓冲完毕", music.getPlayState);
+  if (player.value) {
+    player.value.playbackRate = music.getPlayRate;
+  }
   if (music.getPlayState && $player) {
     music.setPlayState(true);
     songInOrOut("play");
@@ -798,13 +823,90 @@ watch(
             --n-rail-width: 4px;
             
             :deep(.n-slider-rail) {
-              background-color: var(--n-close-color-hover);
+              background-color: var(--n-border-color);
+              .n-slider-rail__fill {
+                background-color: var(--n-primary-color);
+              }
+            }
+            :deep(.n-slider-handle) {
+              background-color: #fff;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             }
           }
         }
-        
         &:hover {
           .volume-box {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0) scale(1);
+          }
+        }
+      }
+
+      .speed {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        margin-left: 8px;
+        width: 36px;
+        height: 100%;
+        cursor: pointer;
+        .n-icon {
+          margin-right: 0;
+          transition: all 0.3s;
+          &:hover {
+             color: var(--n-primary-color);
+             transform: scale(1.1);
+          }
+        }
+        .speed-box {
+          position: absolute;
+          bottom: 45px;
+          left: 50%;
+          transform: translateX(-50%) translateY(10px) scale(0.95);
+          width: 40px;
+          height: 140px;
+          padding: 12px 0;
+          background-color: var(--n-color-modal);
+          backdrop-filter: blur(10px);
+          border-radius: 18px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+          border: 1px solid var(--n-border-color);
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          
+          .speed-value {
+             font-size: 10px;
+             margin-bottom: 8px;
+             font-weight: bold;
+          }
+
+          .speed-slider {
+            height: 100%;
+            --n-handle-size: 12px;
+            --n-rail-width: 4px;
+            
+            :deep(.n-slider-rail) {
+              background-color: var(--n-border-color);
+              .n-slider-rail__fill {
+                background-color: var(--n-primary-color);
+              }
+            }
+            :deep(.n-slider-handle) {
+              background-color: #fff;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            }
+          }
+        }
+        &:hover {
+          .speed-box {
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0) scale(1);

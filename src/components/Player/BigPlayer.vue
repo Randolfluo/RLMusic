@@ -173,6 +173,29 @@
                   {{ setting.playerStyle === 'cover' ? '切换为唱片模式' : '切换为封面模式' }}
                 </n-tooltip>
 
+                <n-tooltip trigger="hover">
+                  <template #trigger>
+                    <div class="speed-control">
+                       <n-icon :component="SlowMotionVideoRound" />
+                       <div class="speed-popup">
+                          <div class="val">{{ music.getPlayRate }}x</div>
+                          <n-slider
+                             v-model:value="music.persistData.playRate"
+                             :tooltip="false"
+                             :min="0.5"
+                             :max="2.0"
+                             :step="0.1"
+                             vertical
+                             class="slider"
+                             @update:value="(v) => music.setPlayRate(v)"
+                             @click.stop
+                           />
+                       </div>
+                    </div>
+                  </template>
+                  播放速度
+                </n-tooltip>
+
                 <n-icon
                   v-if="music.getPlaySongTransl"
                   :class="setting.getShowTransl ? 'open' : ''"
@@ -207,6 +230,7 @@ import {
   RemoveOutlined,
   DiscFullOutlined,
   ImageOutlined,
+  SlowMotionVideoRound,
 } from "@vicons/material";
 import { musicStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
@@ -497,6 +521,17 @@ watch(
   opacity: 0;
 }
 .bplayer {
+  :deep(.n-slider-rail) {
+    background-color: rgba(255, 255, 255, 0.2);
+    .n-slider-rail__fill {
+      background-color: #fff;
+    }
+  }
+  :deep(.n-slider-handle) {
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
   position: fixed;
   top: 0;
   left: 0;
@@ -829,6 +864,53 @@ watch(
               font-size: 1.6vh;
               min-width: 40px;
               text-align: center;
+            }
+          }
+          .speed-control {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            
+            .n-icon {
+               margin-right: 0 !important;
+            }
+
+            .speed-popup {
+               position: absolute;
+               bottom: 40px;
+               left: 50%;
+               transform: translateX(-50%);
+               width: 36px;
+               height: 120px;
+               background: rgba(0,0,0,0.6);
+               backdrop-filter: blur(10px);
+               border-radius: 18px;
+               padding: 12px 0;
+               display: flex;
+               flex-direction: column;
+               align-items: center;
+               opacity: 0;
+               visibility: hidden;
+               transition: all 0.3s;
+               
+               .val {
+                  font-size: 10px;
+                  margin-bottom: 8px;
+                  font-weight: bold;
+               }
+               
+               .slider {
+                  height: 100%;
+                  --n-handle-size: 12px;
+                  --n-rail-width: 4px;
+               }
+            }
+            
+            &:hover .speed-popup {
+               opacity: 1;
+               visibility: visible;
             }
           }
           .n-icon {
