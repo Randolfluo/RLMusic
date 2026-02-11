@@ -12,12 +12,16 @@
       <div class="player-content">
         <!-- 歌曲信息 -->
         <div class="song-info">
-          <div class="song-name text-hidden" :title="music.getPlaySongData?.name">
-            {{ music.getPlaySongData?.name || '暂无歌曲' }}
-          </div>
-          <div class="artist-name text-hidden" :title="getArtistNames(music.getPlaySongData?.artist)">
-            {{ getArtistNames(music.getPlaySongData?.artist) }}
-          </div>
+          <Transition name="fade" mode="out-in">
+             <div :key="music.getPlaySongData?.id" class="song-info-inner">
+                <div class="song-name text-hidden" :title="music.getPlaySongData?.name">
+                  {{ music.getPlaySongData?.name || '暂无歌曲' }}
+                </div>
+                <div class="artist-name text-hidden" :title="getArtistNames(music.getPlaySongData?.artist)">
+                  {{ getArtistNames(music.getPlaySongData?.artist) }}
+                </div>
+             </div>
+          </Transition>
         </div>
 
         <!-- 封面 / 歌词 -->
@@ -59,40 +63,70 @@
 
         <!-- 进度条 -->
         <div class="progress-area">
-          <span class="time">{{ music.getPlaySongTime.songTimePlayed }}</span>
-          <n-slider
-            v-model:value="music.getPlaySongTime.barMoveDistance"
-            class="progress-slider"
-            :step="0.01"
-            :tooltip="false"
-            @update:value="handleSliderChange"
-          />
-          <span class="time">{{ music.getPlaySongTime.songTimeDuration }}</span>
+          <div class="slider-wrapper">
+            <n-slider
+              v-model:value="music.getPlaySongTime.barMoveDistance"
+              class="progress-slider"
+              :step="0.01"
+              :tooltip="false"
+              @update:value="handleSliderChange"
+            >
+              <template #thumb>
+                <div class="custom-thumb">
+                  <div class="time-tooltip">{{ tooltipTime }}</div>
+                </div>
+              </template>
+            </n-slider>
+          </div>
         </div>
 
         <!-- 控制按钮 -->
         <div class="controls">
-          <n-icon size="32" :component="SkipPreviousRound" class="control-btn" @click="music.setPlaySongIndex('prev')" />
+          <n-icon size="32" :component="SkipPreviousRound" class="control-btn" @click="changeSong('prev')" />
           <n-icon 
             size="56" 
             :component="music.getPlayState ? PauseCircleFilled : PlayCircleFilled" 
             class="control-btn play-btn" 
-            @click="music.setPlayState(!music.getPlayState)" 
+            @click.stop="togglePlay" 
           />
-          <n-icon size="32" :component="SkipNextRound" class="control-btn" @click="music.setPlaySongIndex('next')" />
+          <n-icon size="32" :component="SkipNextRound" class="control-btn" @click="changeSong('next')" />
         </div>
         
         <!-- 额外功能区 -->
         <div class="extra-actions">
+           <!-- 音量调节 -->
+           <div class="volume-control">
+             <n-icon 
+                size="24" 
+                :component="
+                  music.persistData.playVolume == 0
+                    ? VolumeOffRound
+                    : music.persistData.playVolume < 0.4
+                    ? VolumeMuteRound
+                    : music.persistData.playVolume < 0.7
+                    ? VolumeDownRound
+                    : VolumeUpRound
+                " 
+                class="action-icon"
+                @click="volumeMute" 
+              />
+              <div class="volume-popup">
+                  <div class="val">{{ Math.round(music.persistData.playVolume * 100) }}%</div>
+                  <n-slider
+                     v-model:value="music.persistData.playVolume"
+                     :tooltip="false"
+                     :min="0"
+                     :max="1"
+                     :step="0.01"
+                     vertical
+                     class="volume-slider"
+                   />
+              </div>
+           </div>
+
            <n-tooltip trigger="hover">
              <template #trigger>
-               <n-icon size="24" :component="FavoriteBorderRound" class="action-icon" />
-             </template>
-             喜欢
-           </n-tooltip>
-           <n-tooltip trigger="hover">
-             <template #trigger>
-               <n-icon size="24" :component="PlaylistPlayRound" class="action-icon" />
+               <n-icon size="24" :component="PlaylistPlayRound" class="action-icon" @click.stop="music.showPlayList = !music.showPlayList" />
              </template>
              播放列表
            </n-tooltip>
@@ -109,10 +143,8 @@
              {{ setting.getShowTransl ? '关闭翻译' : '开启翻译' }}
            </n-tooltip>
            
-           <n-popover trigger="click" placement="top" style="padding: 0; background: transparent;">
-              <template #trigger>
-                 <n-icon size="24" :component="SlowMotionVideoRound" class="action-icon" />
-              </template>
+           <div class="speed-control">
+              <n-icon size="24" :component="SlowMotionVideoRound" class="action-icon" />
               <div class="speed-popup">
                   <div class="val">{{ music.getPlayRate }}x</div>
                   <n-slider
@@ -123,11 +155,11 @@
                      :step="0.1"
                      vertical
                      class="speed-slider"
-                     @update:value="(v) => music.setPlayRate(v)"
+                     @update:value="handleSpeedChange"
                      @click.stop
                    />
               </div>
-           </n-popover>
+           </div>
 
            <n-tooltip trigger="hover">
              <template #trigger>
@@ -255,6 +287,11 @@
       </div>
     </div>
 
+    <!-- 播放列表组件 -->
+    <div class="playlist-container" v-if="music.showPlayList">
+       <PlayList class="fixed-mode" />
+    </div>
+
     <!-- 创建房间弹窗 -->
     <n-modal v-model:show="showCreateRoomModal" preset="dialog" title="创建房间">
       <n-input v-model:value="newRoomName" placeholder="请输入房间名称" @keyup.enter="handleCreateRoom" />
@@ -282,19 +319,27 @@ import {
   PlaylistPlayRound,
   GTranslateFilled,
   FullscreenRound,
-  ExploreRound,
+  VolumeOffRound,
+  VolumeMuteRound,
+  VolumeDownRound,
+  VolumeUpRound,
   SlowMotionVideoRound,
+  ExploreRound,
 } from "@vicons/material";
-import { chatStore, musicStore, settingStore } from '@/store';
+import { chatStore, musicStore, settingStore, userStore } from '@/store';
 import { storeToRefs } from 'pinia';
 import { getSongCover } from "@/api/song";
+import { timelineEngine } from "@/core/realtime/timeline";
+import PlayList from "@/components/DataList/PlayList.vue";
 
 const WebSocketDebug = defineAsyncComponent(() => import('@/components/WebSocketDebug.vue'));
 
 const chat = chatStore();
 const music = musicStore();
 const setting = settingStore();
+const user = userStore();
 const themeVars = useThemeVars();
+const { persistData } = storeToRefs(music);
 
 const { 
   availableRooms, 
@@ -383,6 +428,21 @@ const getArtistNames = (artists: any[]) => {
   return artists.map(a => a.name).join(' / ');
 };
 
+// 辅助函数：格式化秒数
+const formatSeconds = (seconds: number) => {
+  if (!seconds && seconds !== 0) return '00:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+// 实时计算拖拽时的显示时间
+const tooltipTime = computed(() => {
+   const duration = music.getPlaySongTime.duration || 0;
+   const val = music.getPlaySongTime.barMoveDistance || 0;
+   return formatSeconds((duration / 100) * val);
+});
+
 // 辅助函数：获取当前歌词
 const currentLyricLine = computed(() => {
   const lyric = music.getPlaySongLyric;
@@ -400,17 +460,67 @@ const coverUrl = computed(() => {
   return "/images/logo/logo.png";
 });
 
+// 音量逻辑
+const volumeMute = () => {
+  if (music.persistData.playVolume > 0) {
+    music.persistData.playVolumeMute = music.persistData.playVolume;
+    music.persistData.playVolume = 0;
+  } else {
+    music.persistData.playVolume = music.persistData.playVolumeMute || 0.5;
+  }
+};
+
 // 播放器逻辑
 const handleSliderChange = (val: number) => {
-   if ((window as any).$player && music.getPlaySongTime.duration) {
-      (window as any).$player.currentTime = (music.getPlaySongTime.duration / 100) * val;
+   if (music.getPlaySongTime.duration) {
+      const time = (music.getPlaySongTime.duration / 100) * val;
+      // 立即更新本地播放器进度
+      const player = (window as any).$player;
+      if (player) {
+        player.currentTime = time;
+      }
+      timelineEngine.requestSeek(time);
    }
 };
 
 const handleLyricClick = (time: number) => {
-   if ((window as any).$player) {
-      (window as any).$player.currentTime = time;
-   }
+   timelineEngine.requestSeek(time);
+};
+
+const togglePlay = () => {
+  // 乐观更新：立即切换图标状态
+  music.setPlayState(!music.getPlayState);
+  
+  // 实际执行逻辑
+  timelineEngine.togglePlay();
+};
+
+const changeSong = (dir: 'prev' | 'next') => {
+    const list = music.getPlaylists;
+    const len = list.length;
+    if (len === 0) return;
+    let index = music.getPlaySongIndex;
+    if (dir === 'next') {
+        index = (index + 1) % len;
+    } else {
+        index = (index - 1 + len) % len;
+    }
+    const song = list[index];
+    if (song && song.id) {
+        // 先乐观更新 UI，防止点击无反应
+        music.setPlaySongIndex(index);
+        timelineEngine.requestChangeSong(String(song.id));
+    }
+};
+
+const handleSpeedChange = (v: number) => {
+    // 立即应用到本地，提升响应速度
+    music.setPlayRate(v);
+    const player = (window as any).$player;
+    if (player) player.playbackRate = v;
+    
+    // 发送请求
+    timelineEngine.requestSetSpeed(v);
 };
 
 // 监听歌词滚动
@@ -477,6 +587,14 @@ onUnmounted(() => {
   // chat.stopListen(); // 根据需求决定是否断开
   // 恢复底部播放栏
   music.showPlayBar = true;
+  
+  // 清理可能存在的全局事件监听
+  document.removeEventListener('mousemove', handleResizeMembers);
+  document.removeEventListener('mouseup', stopResizeMembers);
+  document.removeEventListener('mousemove', handleResizeInput);
+  document.removeEventListener('mouseup', stopResizeInput);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
 });
 </script>
 
@@ -488,11 +606,32 @@ onUnmounted(() => {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+  position: relative; // 确保播放列表可以绝对定位在容器内
 }
 
+  /* 播放列表容器 */
+  .playlist-container {
+     position: absolute;
+     right: 24px;
+     bottom: 24px;
+     z-index: 1000;
+     
+     :deep(.play-list) {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        height: 500px;
+        background: var(--n-color-modal);
+        border: 1px solid var(--n-border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+     }
+  }
+
 /* 左侧播放器 */
-.lt-player {
-  width: 380px;
+  .lt-player {
+    z-index: 2;
+    width: 380px;
   flex-shrink: 0;
   background: var(--n-color-modal);
   border-radius: 24px;
@@ -611,18 +750,38 @@ onUnmounted(() => {
     text-align: center;
     width: 100%;
     margin-bottom: 16px;
+    height: 50px; /* 固定高度防止跳动 */
+    
+    .song-info-inner {
+       width: 100%;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+    }
 
     .song-name {
       font-size: 20px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       color: var(--n-text-color);
+      width: 100%;
     }
 
     .artist-name {
       font-size: 14px;
       color: var(--n-text-color-3);
+      width: 100%;
     }
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
   }
 
   .lyric-preview {
@@ -651,8 +810,92 @@ onUnmounted(() => {
       text-align: center;
     }
 
-    .progress-slider {
+    .slider-wrapper {
       flex: 1;
+      padding: 8px 0; /* 增加点击热区 */
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .progress-slider {
+      width: 100%;
+      --n-rail-height: 4px;
+      --n-handle-size: 16px;
+      
+      :deep(.n-slider-rail) {
+        background-color: #E0E0E0;
+        border-radius: 2px;
+        
+        .n-slider-rail__fill {
+          background-color: var(--n-color-primary);
+          border-radius: 2px;
+          transition: width 150ms cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+      }
+      
+      /* 自定义 Thumb 容器 */
+      :deep(.n-slider-handle) {
+        background-color: transparent;
+        box-shadow: none;
+        width: 0;
+        height: 0;
+        
+        /* 实际显示的圆点在 slot 中 */
+        .custom-thumb {
+           width: 16px;
+           height: 16px;
+           background-color: #ffffff;
+           border-radius: 50%;
+           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+           position: relative;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           transition: transform 0.2s;
+           
+           /* 悬停放大 */
+           &:hover {
+              transform: scale(1.2);
+              
+              .time-tooltip {
+                 opacity: 1;
+                 transform: translateY(-8px);
+              }
+           }
+           
+           /* 拖动时显示时间提示 */
+           .time-tooltip {
+              position: absolute;
+              bottom: 100%;
+              background-color: rgba(0, 0, 0, 0.8);
+              color: #fff;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              white-space: nowrap;
+              opacity: 0;
+              transform: translateY(0);
+              transition: all 0.2s;
+              pointer-events: none;
+              margin-bottom: 8px;
+           }
+        }
+      }
+    }
+
+    /* 高对比度模式适配 */
+    @media (prefers-contrast: high) {
+      .progress-slider {
+        :deep(.n-slider-rail) {
+          background-color: #FFF;
+          border: 1px solid #000;
+          .n-slider-rail__fill {
+            background-color: #000;
+          }
+        }
+      }
     }
   }
 
@@ -683,6 +926,7 @@ onUnmounted(() => {
   .extra-actions {
     display: flex;
     gap: 24px;
+    align-items: center; // 确保子元素垂直居中
     
     .action-icon {
       cursor: pointer;
@@ -698,9 +942,59 @@ onUnmounted(() => {
         color: var(--n-color-primary);
       }
     }
+
+    .volume-control,
+    .speed-control {
+       position: relative;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       height: 100%; /* 继承父高度 */
+
+       /* 弹窗样式调整为绝对定位 */
+       .volume-popup,
+       .speed-popup {
+          position: absolute;
+          bottom: 100%; /* 在上方显示 */
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 4px; /* 间距 */
+          
+          /* 初始隐藏 */
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease-in-out;
+          pointer-events: none; /* 防止未显示时阻挡点击 */
+       }
+
+       /* Hover 显示逻辑 */
+       &:hover {
+          .volume-popup,
+          .speed-popup {
+             opacity: 1;
+             visibility: visible;
+             pointer-events: auto;
+             bottom: calc(100% + 4px); /* 稍微上浮动画 */
+          }
+       }
+       
+       /* 连接桥，防止鼠标移出间隙导致弹窗消失 */
+       &::after {
+          content: '';
+          position: absolute;
+          top: -20px;
+          left: 0;
+          width: 100%;
+          height: 30px;
+          background: transparent;
+       }
+    }
   }
-  
-  .speed-popup {
+}
+
+.volume-popup,
+.speed-popup {
+     /* 保持原有样式，仅移除位置相关属性（如果之前写死的话） */
      width: 44px;
      height: 140px;
      background: var(--n-color-modal);
@@ -710,7 +1004,7 @@ onUnmounted(() => {
      display: flex;
      flex-direction: column;
      align-items: center;
-     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
      border: 1px solid var(--n-border-color);
      z-index: 10000;
      
@@ -720,13 +1014,14 @@ onUnmounted(() => {
         font-weight: bold;
      }
      
+     .volume-slider,
      .speed-slider {
         height: 100%;
         --n-handle-size: 12px;
         --n-rail-width: 4px;
         
         :deep(.n-slider-rail) {
-          background-color: var(--n-border-color);
+          background-color: #E0E0E0;
           .n-slider-rail__fill {
             background-color: var(--n-color-primary);
           }
@@ -736,10 +1031,9 @@ onUnmounted(() => {
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
      }
-  }
 }
 
-/* 右侧房间区域 */
+/* 确保内容不会被遮挡 */
 .lt-room {
   flex: 1;
   background: var(--n-color-modal);
@@ -749,6 +1043,7 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--n-border-color);
+  z-index: 1; /* 确保低于播放列表 */
 
   .room-header {
     padding: 20px 24px;

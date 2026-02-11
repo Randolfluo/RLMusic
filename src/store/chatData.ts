@@ -263,12 +263,18 @@ export const useChatDataStore = defineStore("chatData", {
 
     startHeartbeatLoop() {
       if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+      // Initial Time Sync
+      if (socket.isConnected.value) socket.sendTimeSyncReq();
+      
       this.heartbeatInterval = setInterval(() => {
         if (socket.isConnected.value) {
           socket.sendHeartbeat();
           socket.sendGetRoomList();
+          // Periodically sync time? Maybe every minute?
+          // For now, let's just do it.
+          socket.sendTimeSyncReq();
         }
-      }, 5000);
+      }, 10000); // 10s
     }
   },
   // 持久化配置，可选，如果需要在刷新页面后恢复状态

@@ -12,17 +12,23 @@ import (
 
 // WebSocket 消息类型定义
 const (
-	MsgTypeHello       = "HELLO"         // 客户端连接初始化
-	MsgTypeTimeSyncReq = "TIME_SYNC_REQ" // 客户端请求时间同步
-	MsgTypeTimeSyncRes = "TIME_SYNC_RES" // 服务器返回时间同步响应
-	MsgTypeHeartbeat   = "HEARTBEAT"     // 心跳包，用于保活和RTT测量
-	MsgTypeChat        = "CHAT"          // 聊天消息
-	MsgTypeJoinRoom    = "JOIN_ROOM"     // 加入房间
-	MsgTypeLeaveRoom   = "LEAVE_ROOM"    // 离开房间
-	MsgTypeRoomMembers = "ROOM_MEMBERS"  // 房间成员列表
-	MsgTypeRoomInfo    = "ROOM_INFO"     // 房间信息（包含房主、时间线等）
-	MsgTypeGetRoomList = "GET_ROOM_LIST" // 获取房间列表请求
-	MsgTypeRoomListRes = "ROOM_LIST_RES" // 房间列表响应
+	MsgTypeHello        = "HELLO"         // 客户端连接初始化
+	MsgTypeTimeSyncReq  = "TIME_SYNC_REQ" // 客户端请求时间同步
+	MsgTypeTimeSyncRes  = "TIME_SYNC_RES" // 服务器返回时间同步响应
+	MsgTypeHeartbeat    = "HEARTBEAT"     // 心跳包，用于保活和RTT测量
+	MsgTypeChat         = "CHAT"          // 聊天消息
+	MsgTypeJoinRoom     = "JOIN_ROOM"     // 加入房间
+	MsgTypeLeaveRoom    = "LEAVE_ROOM"    // 离开房间
+	MsgTypeRoomMembers  = "ROOM_MEMBERS"  // 房间成员列表
+	MsgTypeRoomInfo     = "ROOM_INFO"     // 房间信息（包含房主、时间线等）
+	MsgTypeGetRoomList  = "GET_ROOM_LIST" // 获取房间列表请求
+	MsgTypeRoomListRes  = "ROOM_LIST_RES" // 房间列表响应
+	MsgTypeTimelineInit = "TIMELINE_INIT"
+	MsgTypePlay         = "PLAY"
+	MsgTypePause        = "PAUSE"
+	MsgTypeSeek         = "SEEK"
+	MsgTypeChangeSong   = "CHANGE_SONG"
+	MsgTypeSetSpeed     = "SET_SPEED"
 )
 
 // RoomTimeline 房间权威时间线
@@ -32,6 +38,99 @@ type RoomTimeline struct {
 	Paused          bool    `json:"paused"`            // 当前是否处于暂停状态
 	PausePositionMs float64 `json:"pause_position_ms"` // 暂停时，歌曲精确停在的位置
 	Speed           float64 `json:"speed"`             // 播放速度，默认 1.0
+}
+
+// ApplyPlay 应用播放操作
+func (t *RoomTimeline) ApplyPlay(serverTime int64) {
+	t.StartTimestamp = serverTime - int64(t.PausePositionMs)
+	t.Paused = false
+}
+
+// ApplyPause 应用暂停操作
+func (t *RoomTimeline) ApplyPause(serverTime int64, positionMs float64) {
+	t.PausePositionMs = positionMs
+	t.Paused = true
+}
+
+// ApplySeek 应用跳转操作
+func (t *RoomTimeline) ApplySeek(serverTime int64, positionMs float64) {
+	t.StartTimestamp = serverTime - int64(positionMs)
+	t.Paused = false
+}
+
+// ApplyChangeSong 应用切歌操作
+func (t *RoomTimeline) ApplyChangeSong(serverTime int64, songId string) {
+	t.SongID = songId
+	t.StartTimestamp = serverTime
+	t.PausePositionMs = 0
+	t.Paused = false
+}
+
+// ApplySetSpeed 应用倍速操作
+func (t *RoomTimeline) ApplySetSpeed(serverTime int64, newSpeed float64) {
+	if !t.Paused {
+		oldSpeed := t.Speed
+		if oldSpeed == 0 {
+			oldSpeed = 1.0
+		}
+		// 计算当前播放了多少时间（基于旧速度）
+		// pos = (server_time - start_timestamp) * old_speed
+		pos := float64(serverTime-t.StartTimestamp) * oldSpeed
+
+		// 反推新的 start_timestamp，使得在新速度下当前位置不变
+		// new_start = server_time - pos / new_speed
+		t.StartTimestamp = serverTime - int64(pos/newSpeed)
+	}
+	t.Speed = newSpeed
+}
+
+// SaveTimeline 保存时间线到 Redis
+func (s *WSServer) SaveTimeline(roomId string, timeline *RoomTimeline) error {
+	jsonBytes, err := json.Marshal(timeline)
+	if err != nil {
+		return err
+	}
+	return s.RDB.Set(context.Background(), fmt.Sprintf("room:%s:timeline", roomId), jsonBytes, 0).Err()
+}
+
+// LoadTimeline 从 Redis 加载时间线
+func (s *WSServer) LoadTimeline(roomId string) (*RoomTimeline, error) {
+	jsonStr, err := s.RDB.Get(context.Background(), fmt.Sprintf("room:%s:timeline", roomId)).Result()
+	if err != nil {
+		return nil, err
+	}
+	var timeline RoomTimeline
+	err = json.Unmarshal([]byte(jsonStr), &timeline)
+	if err != nil {
+		return nil, err
+	}
+	return &timeline, nil
+}
+
+// AddMember 添加成员到房间
+func (s *WSServer) AddMember(roomId string, userId string, userJson string) error {
+	return s.RDB.HSet(context.Background(), fmt.Sprintf("room:%s:members", roomId), userId, userJson).Err()
+}
+
+// RemoveMember 从房间移除成员
+func (s *WSServer) RemoveMember(roomId string, userId string) error {
+	return s.RDB.HDel(context.Background(), fmt.Sprintf("room:%s:members", roomId), userId).Err()
+}
+
+// GetMembers 获取房间成员列表
+func (s *WSServer) GetMembers(roomId string) ([]interface{}, error) {
+	membersMap, err := s.RDB.HGetAll(context.Background(), fmt.Sprintf("room:%s:members", roomId)).Result()
+	if err != nil {
+		return nil, err
+	}
+	var members []interface{}
+	for _, jsonStr := range membersMap {
+		var member interface{}
+		if err := json.Unmarshal([]byte(jsonStr), &member); err == nil {
+			members = append(members, member)
+		}
+	}
+	return members, nil
 }
 
 // WSMessage 定义 WebSocket 消息结构
@@ -379,6 +478,204 @@ func NewWSServer(rdb *redis.Client) *WSServer {
 					}
 				}
 			}
+
+		case MsgTypePlay:
+			if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+				roomId, _ := payloadMap["roomId"].(string)
+				if roomId == "" {
+					return
+				}
+				// 权限检查：仅房主可操作
+				userId, _ := s.Get("userId")
+				userIdStr := fmt.Sprintf("%v", userId)
+				ownerId, _ := wsServer.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
+				if userIdStr != ownerId {
+					return
+				}
+
+				serverTime := time.Now().UnixMilli()
+				timeline, err := wsServer.LoadTimeline(roomId)
+				if err != nil || timeline == nil {
+					return
+				}
+
+				timeline.ApplyPlay(serverTime)
+
+				wsServer.SaveTimeline(roomId, timeline)
+
+				resp := WSMessage{
+					Type: MsgTypePlay,
+					Payload: map[string]interface{}{
+						"event":       "PLAY",
+						"server_time": serverTime,
+						"roomId":      roomId,
+					},
+				}
+				if b, err := json.Marshal(resp); err == nil {
+					wsServer.M.Broadcast(b)
+				}
+				wsServer.BroadcastRoomInfo(roomId)
+			}
+
+		case MsgTypePause:
+			if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+				roomId, _ := payloadMap["roomId"].(string)
+				if roomId == "" {
+					return
+				}
+				userId, _ := s.Get("userId")
+				userIdStr := fmt.Sprintf("%v", userId)
+				ownerId, _ := wsServer.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
+				if userIdStr != ownerId {
+					return
+				}
+
+				serverTime := time.Now().UnixMilli()
+				positionMs, _ := payloadMap["position_ms"].(float64)
+
+				timeline, err := wsServer.LoadTimeline(roomId)
+				if err != nil || timeline == nil {
+					return
+				}
+
+				timeline.ApplyPause(serverTime, positionMs)
+
+				wsServer.SaveTimeline(roomId, timeline)
+
+				resp := WSMessage{
+					Type: MsgTypePause,
+					Payload: map[string]interface{}{
+						"event":       "PAUSE",
+						"server_time": serverTime,
+						"position_ms": positionMs,
+						"roomId":      roomId,
+					},
+				}
+				if b, err := json.Marshal(resp); err == nil {
+					wsServer.M.Broadcast(b)
+				}
+				wsServer.BroadcastRoomInfo(roomId)
+			}
+
+		case MsgTypeSeek:
+			if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+				roomId, _ := payloadMap["roomId"].(string)
+				if roomId == "" {
+					return
+				}
+				userId, _ := s.Get("userId")
+				userIdStr := fmt.Sprintf("%v", userId)
+				ownerId, _ := wsServer.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
+				if userIdStr != ownerId {
+					return
+				}
+
+				serverTime := time.Now().UnixMilli()
+				positionMs, _ := payloadMap["position_ms"].(float64)
+
+				timeline, err := wsServer.LoadTimeline(roomId)
+				if err != nil || timeline == nil {
+					return
+				}
+
+				timeline.ApplySeek(serverTime, positionMs)
+
+				wsServer.SaveTimeline(roomId, timeline)
+
+				resp := WSMessage{
+					Type: MsgTypeSeek,
+					Payload: map[string]interface{}{
+						"event":       "SEEK",
+						"server_time": serverTime,
+						"position_ms": positionMs,
+						"roomId":      roomId,
+					},
+				}
+				if b, err := json.Marshal(resp); err == nil {
+					wsServer.M.Broadcast(b)
+				}
+				wsServer.BroadcastRoomInfo(roomId)
+			}
+
+		case MsgTypeChangeSong:
+			if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+				roomId, _ := payloadMap["roomId"].(string)
+				songId, _ := payloadMap["song_id"].(string)
+				if roomId == "" {
+					return
+				}
+				userId, _ := s.Get("userId")
+				userIdStr := fmt.Sprintf("%v", userId)
+				ownerId, _ := wsServer.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
+				if userIdStr != ownerId {
+					return
+				}
+
+				serverTime := time.Now().UnixMilli()
+
+				timeline, err := wsServer.LoadTimeline(roomId)
+				if err != nil || timeline == nil {
+					return
+				}
+
+				timeline.ApplyChangeSong(serverTime, songId)
+
+				wsServer.SaveTimeline(roomId, timeline)
+
+				resp := WSMessage{
+					Type: MsgTypeChangeSong,
+					Payload: map[string]interface{}{
+						"event":       "CHANGE_SONG",
+						"song_id":     songId,
+						"server_time": serverTime,
+						"roomId":      roomId,
+					},
+				}
+				if b, err := json.Marshal(resp); err == nil {
+					wsServer.M.Broadcast(b)
+				}
+				wsServer.BroadcastRoomInfo(roomId)
+			}
+
+		case MsgTypeSetSpeed:
+			if payloadMap, ok := incoming.Payload.(map[string]interface{}); ok {
+				roomId, _ := payloadMap["roomId"].(string)
+				newSpeed, _ := payloadMap["speed"].(float64)
+				if roomId == "" {
+					return
+				}
+				userId, _ := s.Get("userId")
+				userIdStr := fmt.Sprintf("%v", userId)
+				ownerId, _ := wsServer.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
+				if userIdStr != ownerId {
+					return
+				}
+
+				serverTime := time.Now().UnixMilli()
+
+				timeline, err := wsServer.LoadTimeline(roomId)
+				if err != nil || timeline == nil {
+					return
+				}
+
+				timeline.ApplySetSpeed(serverTime, newSpeed)
+
+				wsServer.SaveTimeline(roomId, timeline)
+
+				resp := WSMessage{
+					Type: MsgTypeSetSpeed,
+					Payload: map[string]interface{}{
+						"event":       "SET_SPEED",
+						"speed":       newSpeed,
+						"server_time": serverTime,
+						"roomId":      roomId,
+					},
+				}
+				if b, err := json.Marshal(resp); err == nil {
+					wsServer.M.Broadcast(b)
+				}
+				wsServer.BroadcastRoomInfo(roomId)
+			}
 		}
 	})
 
@@ -391,18 +688,15 @@ func (s *WSServer) BroadcastRoomInfo(roomId string) {
 	ownerId, _ := s.RDB.Get(context.Background(), fmt.Sprintf("room:%s:owner", roomId)).Result()
 
 	// 获取时间线
-	var timeline RoomTimeline
-	timelineJson, _ := s.RDB.Get(context.Background(), fmt.Sprintf("room:%s:timeline", roomId)).Result()
-	if timelineJson != "" {
-		json.Unmarshal([]byte(timelineJson), &timeline)
-	}
+	timeline, _ := s.LoadTimeline(roomId)
 
 	msg := WSMessage{
 		Type: MsgTypeRoomInfo,
 		Payload: map[string]interface{}{
-			"roomId":   roomId,
-			"ownerId":  ownerId,
-			"timeline": timeline,
+			"roomId":      roomId,
+			"ownerId":     ownerId,
+			"timeline":    timeline,
+			"server_time": time.Now().UnixMilli(),
 		},
 	}
 
@@ -413,17 +707,9 @@ func (s *WSServer) BroadcastRoomInfo(roomId string) {
 
 // BroadcastRoomMembers 广播房间成员列表
 func (s *WSServer) BroadcastRoomMembers(roomId string) {
-	membersMap, err := s.RDB.HGetAll(context.Background(), fmt.Sprintf("room:%s:members", roomId)).Result()
+	members, err := s.GetMembers(roomId)
 	if err != nil {
 		return
-	}
-
-	var members []interface{}
-	for _, jsonStr := range membersMap {
-		var member interface{}
-		if err := json.Unmarshal([]byte(jsonStr), &member); err == nil {
-			members = append(members, member)
-		}
 	}
 
 	msg := WSMessage{

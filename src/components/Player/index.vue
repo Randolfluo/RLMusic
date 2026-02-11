@@ -23,7 +23,7 @@
         <div class="pic" @click.stop="music.setBigPlayerState(true)">
           <img
             :src="
-              music.getPlaySongData
+              music.getPlaySongData?.album?.picUrl
                 ? music.getPlaySongData.album.picUrl.replace(
                     /^http:/,
                     'https:'
@@ -280,7 +280,8 @@ const getPlaySongData = (id, level = setting.songLevel) => {
         if (res.data[0].fee == 1) {
           $message.warning("当前歌曲为 VIP 专享，仅可试听");
         }
-        music.setPlaySongLink(res.data[0].url.replace(/^http:/, "https:"));
+        const songUrl = res.data[0].url;
+        music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
       });
       // 获取歌词
       getMusicLyric(id).then((res) => {
@@ -343,27 +344,23 @@ const songPlay = () => {
   music.setPlayState(true);
   // 兼容 mediaSession
   if ("mediaSession" in navigator) {
+    const picUrl = music.getPlaySongData?.album?.picUrl;
+    const safePicUrl = picUrl ? picUrl.replace(/^http:/, "https:") : "/images/pic/default.png";
     navigator.mediaSession.metadata = new MediaMetadata({
       title: music.getPlaySongData.name,
-      artist: music.getPlaySongData.artist[0].name,
-      album: music.getPlaySongData.album.name,
+      artist: music.getPlaySongData.artist?.[0]?.name || "Unknown",
+      album: music.getPlaySongData.album?.name || "Unknown",
       artwork: [
         {
-          src:
-            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
-            "?param=96y96",
+          src: safePicUrl + "?param=96y96",
           sizes: "96x96",
         },
         {
-          src:
-            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
-            "?param=128y128",
+          src: safePicUrl + "?param=128y128",
           sizes: "128x128",
         },
         {
-          src:
-            music.getPlaySongData.album.picUrl.replace(/^http:/, "https:") +
-            "?param=192y192",
+          src: safePicUrl + "?param=192y192",
           sizes: "192x192",
         },
       ],

@@ -99,6 +99,15 @@ const delSong = (index: number) => {
   flex-direction: column;
   backdrop-filter: blur(20px);
   overflow: hidden;
+  /* Fix for ListenTogether page */
+  &.fixed-mode {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    top: auto;
+    left: auto;
+    height: 400px;
+  }
   .header {
     display: flex;
     align-items: center;
