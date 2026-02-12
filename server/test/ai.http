@@ -1,0 +1,26 @@
+### 全局变量
+@baseUrl = http://localhost:12345/api
+@contentType = application/json
+
+### 1. 语音合成 (TTS)
+# @name tts
+POST {{baseUrl}}/ai/tts
+Content-Type: {{contentType}}
+
+{
+    "text": "你好，这是一段测试语音，用于验证阿里百炼语音合成接口。",
+    "voice": "longxiaochun",
+    "format": "flac",
+    "sample_rate": 24000,
+    "volume": 50,
+    "rate": 1.0,
+    "pitch": 1.0
+}
+
+### 2. 硅基流动 Qwen 对话
+# @name chat
+POST {{baseUrl}}/ai/chat
+Content-Type: {{contentType}}
+{
+    "prompt": "写一个20字的周杰伦的歌曲青花瓷的推荐语，用空格表示情感"
+}

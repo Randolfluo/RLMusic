@@ -22,12 +22,13 @@ var (
 	systemAuthAPI = &handle.SystemAuth{}
 	songAuthAPI   = &handle.SongAuth{}
 	wsAuthAPI     *handle.WSAuth
+	aiHandler     = &handle.AIHandler{}
 )
 
 // RegisterHandlers 注册所有路由处理器
 func RegisterHandlers(r *gin.Engine, rdb *redis.Client) {
 	// 初始化 WebSocket 处理器
-	wsAuthAPI = handle.NewWSAuth(rdb)
+	// wsAuthAPI = handle.NewWSAuth(rdb)
 
 	// 配置Swagger
 	docs.SwaggerInfo.BasePath = apiBasePath
@@ -85,11 +86,18 @@ func registerBaseHandler(r *gin.Engine) {
 		system.GET("/stats", systemAuthAPI.GetStats) // 合并后的接口
 	}
 
-	// WebSocket
-	ws := base.Group("/ws")
+	// AI相关(无需认证)
+	ai := base.Group("/ai")
 	{
-		ws.GET("/chat", wsAuthAPI.HandleWS)
+		ai.POST("/tts", aiHandler.QwenTTS)
+		ai.POST("/chat", aiHandler.QwenChat)
 	}
+
+	// WebSocket
+	// ws := base.Group("/ws")
+	// {
+	// 	ws.GET("/chat", wsAuthAPI.HandleWS)
+	// }
 }
 
 // registerAuthHandler 注册需要JWT认证的路由
@@ -141,4 +149,5 @@ func registerAuthHandler(r *gin.Engine) {
 	{
 		system.POST("/config", systemAuthAPI.UpdateConfig)
 	}
+
 }

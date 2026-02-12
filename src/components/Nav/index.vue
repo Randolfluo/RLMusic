@@ -13,7 +13,7 @@
     <div class="center">
       <router-link class="link link-home" to="/">发现</router-link>
       <router-link class="link link-search" to="/search">搜索</router-link>
-      <n-dropdown
+      <!-- <n-dropdown
         class="link-discover-wrap"
         trigger="hover"
         size="large"
@@ -21,7 +21,7 @@
         @select="menuSelect"
       >
         <router-link class="link" to="/listen-together">一起听歌</router-link>
-      </n-dropdown>
+      </n-dropdown> -->
       <router-link class="link link-system" to="/system-stats">系统信息</router-link>
       <n-dropdown
         class="link-user-wrap"

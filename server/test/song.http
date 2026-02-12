@@ -1,5 +1,5 @@
 ### 全局变量
-@baseUrl = http://localhost:3000/api
+@baseUrl = http://localhost:12345/api
 @contentType = application/json
 @username = testuser001
 @password = password123

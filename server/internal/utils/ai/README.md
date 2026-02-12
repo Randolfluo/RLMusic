@@ -1,0 +1,1 @@
+将SiliconFlow_qwen.go拆分为SiliconFlow_Qwen.go和handle_ai.go，与api的交互在SiliconFlow_Qwen.go中实现，handle_ai.go中实现http接口调用路由。并修改测试文件ai.http

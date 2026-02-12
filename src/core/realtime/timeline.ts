@@ -43,28 +43,9 @@ class TimelineEngine {
     if (!player) return;
 
     // 1. Check Song
-    // If song ID differs, we might need to change it.
-    if (timeline.song_id) {
-        const currentSong = this.music.getPlaySongData;
-        if (!currentSong || currentSong.id.toString() !== timeline.song_id.toString()) {
-            console.log(`[Timeline] Song mismatch. Server: ${timeline.song_id}, Local: ${currentSong?.id}`);
-            // Find song in current playlist
-            const playlists = this.music.getPlaylists;
-            const index = playlists.findIndex((s: any) => s.id.toString() === timeline.song_id.toString());
-            
-            if (index !== -1) {
-                console.log(`[Timeline] Switching to song index ${index}`);
-                this.music.setPlaySongIndex(index);
-                // Wait a bit for song to load? 
-                // The player watcher in main component should handle load, 
-                // and then we might need to seek. 
-                // But this applyTimeline runs frequently. 
-                // Let's rely on next update or just proceed.
-            } else {
-                console.warn(`[Timeline] Song ${timeline.song_id} not found in local playlist.`);
-            }
-        }
-    }
+    // If song ID differs, we might need to change it. 
+    // For now, assuming the user has the same playlist context.
+    // If timeline.song_id is implemented...
     
     // 2. Calculate Target Position
     const serverNow = Date.now() + socket.timeOffset.value;

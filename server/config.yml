@@ -1,6 +1,6 @@
 Server:
   Mode: debug # debug | release
-  Port: :3000
+  Port: :12345
   DbType: "sqlite" # mongoDb | sqlite
   DbAutoMigrate: true # 是否自动迁移数据库表结构 (表结构没变可以不迁移, 提高启动速度)
   DbLogMode: "error" # 日志级别 silent, error, warn, info, 默认 info
@@ -32,5 +32,17 @@ Redis:
   Password: ""
   DB: 0
 
-API:
-   silicion
+QwenTTS:
+  ApiKey: "" # 阿里云百炼 API Key，若为空则从环境变量中获取
+  Model: "qwen3-tts-flash"
+  Voice: "longxiaochun"
+  Format: "flac"
+  SampleRate: 24000
+  Volume: 50
+  Rate: 1.0
+  Pitch: 1.0
+
+SiliconFlow:
+  ApiKey: "" # 硅基流动 API Key
+  Model: "Qwen/Qwen3-8B"
+

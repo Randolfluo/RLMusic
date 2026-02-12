@@ -70,6 +70,20 @@ type Config struct {
 		MaxSkew  float64
 		DotCount int
 	}
+	QwenTTS struct {
+		ApiKey     string  `mapstructure:"api_key"`
+		Model      string  `mapstructure:"model"`
+		Voice      string  `mapstructure:"voice"`
+		Format     string  `mapstructure:"format"`      // mp3, wav, pcm, flac
+		SampleRate int     `mapstructure:"sample_rate"` // 22050, 44100, 48000
+		Volume     int     `mapstructure:"volume"`      // 0-100
+		Rate       float64 `mapstructure:"rate"`        // 0.5-2.0
+		Pitch      float64 `mapstructure:"pitch"`       // 0.5-2.0
+	}
+	SiliconFlow struct {
+		ApiKey string `mapstructure:"api_key"`
+		Model  string `mapstructure:"model"`
+	}
 }
 
 var Conf *Config

@@ -91,15 +91,15 @@ const routes: any = [
     component: () => import("@/views/User/like.vue"),
   },
   // 一起听歌
-  {
-    path: "/listen-together",
-    name: "listen-together",
-    meta: {
-      title: "一起听歌",
-      needLogin: true,
-    },
-    component: () => import("@/views/ListenTogether/index.vue"),
-  },
+  // {
+  //   path: "/listen-together",
+  //   name: "listen-together",
+  //   meta: {
+  //     title: "一起听歌",
+  //     needLogin: true,
+  //   },
+  //   component: () => import("@/views/ListenTogether/index.vue"),
+  // },
   // 历史记录
   {
     path: "/history",

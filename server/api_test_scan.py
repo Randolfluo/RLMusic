@@ -3,7 +3,7 @@ import time
 import json
 
 # 配置
-BASE_URL = "http://localhost:3000/api"
+BASE_URL = "http://localhost:12345/api"
 USER_COUNT = 5
 BASE_USERNAME = "testuser"
 BASE_PASSWORD = "password123"
