@@ -16,6 +16,9 @@ Content-Type: {{contentType}}
     "password": "{{password}}"
 }
 
+
+
+
 ### 11-2a. 获取公共歌单详情 (无需登录，验证 is_public)
 GET {{baseUrl}}/song/playlist/public/1?page=1&limit=90
 
@@ -25,17 +28,14 @@ Authorization: Bearer {{login.response.body.data.token}}
 
 ### 14. 获取所有公开歌单 (无需登录)
 GET {{baseUrl}}/song/playlists/public
-# 返回 is_public=true 的歌单
+# 返回 is_public=true 的歌单，包含 total_songs 字段
 
-### 14-2. 获取我的公开歌单 (需要登录)
-GET {{baseUrl}}/song/playlists/user/public
-Authorization: Bearer {{login.response.body.data.token}}
-# 返回 owner_id 为当前用户，且 is_public=true 的歌单
+
 
 ### 14-3. 获取我的私有歌单 (需要登录)
 GET {{baseUrl}}/song/playlists/user/private
 Authorization: Bearer {{login.response.body.data.token}}
-# 返回 owner_id 为当前用户，且 is_public=false 的歌单
+# 返回 owner_id 为当前用户，且 is_public=false 的歌单，包含 total_songs 字段
 
 ### 15. 更新歌单信息(包括权限) (需要登录)
 PUT {{baseUrl}}/song/playlist/1
@@ -47,3 +47,55 @@ Content-Type: {{contentType}}
     "description": "这是新的描述",
     "is_public": false
 }
+
+
+
+### 11-1. 创建私有歌单 (需要登录)
+POST {{baseUrl}}/song/playlist
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "title": "我的私有歌单",
+    "description": "这是一个测试创建的私有歌单"
+}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "id": 21,
+#     "title": "我的私有歌单",
+#     "description": "这是一个测试创建的私有歌单",
+#     "is_public": false,
+#     "cover_url": "",
+#     "owner_id": 2,
+#     "songs": null,
+#     "play_count": 0
+#   }
+# }
+
+
+
+### 16. 批量添加歌曲到歌单
+POST {{baseUrl}}/song/playlist/add-songs
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "playlist_id": 1,
+    "song_ids": [1, 2]
+}
+
+### 17. 点赞/取消点赞歌曲 (需要登录)
+# 此接口内部逻辑类似添加/移除歌曲到"我喜欢的音乐"歌单，
+# 也会触发更新该歌单的 total_songs 计数
+POST {{baseUrl}}/song/like/1
+Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "count": 2,
+#     "message": "添加成功"
+#   }
+# }

@@ -135,3 +135,22 @@ https://chatgpt.com/s/t_69875e32fe7c8191a6c1594adc92ccb5
 
 
 异步实现
+
+在model执行相应数据库操作，在handler中处理
+添加
+添加测试接口到.http，不要删除其他API
+
+
+
+1. 添加歌单删除歌曲api，只能操作用户私有歌单，删除用户私有歌单歌曲，公共歌单不提供删除服务。
+2. 添加删除歌单功能，只能删除该用户的私有歌单。
+3. 修改main.go的静态资源映射，handle_song中scan扫描到的歌曲缩略图存储到config.yml中的FilePath+FileName/data/cover文件夹内，存储缩略图时只存储文件名，路径由服务器拼接完成。
+4. 修改ai生成的音频文件到config.yml中的FilePath+FileName/data/Podcast文件夹内
+5. 修改数据库地址为config.yml中的FilePath+FileName/data/data.db
+6. 修改handle_song扫描逻辑，扫描除data文件夹内的所有文件夹。
+7. 添加MP3、WAV等歌曲信息扫描支持。
+8. 优化歌曲页ui设计。
+9. 修改扫描逻辑，歌单描述信息默认为空，专辑页描述默认为空，歌手描述默认为空
+10. 修改私有歌单的歌单为为软链接，存储歌曲id和开场白文件名，播放时根据i文件路径。添加api实现开场白功能，根据歌手名，专辑名，歌曲名生成开场白，并写入到静态文件夹data/Podcast/。
+10. 支持歌单描述、专辑描述、歌手描述的获取和修改。scan后开启一个线程修改数据库中的描述信息（描述信息通过POST {{baseUrl}}/ai/chat接口生成）
+11. 

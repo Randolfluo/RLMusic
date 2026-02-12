@@ -108,6 +108,30 @@ export const getPrivatePlaylistDetail = (id: string | number, page: number = 1, 
 };
 
 /**
+ * 创建私有歌单
+ * @param {object} data - 歌单信息 {title, description}
+ */
+export const createPrivatePlaylist = (data: { title: string; description?: string }) => {
+    return axios({
+        method: "POST",
+        url: "/song/playlist",
+        data
+    });
+};
+
+/**
+ * 批量添加歌曲到歌单
+ * @param {object} data - {playlist_id, song_ids}
+ */
+export const addSongsToPlaylist = (data: { playlist_id: number; song_ids: number[] }) => {
+    return axios({
+        method: "POST",
+        url: "/song/playlist/add-songs",
+        data
+    });
+};
+
+/**
  * 更新歌单信息
  * @param {string|number} id
  * @param {object} data

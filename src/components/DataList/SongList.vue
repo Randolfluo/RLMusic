@@ -12,11 +12,50 @@
     <!-- 列表控制栏（右上角视图切换） -->
     <div class="list-control">
       <div class="left">
-        <!-- Slot for left side controls (e.g. Play All button if moved here, or just empty) -->
+        <!-- 多选模式下的操作按钮 -->
+        <n-button-group v-if="isMultiSelectMode && selectedRowKeys.length > 0" size="small">
+          <n-button @click="handleBatchPlay">
+            <template #icon>
+              <n-icon :component="PlayOne" />
+            </template>
+            播放
+          </n-button>
+          <n-button @click="handleBatchAddToPlaylist">
+            <template #icon>
+              <n-icon :component="FolderPlus" />
+            </template>
+            添加到
+          </n-button>
+          <n-button @click="handleBatchDownload">
+            <template #icon>
+              <n-icon :component="Download" />
+            </template>
+            下载
+          </n-button>
+          <n-button @click="handleBatchDelete">
+            <template #icon>
+              <n-icon :component="Delete" />
+            </template>
+            删除
+          </n-button>
+        </n-button-group>
+        <span v-if="isMultiSelectMode" style="margin-left: 10px; font-size: 12px; opacity: 0.6;">
+          已选择 {{ selectedRowKeys.length }} 项
+        </span>
         <slot name="controls"></slot>
       </div>
       <div class="right">
         <n-button-group size="small">
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button :type="isMultiSelectMode ? 'primary' : 'default'" @click="toggleMultiSelect">
+                <template #icon>
+                  <n-icon :component="CheckOne" />
+                </template>
+              </n-button>
+            </template>
+            {{ isMultiSelectMode ? '退出多选' : '批量操作' }}
+          </n-tooltip>
           <n-tooltip trigger="hover">
             <template #trigger>
               <n-button :type="viewMode === 'thumbnail' ? 'primary' : 'default'" @click="viewMode = 'thumbnail'">
@@ -49,6 +88,8 @@
       :row-props="rowProps"
       :row-class-name="() => 'song-row'"
       :loading="loading"
+      :row-key="(row) => row.id"
+      v-model:checked-row-keys="selectedRowKeys"
     />
     
     <!-- 空状态显示 -->
@@ -67,6 +108,13 @@
       :on-clickoutside="onClickOutside"
       @select="handleSelect"
     />
+
+    <!-- 添加到歌单模态框 -->
+    <AddToPlaylistModal
+      v-model:show="showAddToPlaylistModal"
+      :song-ids="songsToAdd"
+      @success="handleAddToPlaylistSuccess"
+    />
   </div>
 </template>
 
@@ -74,8 +122,9 @@
 import { ref, computed, h, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage } from "naive-ui";
-import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, Download, FolderPlus, Copy } from "@icon-park/vue-next";
+import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, Download, FolderPlus, Copy, CheckOne, More, CloudStorage, Delete } from "@icon-park/vue-next";
 import { musicStore, settingStore } from "@/store";
+import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
 
 // Props 定义
 const props = defineProps({
@@ -106,19 +155,107 @@ const showDropdown = ref(false);
 const dropdownX = ref(0);
 const dropdownY = ref(0);
 const currentSong = ref<any>(null);
+const isMultiSelectMode = ref(false);
+const selectedRowKeys = ref<Array<string | number>>([]);
+
+// 添加到歌单模态框状态
+const showAddToPlaylistModal = ref(false);
+const songsToAdd = ref<number[]>([]);
+
+const openAddToPlaylist = (ids: number[]) => {
+  songsToAdd.value = ids;
+  showAddToPlaylistModal.value = true;
+};
+
+const handleAddToPlaylistSuccess = () => {
+    // 如果是多选模式，操作成功后退出多选
+    if (isMultiSelectMode.value) {
+        toggleMultiSelect();
+    }
+};
+
+const toggleMultiSelect = () => {
+  isMultiSelectMode.value = !isMultiSelectMode.value;
+  if (!isMultiSelectMode.value) {
+    selectedRowKeys.value = [];
+  }
+};
+
+// 批量操作处理函数
+const handleBatchPlay = () => {
+    if (selectedRowKeys.value.length === 0) return;
+    // 获取选中的歌曲对象
+    const selectedSongs = props.songs.filter(s => selectedRowKeys.value.includes(s.id));
+    if (selectedSongs.length > 0) {
+        const tracks = mapSongsToPlayer(selectedSongs);
+        music.setPlaylists(tracks);
+        music.setPlaySongIndex(0);
+        music.setPlayState(true);
+        message.success(`已开始播放选中的 ${selectedSongs.length} 首歌曲`);
+        // 退出多选模式
+        toggleMultiSelect();
+    }
+};
+
+const handleBatchAddToPlaylist = () => {
+    if (selectedRowKeys.value.length === 0) return;
+    openAddToPlaylist(selectedRowKeys.value.map(id => Number(id)));
+};
+
+const handleBatchDownload = () => {
+    message.info(`批量下载: ${selectedRowKeys.value.length} 首 (功能开发中)`);
+};
+
+const handleBatchDelete = () => {
+    message.warning(`批量删除: ${selectedRowKeys.value.length} 首 (功能开发中)`);
+};
 
 // 渲染图标辅助函数
 const renderIcon = (icon: any, color?: string) => {
   return () => h(NIcon, { color }, { default: () => h(icon) });
 };
 
+// 渲染菜单头部 (歌曲信息)
+const renderMenuHeader = (song: any) => {
+  return h('div', {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '4px 8px 8px 8px',
+      borderBottom: '1px solid var(--n-divider-color)',
+      marginBottom: '4px',
+      cursor: 'default'
+    }
+  }, [
+    h(NImage, {
+      src: song.cover_url || (song.album ? song.album.picUrl : null) || song.picUrl || `/api/song/cover/${song.id}`,
+      width: 40,
+      height: 40,
+      previewDisabled: true,
+      style: { borderRadius: '4px', marginRight: '10px' }
+    }),
+    h('div', { style: { display: 'flex', flexDirection: 'column', overflow: 'hidden' } }, [
+      h('span', { style: { fontWeight: 'bold', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' } }, song.title),
+      h('span', { style: { fontSize: '12px', opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' } }, song.artist_name || (song.artists ? song.artists.map((a: any) => a.name).join(' / ') : 'Unknown'))
+    ])
+  ]);
+};
+
 // 右键菜单选项配置
 const menuOptions = computed(() => {
     if (!currentSong.value) return [];
     const isLiked = music.getSongIsLike(currentSong.value.id);
+    const song = currentSong.value;
+
     return [
         {
-            label: '播放',
+            key: 'header',
+            type: 'render',
+            render: () => renderMenuHeader(song),
+            disabled: true // 禁止点击
+        },
+        {
+            label: '立即播放',
             key: 'play',
             icon: renderIcon(PlayOne)
         },
@@ -126,6 +263,11 @@ const menuOptions = computed(() => {
             label: '下一首播放',
             key: 'play-next',
             icon: renderIcon(PlayTwo)
+        },
+        {
+            label: '添加到歌单',
+            key: 'add-to-playlist',
+            icon: renderIcon(FolderPlus)
         },
         {
             type: 'divider',
@@ -137,19 +279,30 @@ const menuOptions = computed(() => {
             icon: renderIcon(Like, isLiked ? '#d03050' : undefined)
         },
         {
-            label: '添加到歌单',
-            key: 'add-to-playlist',
-            icon: renderIcon(FolderPlus)
+            label: '更多操作',
+            key: 'more',
+            icon: renderIcon(More),
+            children: [
+                {
+                    label: '下载',
+                    key: 'download',
+                    icon: renderIcon(Download)
+                },
+                {
+                    label: '复制链接',
+                    key: 'copy-link',
+                    icon: renderIcon(Copy)
+                }
+            ]
         },
         {
-            label: '下载',
-            key: 'download',
-            icon: renderIcon(Download)
+            type: 'divider',
+            key: 'd2'
         },
         {
-            label: '复制链接',
-            key: 'copy-link',
-            icon: renderIcon(Copy)
+            label: '从歌单中删除',
+            key: 'delete-from-playlist',
+            icon: renderIcon(Delete)
         }
     ];
 });
@@ -189,14 +342,22 @@ const handleSelect = (key: string) => {
             }
             break;
         case 'play-next':
-            message.info('已添加到下一首播放 (功能开发中)');
+            // 构造播放器需要的歌曲对象结构
+            const track = {
+                ...song,
+                name: song.title,
+                artist: [{ name: song.artist_name, id: song.artist_id }],
+                album: { name: song.album_title, id: song.album_id, picUrl: song.cover_url }
+            };
+            music.addSongToNext(track);
+            message.success('已添加到下一首播放');
             break;
         case 'like':
             const isLiked = music.getSongIsLike(song.id);
             music.changeLikeList(song.id, !isLiked);
             break;
         case 'add-to-playlist':
-            message.info('添加到歌单 (功能开发中)');
+            openAddToPlaylist([song.id]);
             break;
         case 'download':
             message.info('开始下载 (功能开发中)');
@@ -207,12 +368,25 @@ const handleSelect = (key: string) => {
                  message.success('链接已复制');
              });
             break;
+        case 'delete-from-playlist':
+            message.warning('从歌单中删除 (功能开发中)');
+            // 这里需要根据具体的业务场景（是否在歌单详情页）来实现删除逻辑
+            break;
     }
 };
 
 // 表格列配置
 const columns = computed(() => {
-  const baseColumns: any[] = [
+  const baseColumns: any[] = [];
+  
+  if (isMultiSelectMode.value) {
+    baseColumns.push({
+      type: 'selection',
+      fixed: 'left'
+    });
+  }
+
+  baseColumns.push(
     {
       title: "#",
       key: "index",
@@ -307,10 +481,12 @@ const columns = computed(() => {
       width: 100,
       render: (row: any) => h('span', { style: { opacity: 0.5, fontFamily: 'Monaco, monospace', fontSize: '12px' } }, formatDuration(row.duration)),
     },
-  ];
+  );
 
   if (viewMode.value === 'thumbnail') {
-    baseColumns.splice(1, 0, {
+    // 如果是多选模式，插入位置要后移一位
+    const insertIndex = isMultiSelectMode.value ? 2 : 1;
+    baseColumns.splice(insertIndex, 0, {
       title: "封面",
       key: "cover",
       width: 80,
@@ -345,12 +521,25 @@ const formatDuration = (seconds: number) => {
 const rowProps = (row: any, index: number) => {
   return {
     style: "cursor: pointer;",
-    onClick: () => {
+    onClick: (e: Event) => {
+        // 多选模式下点击行不触发播放，而是切换选中状态（NDataTable 默认行为可能需要自行处理，或者仅禁止播放）
+        if (isMultiSelectMode.value) {
+           const id = row.id;
+           const idx = selectedRowKeys.value.indexOf(id);
+           if (idx > -1) {
+             selectedRowKeys.value.splice(idx, 1);
+           } else {
+             selectedRowKeys.value.push(id);
+           }
+           return;
+        }
+
         const tracks = mapSongsToPlayer(props.songs);
         music.setPlaylists(tracks);
         music.setPlaySongIndex(index);
         music.setPlayState(true);
-    }
+    },
+    onContextmenu: (e: MouseEvent) => handleContextMenu(e, row)
   };
 };
 
@@ -382,7 +571,7 @@ const mapSongsToPlayer = (list: any[]) => {
     right: 0;
     z-index: 100;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     padding: 0;
     pointer-events: none;
@@ -393,7 +582,10 @@ const mapSongsToPlayer = (list: any[]) => {
     
     /* 如果 slot 有内容，可能需要额外处理，这里默认 float right */
     .left {
-       display: none; /* 暂时隐藏左侧空 slot */
+       /* display: none; */ /* 暂时隐藏左侧空 slot */
+       pointer-events: auto;
+       display: flex;
+       align-items: center;
     }
 }
 

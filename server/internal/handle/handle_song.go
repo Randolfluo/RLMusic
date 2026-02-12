@@ -435,24 +435,6 @@ func (*SongAuth) GetAllPlaylists(c *gin.Context) {
 	ReturnSuccess(c, playlists)
 }
 
-// GetUserPublicPlaylists 获取用户公开歌单
-func (*SongAuth) GetUserPublicPlaylists(c *gin.Context) {
-	user := GetCurrentUser(c)
-	if user == nil {
-		ReturnError(c, g.ErrUserNotExist, "用户未登录")
-		return
-	}
-	db := GetDB(c)
-
-	playlists, err := model.GetUserPublicPlaylists(db, user.ID)
-	if err != nil {
-		ReturnError(c, g.ErrDbOp, err)
-		return
-	}
-
-	ReturnSuccess(c, playlists)
-}
-
 // GetUserPrivatePlaylists 获取用户私有歌单
 func (*SongAuth) GetUserPrivatePlaylists(c *gin.Context) {
 	user := GetCurrentUser(c)
@@ -883,4 +865,152 @@ func (*SongAuth) CheckIsSubscribed(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, gin.H{"is_subscribed": isSubscribed})
+}
+
+// CreatePlaylistRequest 创建歌单请求
+type CreatePlaylistRequest struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+}
+
+// CreatePrivatePlaylist 创建私有歌单
+func (*SongAuth) CreatePrivatePlaylist(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	var req CreatePlaylistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	db := GetDB(c)
+
+	// 检查歌单是否已存在
+	var count int64
+	if err := db.Model(&model.Playlist{}).Where("title = ? AND owner_id = ?", req.Title, user.ID).Count(&count).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+	if count > 0 {
+		ReturnError(c, g.ErrRequest, "歌单已存在")
+		return
+	}
+
+	// 创建私有歌单 (IsPublic = false)
+	playlist, err := model.CreatePlaylist(db, user.ID, req.Title, req.Description, false)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, playlist)
+}
+
+// AddSongsRequest 批量添加歌曲请求
+type AddSongsRequest struct {
+	PlaylistID int   `json:"playlist_id" binding:"required"`
+	SongIDs    []int `json:"song_ids" binding:"required"`
+}
+
+// AddSongsToPlaylist 批量添加歌曲到歌单
+func (*SongAuth) AddSongsToPlaylist(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	var req AddSongsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	if len(req.SongIDs) == 0 {
+		ReturnSuccess(c, "未选择任何歌曲")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 1. 检查歌单权限
+	var playlist model.Playlist
+	if err := db.First(&playlist, req.PlaylistID).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	if playlist.OwnerID != user.ID {
+		ReturnError(c, g.ErrPermission, "无权修改此歌单")
+		return
+	}
+
+	// 2. 查找所有歌曲
+	var songs []model.Song
+	if err := db.Find(&songs, req.SongIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "查询歌曲失败")
+		return
+	}
+
+	if len(songs) == 0 {
+		ReturnError(c, g.ErrRequest, "未找到有效的歌曲")
+		return
+	}
+
+	// 过滤已存在的歌曲
+	var existingSongIDs []int
+	// 假设中间表名为 playlist_songs
+	if err := db.Table("playlist_songs").Where("playlist_id = ? AND song_id IN ?", playlist.ID, req.SongIDs).Pluck("song_id", &existingSongIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "查询歌单歌曲失败")
+		return
+	}
+
+	existingMap := make(map[int]bool)
+	for _, id := range existingSongIDs {
+		existingMap[id] = true
+	}
+
+	var newSongs []model.Song
+	for _, song := range songs {
+		if !existingMap[song.ID] {
+			newSongs = append(newSongs, song)
+		}
+	}
+
+	if len(newSongs) == 0 {
+		ReturnSuccess(c, gin.H{
+			"message": "所选歌曲已在歌单中",
+			"count":   0,
+		})
+		return
+	}
+
+	// 3. 批量添加
+	if err := model.AddSongsToPlaylist(db, &playlist, newSongs); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 4. 设置歌单封面（始终使用最新添加歌曲的封面）
+	for _, s := range newSongs {
+		// 需要加载 Song 的 Cover 关联，因为 newSongs 此时可能只有基本信息
+		var fullSong model.Song
+		if err := db.Preload("Cover").First(&fullSong, s.ID).Error; err == nil {
+			if fullSong.CoverID != nil && fullSong.Cover.ID != 0 {
+				coverUrl := "/covers/" + fullSong.Cover.Path
+				if err := db.Model(&playlist).Update("cover_url", coverUrl).Error; err == nil {
+					break // 成功设置后退出
+				}
+			}
+		}
+	}
+
+	ReturnSuccess(c, gin.H{
+		"message": "添加成功",
+		"count":   len(newSongs),
+	})
 }

@@ -34,15 +34,15 @@ Redis:
 
 QwenTTS:
   ApiKey: "" # 阿里云百炼 API Key，若为空则从环境变量中获取
-  Model: "qwen3-tts-flash"
-  Voice: "longxiaochun"
-  Format: "flac"
-  SampleRate: 24000
-  Volume: 50
-  Rate: 1.0
-  Pitch: 1.0
+  Model: "qwen3-tts-flash"  # 模型名称
+  Voice: "longxiaochun"  # 语音名称
+  Format: "flac"  # 音频格式
+  SampleRate: 24000  # 采样率
+  Volume: 50  # 音量
+  Rate: 1.0  # 语速
+  Pitch: 1.0  # 语调
 
 SiliconFlow:
-  ApiKey: "" # 硅基流动 API Key
-  Model: "Qwen/Qwen3-8B"
+  ApiKey: "" # 硅基流动 API Key，若为空则从环境变量中获取
+  Model: "Qwen/Qwen3-8B"  # 模型名称
 

@@ -124,9 +124,11 @@ func registerAuthHandler(r *gin.Engine) {
 	song := auth.Group("/song")
 	{
 		song.POST("/scan", songAuthAPI.ScanUserMusic)
-		song.PUT("/playlist/:id", songAuthAPI.UpdatePlaylist) // 更新歌单信息
+		song.POST("/playlist", songAuthAPI.CreatePrivatePlaylist)        // 创建私有歌单
+		song.POST("/playlist/add-songs", songAuthAPI.AddSongsToPlaylist) // 批量添加歌曲到歌单
+		song.PUT("/playlist/:id", songAuthAPI.UpdatePlaylist)            // 更新歌单信息
 		// song.GET("/playlists/private", songAuthAPI.GetPrivatePlaylists) // Legacy (removed)
-		song.GET("/playlists/user/public", songAuthAPI.GetUserPublicPlaylists)   // 获取用户公开歌单
+
 		song.GET("/playlists/user/private", songAuthAPI.GetUserPrivatePlaylists) // 获取用户私有歌单
 		song.GET("/playlist/private/:id", songAuthAPI.GetPrivatePlaylistDetail)  // 获取私有歌单详情
 

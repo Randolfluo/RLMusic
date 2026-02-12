@@ -215,6 +215,7 @@
     </div>
     <audio
       ref="player"
+      :loop="music.getPlaySongMode === 'single'"
       :autoplay="music.getPlayState"
       @timeupdate="songUpdate"
       @play="songPlay"

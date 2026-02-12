@@ -21,6 +21,9 @@
         <div class="desc" v-if="playlist.description">
           {{ playlist.description }}
         </div>
+        <div class="count-info">
+            歌曲数：{{ playlist.total_songs || playlist.total || 0 }}
+        </div>
         <div class="actions">
           <n-button type="primary" round size="large" @click="playAll">
             <template #icon>
@@ -310,6 +313,12 @@ const rowProps = (_row: any, index: number) => {
         -webkit-box-orient: vertical;
       }
       
+      .count-info {
+        font-size: 12px;
+        color: var(--n-text-color-3);
+        margin-bottom: 8px;
+      }
+
       .actions {
         margin-top: auto;
       }

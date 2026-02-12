@@ -58,6 +58,7 @@ server/data/
 server/basic/
 server/logs/
 server/log/
+server/tmp/
 server/config.yml
 server/config.toml
 server/.env

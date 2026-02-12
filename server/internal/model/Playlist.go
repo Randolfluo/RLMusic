@@ -11,14 +11,15 @@ type Playlist struct {
 	Title       string `gorm:"type:varchar(255);not null;index" json:"title"` // 歌单标题
 	Description string `gorm:"type:text" json:"description"`                  // 歌单描述
 	IsPublic    bool   `gorm:"index" json:"is_public"`                        // 是否公开 (GORM Default tag removed to allow false/zero-value insert)
-	CoverUrl    string `gorm:"type:varchar(500)" json:"cover_url"`            // 歌单封面 (第一首歌的ID，或者外部URL)
+	CoverUrl    string `gorm:"type:varchar(500)" json:"cover_url"`            // 歌单封面
 
 	OwnerID int `gorm:"index" json:"owner_id"` // 创建者ID
 
 	Songs []Song `gorm:"many2many:playlist_songs;" json:"songs"` // 歌单包含的歌曲 (多对多)
 
 	// 统计信息
-	PlayCount int `gorm:"default:0" json:"play_count"` // 播放次数
+	PlayCount  int `gorm:"default:0" json:"play_count"`  // 播放次数
+	TotalSongs int `gorm:"default:0" json:"total_songs"` // 歌曲总数
 }
 
 // FindOrCreatePlaylist 查找或创建歌单
@@ -67,12 +68,35 @@ func CreatePlaylist(db *gorm.DB, userID int, title string, description string, i
 
 // AddSongToPlaylist 添加歌曲到歌单
 func AddSongToPlaylist(db *gorm.DB, playlist *Playlist, song *Song) error {
-	return db.Model(playlist).Association("Songs").Append(song)
+	if err := db.Model(playlist).Association("Songs").Append(song); err != nil {
+		return err
+	}
+	// Update count
+	return UpdatePlaylistSongCount(db, playlist)
+}
+
+// AddSongsToPlaylist 批量添加歌曲到歌单
+func AddSongsToPlaylist(db *gorm.DB, playlist *Playlist, songs []Song) error {
+	if err := db.Model(playlist).Association("Songs").Append(songs); err != nil {
+		return err
+	}
+	// Update count
+	return UpdatePlaylistSongCount(db, playlist)
 }
 
 // RemoveSongFromPlaylist 从歌单移除歌曲
 func RemoveSongFromPlaylist(db *gorm.DB, playlist *Playlist, song *Song) error {
-	return db.Model(playlist).Association("Songs").Delete(song)
+	if err := db.Model(playlist).Association("Songs").Delete(song); err != nil {
+		return err
+	}
+	// Update count
+	return UpdatePlaylistSongCount(db, playlist)
+}
+
+// UpdatePlaylistSongCount 更新歌单歌曲数量
+func UpdatePlaylistSongCount(db *gorm.DB, playlist *Playlist) error {
+	count := db.Model(playlist).Association("Songs").Count()
+	return db.Model(playlist).Update("total_songs", count).Error
 }
 
 // IsSongInPlaylist 检查歌曲是否在歌单中
@@ -104,8 +128,9 @@ type PlaylistResponse struct {
 	OwnerID     int                  `json:"owner_id"`
 	CoverUrl    string               `json:"cover_url"` // 新增封面字段返回
 	PlayCount   int                  `json:"play_count"`
-	Total       int64                `json:"total"` // 歌曲总数
-	Songs       []SimpleSongResponse `json:"songs"` // Deprecated: 列表接口不再返回详情
+	Total       int64                `json:"total"`       // 歌曲总数 (Legacy)
+	TotalSongs  int                  `json:"total_songs"` // 歌曲总数
+	Songs       []SimpleSongResponse `json:"songs"`       // Deprecated: 列表接口不再返回详情
 }
 
 // GetPublicPlaylists 获取所有公开歌单(不含歌曲详情)
@@ -115,15 +140,6 @@ func GetPublicPlaylists(db *gorm.DB) ([]PlaylistResponse, error) {
 		return nil, err
 	}
 	// 列表不需要总条数
-	return convertToResponse(playlists), nil
-}
-
-// GetUserPublicPlaylists 获取用户公开歌单
-func GetUserPublicPlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
-	var playlists []Playlist
-	if err := db.Where("owner_id = ? AND is_public = ?", userID, true).Find(&playlists).Error; err != nil {
-		return nil, err
-	}
 	return convertToResponse(playlists), nil
 }
 
@@ -210,6 +226,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		CoverUrl:    playlist.CoverUrl,
 		PlayCount:   playlist.PlayCount,
 		Total:       total,
+		TotalSongs:  int(total),
 		Songs:       songs,
 	}, nil
 }
@@ -228,6 +245,8 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 			OwnerID:     p.OwnerID,
 			CoverUrl:    p.CoverUrl,
 			PlayCount:   p.PlayCount,
+			TotalSongs:  p.TotalSongs, // 赋值
+			Total:       int64(p.TotalSongs),
 			Songs:       songs,
 		})
 	}

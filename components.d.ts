@@ -13,8 +13,10 @@ declare module 'vue' {
   export interface GlobalComponents {
     AboutSite: typeof import('./src/components/DataModel/AboutSite.vue')['default']
     AddPlaylist: typeof import('./src/components/DataModel/AddPlaylist.vue')['default']
+    AddToPlaylistModal: typeof import('./src/components/DataModel/AddToPlaylistModal.vue')['default']
     AllArtists: typeof import('./src/components/DataList/AllArtists.vue')['default']
     BigPlayer: typeof import('./src/components/Player/BigPlayer.vue')['default']
+    CreatePlaylistModal: typeof import('./src/components/DataModel/CreatePlaylistModal.vue')['default']
     NA: typeof import('naive-ui')['NA']
     Nav: typeof import('./src/components/Nav/index.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']

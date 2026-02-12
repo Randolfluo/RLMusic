@@ -176,6 +176,19 @@ export const useMusicDataStore = defineStore("musicData", {
       } else {
         const len = this.persistData.playlists.length;
         if (len === 0) return;
+
+        // 随机播放模式
+        if (this.persistData.playSongMode === "random") {
+            if (len === 1) return;
+            // 随机选取一个新的索引
+            let newIndex = this.persistData.playSongIndex;
+            while (newIndex === this.persistData.playSongIndex) {
+                newIndex = Math.floor(Math.random() * len);
+            }
+            this.persistData.playSongIndex = newIndex;
+            return;
+        }
+
         if (value === "next") {
           this.persistData.playSongIndex =
             (this.persistData.playSongIndex + 1) % len;
@@ -184,6 +197,47 @@ export const useMusicDataStore = defineStore("musicData", {
             (this.persistData.playSongIndex - 1 + len) % len;
         }
       }
+    },
+    // 添加到下一首播放
+    addSongToNext(song: any) {
+        const list = this.persistData.playlists;
+        // 如果列表为空，直接播放
+        if (list.length === 0) {
+            this.setPlaylists([song]);
+            this.setPlayState(true);
+            return;
+        }
+        
+        // 检查歌曲是否已在列表中
+        const index = list.findIndex(item => item.id === song.id);
+        const currentIndex = this.persistData.playSongIndex;
+        
+        // 插入位置：当前播放歌曲的下一位
+        const nextIndex = currentIndex + 1;
+        
+        if (index !== -1) {
+            // 如果已在列表中
+            if (index === currentIndex) return; // 就是当前正在播放的，不做处理
+            
+            // 移动到下一位
+            // 先删除
+            list.splice(index, 1);
+            // 如果删除的元素在当前播放之前，currentIndex 需要减 1，插入位置相应调整
+            // 但因为我们是用 splice 修改原数组，直接重新计算位置比较麻烦
+            // 简单处理：重新获取修改后的列表
+            
+            // 修正：如果删除的元素在当前播放之前，当前索引会发生变化，需要修正
+            if (index < currentIndex) {
+                this.persistData.playSongIndex--;
+            }
+            // 重新计算插入位置（因为删除了一个元素）
+            const newNextIndex = this.persistData.playSongIndex + 1;
+            list.splice(newNextIndex, 0, song);
+        } else {
+            // 不在列表中，直接插入
+            list.splice(nextIndex, 0, song);
+        }
+        this.persistData.playlists = list;
     },
     // 更改音量
     setPlayVolume(value: number) {
