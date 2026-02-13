@@ -1,14 +1,16 @@
 <template>
   <div class="user-like">
     <div class="header">
-      <h2>我喜欢的歌曲</h2>
-      <div class="actions">
-        <n-button size="small" type="primary" @click="handlePlayAll" :disabled="loading || songs.length === 0">
-           <template #icon>
-            <n-icon :component="Play" />
-          </template>
-          播放全部
-        </n-button>
+      <div class="title-section">
+        <h2>我喜欢的歌曲</h2>
+        <div class="actions">
+          <n-button size="small" type="primary" @click="handlePlayAll" :disabled="loading || songs.length === 0">
+             <template #icon>
+              <n-icon :component="Play" />
+            </template>
+            播放全部
+          </n-button>
+        </div>
       </div>
     </div>
 
@@ -100,14 +102,18 @@ onMounted(() => {
 .user-like {
   padding: 24px;
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 24px;
-    h2 {
-      font-size: 24px;
-      font-weight: bold;
-      margin: 0;
+    
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
+      h2 {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
+      }
     }
   }
   .pagination {

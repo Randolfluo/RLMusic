@@ -134,19 +134,47 @@ type PlaylistResponse struct {
 }
 
 // GetPublicPlaylists 获取所有公开歌单(不含歌曲详情)
-func GetPublicPlaylists(db *gorm.DB) ([]PlaylistResponse, error) {
+func GetPublicPlaylists(db *gorm.DB, page int, limit int) ([]PlaylistResponse, int64, error) {
 	var playlists []Playlist
-	if err := db.Where("is_public = ?", true).Find(&playlists).Error; err != nil {
-		return nil, err
+	var total int64
+	offset := (page - 1) * limit
+
+	query := db.Model(&Playlist{}).Where("is_public = ?", true)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Limit(limit).Offset(offset).Find(&playlists).Error; err != nil {
+		return nil, 0, err
 	}
 	// 列表不需要总条数
-	return convertToResponse(playlists), nil
+	return convertToResponse(playlists), total, nil
 }
 
 // GetUserPrivatePlaylists 获取用户私有歌单
-func GetUserPrivatePlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
+func GetUserPrivatePlaylists(db *gorm.DB, userID int, page int, limit int) ([]PlaylistResponse, int64, error) {
 	var playlists []Playlist
-	if err := db.Where("owner_id = ? AND is_public = ?", userID, false).Find(&playlists).Error; err != nil {
+	var total int64
+	offset := (page - 1) * limit
+
+	query := db.Model(&Playlist{}).Where("owner_id = ? AND is_public = ?", userID, false)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Limit(limit).Offset(offset).Find(&playlists).Error; err != nil {
+		return nil, 0, err
+	}
+	return convertToResponse(playlists), total, nil
+}
+
+// GetSubscribedPlaylists 获取用户收藏的歌单
+func GetSubscribedPlaylists(db *gorm.DB, userID int) ([]PlaylistResponse, error) {
+	var user User
+	user.ID = userID
+	var playlists []Playlist
+
+	if err := db.Model(&user).Association("SubscribedPlaylists").Find(&playlists); err != nil {
 		return nil, err
 	}
 	return convertToResponse(playlists), nil
@@ -251,6 +279,19 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 		})
 	}
 	return resp
+}
+
+// RemoveSongsFromPlaylist 从歌单中移除歌曲
+func RemoveSongsFromPlaylist(db *gorm.DB, playlist *Playlist, songs []Song) error {
+	return db.Model(playlist).Association("Songs").Delete(songs)
+}
+
+// DeletePlaylist 删除歌单
+func DeletePlaylist(db *gorm.DB, playlistID int) error {
+	// 1. 删除歌单与歌曲的关联 (GORM 会自动处理，但显式处理更安全或使用 Cascade)
+	// 如果使用软删除，关联表记录可能保留。如果物理删除，需清理关联。
+	// 这里假设直接删除歌单记录。由于 Many2Many 关系，GORM 默认会删除关联表中的记录。
+	return db.Delete(&Playlist{}, playlistID).Error
 }
 
 // GetUserPlaylists 获取用户可见的歌单 (Legacy)

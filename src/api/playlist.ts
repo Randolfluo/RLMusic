@@ -2,11 +2,17 @@ import axios from "@/utils/request";
 
 /**
  * 获取公共歌单列表
+ * @param {number} page
+ * @param {number} limit
  */
-export const getPublicPlaylists = () => {
+export const getPublicPlaylists = (page: number = 1, limit: number = 20) => {
     return axios({
         method: "GET",
         url: "/song/playlists/public",
+        params: {
+            page,
+            limit
+        }
     });
 };
 
@@ -22,11 +28,17 @@ export const getUserPublicPlaylists = () => {
 
 /**
  * 获取用户私有歌单列表
+ * @param {number} page
+ * @param {number} limit
  */
-export const getUserPrivatePlaylists = () => {
+export const getUserPrivatePlaylists = (page: number = 1, limit: number = 20) => {
     return axios({
         method: "GET",
         url: "/song/playlists/user/private",
+        params: {
+            page,
+            limit
+        }
     });
 };
 
@@ -104,6 +116,31 @@ export const getPrivatePlaylistDetail = (id: string | number, page: number = 1, 
             page,
             limit
         }
+    });
+};
+
+/**
+ * 批量从歌单移除歌曲
+ * @param {Object} data
+ * @param {number} data.playlist_id
+ * @param {number[]} data.song_ids
+ */
+export const removeSongsFromPlaylist = (data: { playlist_id: number; song_ids: number[] }) => {
+    return axios({
+        method: "POST",
+        url: "/song/playlist/remove-songs",
+        data
+    });
+};
+
+/**
+ * 删除私有歌单
+ * @param {string|number} id - 歌单ID
+ */
+export const deletePrivatePlaylist = (id: string | number) => {
+    return axios({
+        method: "DELETE",
+        url: `/song/playlist/${id}`,
     });
 };
 

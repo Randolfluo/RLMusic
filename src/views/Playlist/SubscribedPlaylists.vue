@@ -28,7 +28,13 @@ const getPlaylists = async () => {
   try {
     const res = await getSubscribedPlaylists();
     if (res.code === ResultCode.SUCCESS) {
-      playlists.value = res.data;
+      if (Array.isArray(res.data)) {
+          playlists.value = res.data;
+      } else if (res.data && Array.isArray(res.data.list)) {
+          playlists.value = res.data.list;
+      } else {
+          playlists.value = [];
+      }
     }
   } catch (error) {
     message.error("获取歌单失败");

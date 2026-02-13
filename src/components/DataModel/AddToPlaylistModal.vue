@@ -100,10 +100,17 @@ watch(showModal, (val) => {
 
 const fetchPlaylists = () => {
   loading.value = true;
-  getUserPrivatePlaylists()
+  // 获取全部歌单（或足够多），这里使用较大 limit
+  getUserPrivatePlaylists(1, 1000)
     .then((res: any) => {
       if (res.code === 200 || res.code === 1000) {
-        playlists.value = res.data || [];
+        if (Array.isArray(res.data)) {
+            playlists.value = res.data;
+        } else if (res.data && Array.isArray(res.data.list)) {
+            playlists.value = res.data.list;
+        } else {
+            playlists.value = [];
+        }
       }
     })
     .catch((err) => {

@@ -142,8 +142,7 @@ https://chatgpt.com/s/t_69875e32fe7c8191a6c1594adc92ccb5
 
 
 
-1. 添加歌单删除歌曲api，只能操作用户私有歌单，删除用户私有歌单歌曲，公共歌单不提供删除服务。
-2. 添加删除歌单功能，只能删除该用户的私有歌单。
+2. 添加删除歌单功能，只能删除该用户的私有歌单。(已完成)
 3. 修改main.go的静态资源映射，handle_song中scan扫描到的歌曲缩略图存储到config.yml中的FilePath+FileName/data/cover文件夹内，存储缩略图时只存储文件名，路径由服务器拼接完成。
 4. 修改ai生成的音频文件到config.yml中的FilePath+FileName/data/Podcast文件夹内
 5. 修改数据库地址为config.yml中的FilePath+FileName/data/data.db

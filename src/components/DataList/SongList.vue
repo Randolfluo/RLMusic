@@ -121,10 +121,11 @@
 <script setup lang="ts">
 import { ref, computed, h, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage } from "naive-ui";
+import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage, useDialog } from "naive-ui";
 import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, Download, FolderPlus, Copy, CheckOne, More, CloudStorage, Delete } from "@icon-park/vue-next";
 import { musicStore, settingStore } from "@/store";
 import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
+import { removeSongsFromPlaylist } from "@/api/playlist";
 
 // Props 定义
 const props = defineProps({
@@ -143,14 +144,27 @@ const props = defineProps({
   pageSize: {
     type: Number,
     default: 30,
+  },
+  // 歌单ID，用于删除操作
+  playlistId: {
+    type: Number,
+    default: 0
+  },
+  // 是否是当前用户的私有歌单（有权修改）
+  isOwner: {
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['refresh']);
 
 const router = useRouter();
 const music = musicStore();
 const setting = settingStore();
 const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
 const message = useMessage();
+const dialog = useDialog();
 const showDropdown = ref(false);
 const dropdownX = ref(0);
 const dropdownY = ref(0);
@@ -207,7 +221,31 @@ const handleBatchDownload = () => {
 };
 
 const handleBatchDelete = () => {
-    message.warning(`批量删除: ${selectedRowKeys.value.length} 首 (功能开发中)`);
+    if (selectedRowKeys.value.length === 0) return;
+    
+    if (!props.playlistId || !props.isOwner) {
+        message.warning("只有歌单所有者可以删除歌曲");
+        return;
+    }
+
+    dialog.warning({
+        title: "批量删除",
+        content: `确定要从歌单中删除选中的 ${selectedRowKeys.value.length} 首歌曲吗？`,
+        positiveText: "删除",
+        negativeText: "取消",
+        onPositiveClick: () => {
+            const songIds = selectedRowKeys.value.map(id => Number(id));
+            removeSongsFromPlaylist({ playlist_id: props.playlistId, song_ids: songIds })
+                .then(() => {
+                    message.success("删除成功");
+                    toggleMultiSelect();
+                    emit('refresh');
+                })
+                .catch((err) => {
+                    message.error(err.message || "删除失败");
+                });
+        }
+    });
 };
 
 // 渲染图标辅助函数
@@ -247,7 +285,7 @@ const menuOptions = computed(() => {
     const isLiked = music.getSongIsLike(currentSong.value.id);
     const song = currentSong.value;
 
-    return [
+    const options = [
         {
             key: 'header',
             type: 'render',
@@ -294,17 +332,24 @@ const menuOptions = computed(() => {
                     icon: renderIcon(Copy)
                 }
             ]
-        },
-        {
-            type: 'divider',
-            key: 'd2'
-        },
-        {
-            label: '从歌单中删除',
-            key: 'delete-from-playlist',
-            icon: renderIcon(Delete)
         }
     ];
+
+    if (props.playlistId > 0 && props.isOwner) {
+        options.push(
+            {
+                type: 'divider',
+                key: 'd2'
+            },
+            {
+                label: '从歌单中删除',
+                key: 'delete-from-playlist',
+                icon: renderIcon(Delete)
+            }
+        );
+    }
+
+    return options;
 });
 
 // 处理右键点击事件
@@ -369,8 +414,26 @@ const handleSelect = (key: string) => {
              });
             break;
         case 'delete-from-playlist':
-            message.warning('从歌单中删除 (功能开发中)');
-            // 这里需要根据具体的业务场景（是否在歌单详情页）来实现删除逻辑
+            if (!props.playlistId || !props.isOwner) {
+                message.warning("只有歌单所有者可以删除歌曲");
+                return;
+            }
+            dialog.warning({
+                title: "删除歌曲",
+                content: `确定要从歌单中删除歌曲 "${song.title}" 吗？`,
+                positiveText: "删除",
+                negativeText: "取消",
+                onPositiveClick: () => {
+                    removeSongsFromPlaylist({ playlist_id: props.playlistId, song_ids: [song.id] })
+                        .then(() => {
+                            message.success("删除成功");
+                            emit('refresh');
+                        })
+                        .catch((err) => {
+                            message.error(err.message || "删除失败");
+                        });
+                }
+            });
             break;
     }
 };

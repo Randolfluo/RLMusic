@@ -58,6 +58,9 @@
           :loading="loading"
           :page="page"
           :page-size="limit"
+          :playlist-id="playlist.id"
+          :is-owner="isOwner"
+          @refresh="refreshPlaylist"
         />
         <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
           <Pagination
@@ -75,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { 
   getPublicPlaylistDetail, 
@@ -102,6 +105,11 @@ const isSubscribed = ref(false); // 是否已收藏
 const playlist = ref<any>({});
 const page = ref(1);
 const limit = ref(30);
+
+const isOwner = computed(() => {
+    if (!user.userLogin || !playlist.value.owner_id) return false;
+    return Number(user.userData.userId) === Number(playlist.value.owner_id);
+});
 
 onMounted(() => {
   const id = route.params.id as string;
@@ -196,6 +204,10 @@ const onPageSizeChange = (val: number) => {
   limit.value = val;
   page.value = 1;
   fetchPlaylistDetail(route.params.id as string);
+};
+
+const refreshPlaylist = () => {
+    fetchPlaylistDetail(route.params.id as string);
 };
 
 const playAll = () => {

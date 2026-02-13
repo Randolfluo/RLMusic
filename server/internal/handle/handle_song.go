@@ -424,15 +424,29 @@ func (*SongAuth) GetAlbumDetail(c *gin.Context) {
 
 // GetAllPlaylists 获取所有公开歌单
 func (*SongAuth) GetAllPlaylists(c *gin.Context) {
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
 	db := GetDB(c)
 
-	playlists, err := model.GetPublicPlaylists(db)
+	playlists, total, err := model.GetPublicPlaylists(db, page, limit)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
 
-	ReturnSuccess(c, playlists)
+	ReturnSuccess(c, gin.H{
+		"list":  playlists,
+		"total": total,
+	})
 }
 
 // GetUserPrivatePlaylists 获取用户私有歌单
@@ -442,15 +456,30 @@ func (*SongAuth) GetUserPrivatePlaylists(c *gin.Context) {
 		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
+
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 20
+	}
+
 	db := GetDB(c)
 
-	playlists, err := model.GetUserPrivatePlaylists(db, user.ID)
+	playlists, total, err := model.GetUserPrivatePlaylists(db, user.ID, page, limit)
 	if err != nil {
 		ReturnError(c, g.ErrDbOp, err)
 		return
 	}
 
-	ReturnSuccess(c, playlists)
+	ReturnSuccess(c, gin.H{
+		"list":  playlists,
+		"total": total,
+	})
 }
 
 type UpdatePlaylistRequest struct {
@@ -831,9 +860,8 @@ func (*SongAuth) GetSubscribedPlaylists(c *gin.Context) {
 	}
 
 	db := GetDB(c)
-	var playlists []model.Playlist
-
-	if err := db.Model(user).Association("SubscribedPlaylists").Find(&playlists); err != nil {
+	playlists, err := model.GetSubscribedPlaylists(db, user.ID)
+	if err != nil {
 		ReturnError(c, g.ErrDbOp, "获取收藏列表失败")
 		return
 	}
@@ -1013,4 +1041,118 @@ func (*SongAuth) AddSongsToPlaylist(c *gin.Context) {
 		"message": "添加成功",
 		"count":   len(newSongs),
 	})
+}
+
+// RemoveSongsRequest 批量移除歌曲请求
+type RemoveSongsRequest struct {
+	PlaylistID int   `json:"playlist_id" binding:"required"`
+	SongIDs    []int `json:"song_ids" binding:"required"`
+}
+
+// RemoveSongsFromPlaylist 从歌单中批量移除歌曲
+func (*SongAuth) RemoveSongsFromPlaylist(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	var req RemoveSongsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	if len(req.SongIDs) == 0 {
+		ReturnSuccess(c, "未选择任何歌曲")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 1. 检查歌单权限
+	var playlist model.Playlist
+	if err := db.First(&playlist, req.PlaylistID).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 检查是否为公共歌单
+	if playlist.IsPublic {
+		ReturnError(c, g.ErrPermission, "公共歌单禁止删除歌曲")
+		return
+	}
+
+	// 检查所有权
+	if playlist.OwnerID != user.ID {
+		ReturnError(c, g.ErrPermission, "无权操作此歌单")
+		return
+	}
+
+	// 2. 查找歌曲 (只需要 ID 即可，GORM Delete Association 需要 Model 对象)
+	var songs []model.Song
+	if err := db.Find(&songs, req.SongIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "查询歌曲失败")
+		return
+	}
+
+	if len(songs) == 0 {
+		ReturnError(c, g.ErrRequest, "未找到有效的歌曲")
+		return
+	}
+
+	// 3. 批量移除
+	if err := model.RemoveSongsFromPlaylist(db, &playlist, songs); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"message": "移除成功",
+		"count":   len(songs),
+	})
+}
+
+// DeletePrivatePlaylist 删除私有歌单
+func (*SongAuth) DeletePrivatePlaylist(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的ID")
+		return
+	}
+
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 1. 查找歌单
+	var playlist model.Playlist
+	if err := db.First(&playlist, id).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 2. 检查权限 (必须是私有歌单且是所有者)
+	if playlist.IsPublic {
+		ReturnError(c, g.ErrPermission, "无法删除公共歌单")
+		return
+	}
+
+	if playlist.OwnerID != user.ID {
+		ReturnError(c, g.ErrPermission, "无权删除此歌单")
+		return
+	}
+
+	// 3. 执行删除
+	if err := model.DeletePlaylist(db, id); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, "删除成功")
 }

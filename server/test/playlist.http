@@ -31,7 +31,6 @@ GET {{baseUrl}}/song/playlists/public
 # 返回 is_public=true 的歌单，包含 total_songs 字段
 
 
-
 ### 14-3. 获取我的私有歌单 (需要登录)
 GET {{baseUrl}}/song/playlists/user/private
 Authorization: Bearer {{login.response.body.data.token}}
@@ -87,8 +86,6 @@ Content-Type: {{contentType}}
 }
 
 ### 17. 点赞/取消点赞歌曲 (需要登录)
-# 此接口内部逻辑类似添加/移除歌曲到"我喜欢的音乐"歌单，
-# 也会触发更新该歌单的 total_songs 计数
 POST {{baseUrl}}/song/like/1
 Authorization: Bearer {{login.response.body.data.token}}
 # {
@@ -99,3 +96,34 @@ Authorization: Bearer {{login.response.body.data.token}}
 #     "message": "添加成功"
 #   }
 # }
+
+### 18. 批量移除歌单中的歌曲
+POST {{baseUrl}}/song/playlist/remove-songs
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+{
+    "playlist_id": 1,
+    "song_ids": [1]
+}
+
+### 20. 删除私有歌单
+# 先创建一个用于删除的歌单
+POST {{baseUrl}}/song/playlist
+Authorization: Bearer {{login.response.body.data.token}}
+
+{
+    "title": "即将删除的歌单1",
+    "description": "Goodbye"
+}
+
+
+
+### 21. 执行删除私有歌单
+DELETE {{baseUrl}}/song/playlist/21
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 22. 尝试删除公共歌单 (应失败)
+DELETE {{baseUrl}}/song/playlist/2
+Authorization: Bearer {{login.response.body.data.token}}
+
+

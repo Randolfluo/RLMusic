@@ -26,6 +26,7 @@
       empty-text="暂无公共歌单" 
       collapsed 
       :collapsed-rows="2" 
+      @refresh="getPublicList"
     />
 
     <div class="section-title" v-if="userStore.userLogin">
@@ -45,6 +46,7 @@
       empty-text="暂无私有歌单" 
       collapsed 
       :collapsed-rows="2" 
+      @refresh="getPrivateList"
     />
   </div>
 </template>
@@ -89,9 +91,13 @@ onMounted(() => {
 const getPublicList = async () => {
   publicLoading.value = true;
   try {
-    const res = await getPublicPlaylists();
+    const res = await getPublicPlaylists(1, 10); // 首页不需要加载太多
     if (res.code === ResultCode.SUCCESS) {
-      publicPlaylists.value = res.data || [];
+        if (Array.isArray(res.data)) {
+            publicPlaylists.value = res.data;
+        } else {
+            publicPlaylists.value = res.data.list;
+        }
     }
   } catch (error) {
     message.error("获取公共歌单失败");
@@ -103,9 +109,13 @@ const getPublicList = async () => {
 const getPrivateList = async () => {
   privateLoading.value = true;
   try {
-    const res = await getUserPrivatePlaylists();
+    const res = await getUserPrivatePlaylists(1, 10); // 首页不需要加载太多
     if (res.code === ResultCode.SUCCESS) {
-      privatePlaylists.value = res.data || [];
+        if (Array.isArray(res.data)) {
+            privatePlaylists.value = res.data;
+        } else {
+            privatePlaylists.value = res.data.list;
+        }
     }
   } catch (error) {
     // 可能是未登录或权限问题，这里简单处理
