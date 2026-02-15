@@ -46,3 +46,15 @@ export const updateConfig = (data: { filepath: string }) => {
         data
     });
 };
+
+/**
+ * 获取局域网 IP 列表
+ * @param port 前端端口，用于生成完整 URL
+ */
+export const getLocalIPs = (port?: string) => {
+    return axios({
+        method: "GET",
+        url: "/system/local-ips",
+        params: { port }
+    }) as Promise<{ code: number, msg: string, data: { ips: string[], port: string, urls: string[] } }>;
+};

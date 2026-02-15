@@ -341,7 +341,9 @@ export const useMusicDataStore = defineStore("musicData", {
             // 获取所有喜欢的歌曲 (假设 limit 足够大)
             const res: any = await getLikedSongs(1, 10000);
             if (res.code === ResultCode.SUCCESS) {
-                const ids = res.data.list.map((song: any) => song.id);
+                // 确保 res.data.list 存在且是数组
+                const list = Array.isArray(res.data.list) ? res.data.list : (Array.isArray(res.data) ? res.data : []);
+                const ids = list.map((song: any) => song.id);
                 this.persistData.likeList = ids;
             }
         } catch (error) {

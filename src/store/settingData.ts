@@ -6,9 +6,6 @@ import { WbSunnyFilled, DarkModeFilled } from "@vicons/material";
 export const useSettingDataStore = defineStore("settingData", {
   state: () => {
     return {
-      // 全局主题
-      theme: "light",
-      themeAuto: true,
       // 主题色
       themeColor: "#009688",
       // 搜索历史
@@ -48,10 +45,6 @@ export const useSettingDataStore = defineStore("settingData", {
     };
   },
   getters: {
-    // 获取明暗模式
-    getSiteTheme(state) {
-      return state.theme;
-    },
     // 获取是否开启翻译
     getShowTransl(state) {
       return state.showTransl;
@@ -62,16 +55,6 @@ export const useSettingDataStore = defineStore("settingData", {
     },
   },
   actions: {
-    // 切换明暗模式
-    setSiteTheme(value: string) {
-      const isLightMode = value === "light";
-      const message = isLightMode ? "已切换至浅色模式" : "已切换至深色模式";
-      const icon = isLightMode ? WbSunnyFilled : DarkModeFilled;
-      this.theme = value;
-      $message.info(message, {
-        icon: () => h(NIcon, null, { default: () => h(icon) }),
-      });
-    },
     // 更改翻译开启选项
     setShowTransl(value: boolean) {
       this.showTransl = value;

@@ -35,10 +35,11 @@ func main() {
 	//r.Use(middleware.WithCookieStore(conf.Session.Name, conf.Session.Salt))
 
 	// 静态资源: 封面图
-	r.Static("/covers", "./data/covers")
+	coverPath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "data", "cover")
+	r.Static("/covers", coverPath)
 
 	// 静态资源: 播客开场白 (QwenTTS 生成的音频)
-	podcastPath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "podcast")
+	podcastPath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "data", "Podcast")
 	r.Static("/podcast", podcastPath)
 
 	server.RegisterHandlers(r, nil)

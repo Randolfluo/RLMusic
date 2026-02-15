@@ -26,6 +26,14 @@ Content-Type: {{contentType}}
 ### 7. 获取系统统计信息 (无需登录) (系统设置+时长统计)
 GET {{baseUrl}}/system/stats
 
+### 15. 获取局域网IP列表 (无需登录)
+# 默认使用后端端口
+GET {{baseUrl}}/system/local-ips
+
+### 16. 获取局域网IP列表 (指定前端端口)
+# 用于前端生成二维码
+GET {{baseUrl}}/system/local-ips?port=8888
+
 ### 13. 更新系统配置 (仅管理员)
 POST {{baseUrl}}/system/config
 Content-Type: {{contentType}}
@@ -34,3 +42,7 @@ Authorization: Bearer {{adminLogin.response.body.data.token}}
 {
     "filepath": 'C:\Users\lrj32\Desktop\music player\localmusicplayerFoleder'
 }
+
+### 14. 导出数据库为Excel (仅管理员)
+GET {{baseUrl}}/system/export/excel
+Authorization: Bearer {{adminLogin.response.body.data.token}}

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -216,6 +218,10 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		return nil, err
 	}
 
+	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
+		playlist.CoverUrl = "/covers/" + playlist.CoverUrl
+	}
+
 	var songs []SimpleSongResponse
 	for _, s := range songsRaw {
 		artistId := 0
@@ -265,13 +271,18 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 		// 不再返回歌曲列表
 		var songs []SimpleSongResponse = nil // Explicitly nil
 
+		coverUrl := p.CoverUrl
+		if coverUrl != "" && !strings.HasPrefix(coverUrl, "/covers/") && !strings.HasPrefix(coverUrl, "http") {
+			coverUrl = "/covers/" + coverUrl
+		}
+
 		resp = append(resp, PlaylistResponse{
 			ID:          p.ID,
 			Title:       p.Title,
 			Description: p.Description,
 			IsPublic:    p.IsPublic,
 			OwnerID:     p.OwnerID,
-			CoverUrl:    p.CoverUrl,
+			CoverUrl:    coverUrl,
 			PlayCount:   p.PlayCount,
 			TotalSongs:  p.TotalSongs, // 赋值
 			Total:       int64(p.TotalSongs),

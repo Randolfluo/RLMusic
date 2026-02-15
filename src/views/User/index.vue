@@ -1,71 +1,99 @@
 <template>
   <div class="user-center">
-    <n-card title="个人中心" hoverable class="profile-card">
-      <div class="user-info">
-        <n-upload
-          :show-file-list="false"
-          :custom-request="handleAvatarUpload"
-          accept="image/png,image/jpeg,image/gif,image/webp"
-          class="avatar-uploader"
-        >
-            <div class="avatar-wrapper">
-                <n-avatar
-                round
-                :size="120"
-                :src="user.getUserData.avatarUrl || '/images/ico/user-filling.svg'"
-                fallback-src="/images/ico/user-filling.svg"
-                class="user-avatar"
-                />
-                <div class="avatar-overlay">
-                    <n-icon size="32" :component="Camera" color="#ffffff" />
-                </div>
-            </div>
-        </n-upload>
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
 
-        <h2 class="username">{{ user.getUserData.nickname || '用户' }}</h2>
-        <div class="user-meta">
-            <n-tag size="small" :bordered="false" type="primary" round>ID: {{ user.getUserData.userId }}</n-tag>
+    <div class="profile-container">
+      <div class="profile-header glass-card">
+        <div class="avatar-section">
+          <n-upload
+            :show-file-list="false"
+            :custom-request="handleAvatarUpload"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            class="avatar-uploader"
+          >
+              <div class="avatar-wrapper">
+                  <n-avatar
+                    round
+                    :size="140"
+                    :src="user.getUserData.avatarUrl || '/images/ico/user-filling.svg'"
+                    fallback-src="/images/ico/user-filling.svg"
+                    class="user-avatar"
+                    object-fit="cover"
+                  />
+                  <div class="avatar-overlay">
+                      <n-icon size="40" :component="Camera" color="#ffffff" />
+                      <span class="upload-text">更换头像</span>
+                  </div>
+              </div>
+          </n-upload>
         </div>
-        <p v-if="user.getUserData.email" class="user-email">{{ user.getUserData.email }}</p>
+
+        <div class="info-section">
+          <div class="user-main">
+            <h2 class="username">{{ user.getUserData.nickname || '用户' }}</h2>
+            <n-tag size="small" :bordered="false" type="primary" round class="id-tag">
+              ID: {{ user.getUserData.userId }}
+            </n-tag>
+          </div>
+          <p v-if="user.getUserData.email" class="user-email">{{ user.getUserData.email }}</p>
+          <div class="user-bio">
+            生活不止眼前的苟且，还有诗和远方的田野。
+          </div>
+        </div>
       </div>
 
-      <n-divider />
-
-      <n-grid x-gap="24" y-gap="24" cols="1 600:2" style="margin-bottom: 24px;">
-        <n-gi>
-           <n-card size="small" :bordered="false" class="stat-card">
-              <n-statistic label="累计听歌时长">
-                <template #prefix>
-                    <n-icon :component="Time" color="#d03050" />
-                </template>
-                {{ formatDuration(userInfoDetails.total_duration) }}
-              </n-statistic>
-           </n-card>
-        </n-gi>
-         <n-gi>
-           <n-card size="small" :bordered="false" class="stat-card">
-              <n-statistic label="IP 地址">
-                <template #prefix>
-                    <n-icon :component="Connection" color="#2080f0" />
-                </template>
-                {{ userInfoDetails.ip_src || '未知' }}
-              </n-statistic>
-           </n-card>
-        </n-gi>
-      </n-grid>
-
-      
-    
-      <n-divider />
-      
-      <div class="actions">
-        <n-space justify="center" size="large">
-          <n-button strong secondary type="error" size="large" @click="handleLogout">
-              退出登录
-          </n-button>
-        </n-space>
+      <div class="stats-grid">
+        <div class="stat-card glass-card-sm">
+          <div class="stat-icon-wrapper time-icon">
+            <n-icon :component="Time" size="24" />
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatDuration(userInfoDetails.total_duration) }}</div>
+            <div class="stat-label">累计听歌时长</div>
+          </div>
+        </div>
+        
+        <div class="stat-card glass-card-sm">
+          <div class="stat-icon-wrapper ip-icon">
+            <n-icon :component="Connection" size="24" />
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ userInfoDetails.ip_src || '未知' }}</div>
+            <div class="stat-label">当前 IP 地址</div>
+          </div>
+        </div>
+        
+        <div class="stat-card glass-card-sm">
+           <div class="stat-icon-wrapper like-icon">
+            <n-icon :component="Like" size="24" />
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ userInfoDetails.like_count || 0 }}</div>
+            <div class="stat-label">喜欢的歌曲</div>
+          </div>
+        </div>
       </div>
-    </n-card>
+
+      <div class="actions-section">
+        <n-button 
+          class="logout-btn" 
+          type="error" 
+          secondary 
+          round 
+          size="large" 
+          @click="handleLogout"
+        >
+          <template #icon>
+            <n-icon :component="Power" />
+          </template>
+          退出登录
+        </n-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -78,7 +106,8 @@ import {
     Camera, 
     Time,
     Connection,
-    Like
+    Like,
+    Power
 } from "@icon-park/vue-next";
 import axios from "@/utils/request"; 
 import { onMounted, ref } from "vue";
@@ -142,27 +171,146 @@ const handleLogout = () => {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .user-center {
   padding: 40px 20px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.profile-card {
-    border-radius: 16px;
-}
-
-.user-info {
+  min-height: 90vh;
+  position: relative;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 80px;
+
+  .bg-decoration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+
+      .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.4;
+          animation: float 20s infinite ease-in-out;
+      }
+
+      .blob-1 {
+          width: 600px;
+          height: 600px;
+          background: var(--n-primary-color);
+          top: -200px;
+          right: -100px;
+          animation-delay: 0s;
+      }
+
+      .blob-2 {
+          width: 500px;
+          height: 500px;
+          background: #4facfe;
+          bottom: -100px;
+          left: -150px;
+          animation-delay: -5s;
+      }
+  }
 }
 
-.avatar-uploader {
+.profile-container {
+    width: 100%;
+    max-width: 800px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: 32px;
+    position: relative;
+    z-index: 10;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px);
+    border-radius: 32px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    
+    @media (prefers-color-scheme: dark) {
+        background: rgba(30, 30, 30, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    padding: 40px;
+    gap: 40px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+    }
+
+    @media (max-width: 600px) {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 30px 20px;
+    }
+
+    .avatar-section {
+        flex-shrink: 0;
+    }
+
+    .info-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        
+        .user-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            
+            @media (max-width: 600px) {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .username {
+                margin: 0;
+                font-size: 32px;
+                font-weight: 800;
+                color: var(--n-text-color);
+                line-height: 1.2;
+            }
+            
+            .id-tag {
+                font-weight: 600;
+            }
+        }
+        
+        .user-email {
+            color: var(--n-text-color-3);
+            font-size: 15px;
+            margin: 0 0 16px 0;
+        }
+        
+        .user-bio {
+            font-size: 16px;
+            color: var(--n-text-color-2);
+            line-height: 1.6;
+            opacity: 0.8;
+            font-style: italic;
+        }
+    }
 }
 
 .avatar-wrapper {
@@ -170,63 +318,162 @@ const handleLogout = () => {
     cursor: pointer;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 4px solid rgba(255, 255, 255, 0.8);
+    
+    @media (prefers-color-scheme: dark) {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    &:hover {
+        transform: scale(1.05) rotate(2deg);
+        box-shadow: 0 12px 32px rgba(var(--n-primary-color-rgb), 0.3);
+    }
+
+    .user-avatar {
+        display: block;
+        background-color: var(--n-card-color);
+    }
+
+    .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(4px);
+        gap: 8px;
+        
+        .upload-text {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    }
+
+    &:hover .avatar-overlay {
+        opacity: 1;
+    }
 }
 
-.avatar-wrapper:hover {
-    transform: scale(1.05);
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 24px;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: default;
+        
+        &.glass-card-sm {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            
+            @media (prefers-color-scheme: dark) {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+        
+        &:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            
+            @media (prefers-color-scheme: dark) {
+                background: rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        .stat-icon-wrapper {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            
+            &.time-icon {
+                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+                color: #d03050;
+            }
+            
+            &.ip-icon {
+                background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+                color: #0052d4;
+            }
+            
+            &.like-icon {
+                background: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+                color: #555;
+            }
+        }
+        
+        .stat-content {
+            .stat-value {
+                font-size: 20px;
+                font-weight: 800;
+                color: var(--n-text-color);
+                line-height: 1.2;
+                margin-bottom: 4px;
+                font-family: 'DM Mono', monospace;
+            }
+            
+            .stat-label {
+                font-size: 13px;
+                color: var(--n-text-color-3);
+                font-weight: 500;
+            }
+        }
+    }
 }
 
-.user-avatar {
-    display: block;
-}
-
-.avatar-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+.actions-section {
     display: flex;
     justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s;
-    backdrop-filter: blur(2px);
+    margin-top: 20px;
+    
+    .logout-btn {
+        padding: 0 40px;
+        height: 50px;
+        font-weight: 600;
+        font-size: 16px;
+        box-shadow: 0 4px 15px rgba(208, 48, 80, 0.3);
+        transition: all 0.3s;
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(208, 48, 80, 0.4);
+        }
+    }
 }
 
-.avatar-wrapper:hover .avatar-overlay {
-    opacity: 1;
-}
-
-.username {
-  margin-top: 20px;
-  margin-bottom: 8px;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--n-text-color);
-}
-
-.user-meta {
-    margin-bottom: 8px;
-}
-
-.user-email {
-  color: var(--n-text-color-3);
-  font-size: 14px;
-}
-
-.stat-card {
-    background: var(--n-action-color);
-    text-align: center;
-    border-radius: 12px;
-    transition: all 0.3s;
-}
-
-.stat-card:hover {
-    background: var(--n-color-target);
-    transform: translateY(-2px);
+@keyframes float {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(30px, -50px) rotate(10deg); }
+    66% { transform: translate(-20px, 20px) rotate(-5deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
 }
 </style>

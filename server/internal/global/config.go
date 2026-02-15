@@ -135,7 +135,7 @@ func (*Config) DbDSN() string {
 	// 		conf.Username, conf.Password, conf.Host, conf.Port, conf.Dbname, conf.Config,
 	// 	)
 	case "sqlite":
-		return filepath.Join(Conf.BasicPath.FilePath, Conf.BasicPath.FileName, Conf.SQLite.Dsn)
+		return filepath.Join(Conf.BasicPath.FilePath, Conf.BasicPath.FileName, "data", Conf.SQLite.Dsn)
 	default:
 		log.Panic("未设置数据库连接字符串")
 		return ""

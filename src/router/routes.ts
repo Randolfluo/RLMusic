@@ -12,6 +12,7 @@ const routes: any = [
     name: "login",
     meta: {
       title: "登录",
+      hideLayout: true,
     },
     component: () => import("@/views/Login/LoginView.vue"),
   },

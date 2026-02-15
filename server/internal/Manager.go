@@ -84,6 +84,7 @@ func registerBaseHandler(r *gin.Engine) {
 	system := base.Group("/system")
 	{
 		system.GET("/stats", systemAuthAPI.GetStats) // 合并后的接口
+		system.GET("/local-ips", systemAuthAPI.GetLocalIPs) // 获取局域网IP
 	}
 
 	// AI相关(无需认证)
@@ -152,6 +153,7 @@ func registerAuthHandler(r *gin.Engine) {
 	system := auth.Group("/system")
 	{
 		system.POST("/config", systemAuthAPI.UpdateConfig)
+		system.GET("/export/excel", systemAuthAPI.ExportDatabaseToExcel)
 	}
 
 }

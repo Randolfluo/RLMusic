@@ -177,8 +177,8 @@ func SynthesizeAudio(text string, params *Params) (string, error) {
 	}
 
 	// 确定保存路径
-	// 对应存储路径为config.yml定义的BasicPath下的podcast（没有该文件夹则自动创建）
-	basePath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "podcast")
+	// 对应存储路径为config.yml定义的BasicPath下的data/Podcast（没有该文件夹则自动创建）
+	basePath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "data", "Podcast")
 	log.Printf("[QwenTTS] 准备保存音频文件到目录: %s", basePath)
 	if err := os.MkdirAll(basePath, 0755); err != nil {
 		log.Printf("[QwenTTS] 创建目录失败: %v", err)

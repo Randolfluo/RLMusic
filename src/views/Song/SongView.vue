@@ -1,128 +1,167 @@
 <template>
-  <div class="song-view">
-    <div v-if="loading" class="loading-container">
-      <n-skeleton height="200px" width="200px" />
-      <div class="info-placeholders">
-        <n-skeleton text style="width: 50%" />
-        <n-skeleton text style="width: 30%" />
-        <n-skeleton text style="width: 80%" :repeat="3" />
-      </div>
+  <div class="song-view-container">
+    <!-- 动态背景 -->
+    <div class="dynamic-background" :style="{ backgroundImage: `url(${coverUrl || '/images/logo/logo.png'})` }">
+      <div class="backdrop-blur"></div>
     </div>
-    
-    <div v-else-if="song" class="content">
-      <!-- 头部信息 -->
-      <div class="header-section">
-        <div class="cover-wrapper">
-          <n-image
-            :src="coverUrl"
-            class="cover-img"
-            object-fit="contain"
-            fallback-src="/images/logo/logo.png"
-            :preview-disabled="false"
-          />
-        </div>
-        
-        <div class="info-wrapper">
-          <h1 class="song-title">{{ song.title }}</h1>
-          
-          <div class="meta-row">
-            <div class="meta-item">
-              <n-icon :component="User" />
-              <span class="label">歌手：</span>
-              <!-- Logic for displaying Artists list or fallback -->
-              <span v-if="song.artists && song.artists.length > 0">
-                 <template v-for="(artist, index) in song.artists" :key="artist.id">
-                     <span class="value link" @click="router.push(`/artist?id=${artist.id}`)">{{ artist.name }}</span>
-                     <span v-if="index < song.artists.length - 1" class="separator"> / </span>
-                 </template>
-              </span>
-              <span class="value link" @click="router.push(`/artist?id=${song.artist_id}`)" v-else-if="song.artist_id">{{ song.artist_name }}</span>
-              <span class="value" v-else>{{ song.artist_name || '未知歌手' }}</span>
-            </div>
-            
-             <div class="meta-item">
-              <n-icon :component="RecordDisc" />
-              <span class="label">专辑：</span>
-              <span class="value link" @click="router.push(`/album?id=${song.album_id}`)" v-if="song.album_id">{{ song.album_name }}</span>
-              <span class="value" v-else>{{ song.album_name || '未知专辑' }}</span>
-            </div>
-          </div>
 
-          <div class="actions">
-            <n-button type="primary" size="large" round @click="playMusic">
-              <template #icon>
-                <n-icon :component="PlayOne" />
-              </template>
-              播放
-            </n-button>
-             <n-button size="large" round @click="handleLike">
-               <template #icon>
-                <n-icon :component="Like" />
-              </template>
-              收藏
-            </n-button>
+    <div class="song-view-content">
+      <div v-if="loading" class="loading-container">
+        <n-skeleton height="260px" width="260px" style="border-radius: 20px" />
+        <div class="info-placeholders">
+          <n-skeleton text style="width: 50%; height: 40px; margin-bottom: 20px" />
+          <n-skeleton text style="width: 30%; height: 24px; margin-bottom: 12px" />
+          <n-skeleton text style="width: 30%; height: 24px; margin-bottom: 30px" />
+          <div style="display: flex; gap: 20px">
+             <n-skeleton width="120px" height="40px" round />
+             <n-skeleton width="120px" height="40px" round />
           </div>
         </div>
       </div>
+      
+      <div v-else-if="song" class="content-wrapper">
+        <!-- 头部信息 -->
+        <div class="header-section glass-panel">
+          <div class="cover-wrapper">
+            <n-image
+              :src="coverUrl"
+              class="cover-img"
+              object-fit="cover"
+              fallback-src="/images/logo/logo.png"
+              :preview-disabled="false"
+            />
+          </div>
+          
+          <div class="info-wrapper">
+            <h1 class="song-title">{{ song.title }}</h1>
+            
+            <div class="meta-row">
+              <div class="meta-item">
+                <n-icon :component="User" class="icon" />
+                <span class="label">歌手：</span>
+                <span v-if="song.artists && song.artists.length > 0">
+                  <template v-for="(artist, index) in song.artists" :key="artist.id">
+                    <span class="value link" @click="router.push(`/artist?id=${artist.id}`)">{{ artist.name }}</span>
+                    <span v-if="index < song.artists.length - 1" class="separator"> / </span>
+                  </template>
+                </span>
+                <span class="value link" @click="router.push(`/artist?id=${song.artist_id}`)" v-else-if="song.artist_id">{{ song.artist_name }}</span>
+                <span class="value" v-else>{{ song.artist_name || '未知歌手' }}</span>
+              </div>
+              
+              <div class="meta-item">
+                <n-icon :component="RecordDisc" class="icon" />
+                <span class="label">专辑：</span>
+                <span class="value link" @click="router.push(`/album?id=${song.album_id}`)" v-if="song.album_id">{{ song.album_name }}</span>
+                <span class="value" v-else>{{ song.album_name || '未知专辑' }}</span>
+              </div>
+            </div>
 
-      <!-- 简介与详情卡片 -->
-      <div class="details-section">
-        
-        <div class="info-cards">
+            <div class="actions">
+              <n-button type="primary" size="large" round class="action-btn play-btn" @click="playMusic">
+                <template #icon>
+                  <n-icon :component="PlayOne" />
+                </template>
+                <span class="btn-text">立即播放</span>
+              </n-button>
+              <n-button size="large" round class="action-btn like-btn" @click="handleLike">
+                <template #icon>
+                  <n-icon :component="Like" />
+                </template>
+                <span class="btn-text">收藏</span>
+              </n-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 详情卡片区域 -->
+        <div class="details-grid">
            <!-- 格式 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">音频格式</div>
-              <div class="card-value">{{ song.format }}</div>
-              <div class="card-tag">{{ ((song.bit_rate || 0) / 1000).toFixed(0) }} kbps</div>
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="FileCodeOne" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">音频格式</div>
+                <div class="card-value">{{ song.format }}</div>
+                <div class="card-tag">{{ ((song.bit_rate || 0) / 1000).toFixed(0) }} kbps</div>
+              </div>
            </div>
 
             <!-- 时长 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">时长</div>
-              <div class="card-value">{{ formatTime(song.duration) }}</div>
-              <div class="card-tag">Time</div>
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="Time" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">时长</div>
+                <div class="card-value">{{ formatTime(song.duration) }}</div>
+                <div class="card-tag">Time</div>
+              </div>
            </div>
 
            <!-- 采样率 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">采样率</div>
-              <div class="card-value">{{ song.sample_rate }} Hz</div>
-              <div class="card-tag">{{ song.bit_depth }} bit</div>
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="Voice" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">采样率</div>
+                <div class="card-value">{{ song.sample_rate }} Hz</div>
+                <div class="card-tag">{{ song.bit_depth }} bit</div>
+              </div>
            </div>
            
            <!-- 声道/大小 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">声道/大小</div>
-              <div class="card-value">{{ song.channels === 2 ? 'Stereo' : (song.channels === 1 ? 'Mono' : song.channels + ' Ch') }}</div>
-              <div class="card-tag">{{ (song.file_size / 1024 / 1024).toFixed(2) }} MB</div>
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="DatabaseNetwork" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">声道/大小</div>
+                <div class="card-value">{{ song.channels === 2 ? 'Stereo' : (song.channels === 1 ? 'Mono' : song.channels + ' Ch') }}</div>
+                <div class="card-tag">{{ (song.file_size / 1024 / 1024).toFixed(2) }} MB</div>
+              </div>
            </div>
 
             <!-- 轨道/年份 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">发行信息</div>
-              <div class="card-value">{{ song.year || '未知年份' }}</div>
-              <div class="card-tag">
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="Calendar" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">发行信息</div>
+                <div class="card-value">{{ song.year || '未知年份' }}</div>
+                <div class="card-tag">
                   <span v-if="song.disc_num">Disk {{ song.disc_num }} / </span>
                   Track {{ song.track_num }}
+                </div>
               </div>
            </div>
 
            <!-- 播放次数 -->
-           <div class="info-card hover-effect">
-              <div class="card-label">播放统计</div>
-              <div class="card-value">{{ song.play_count }}</div>
-              <div class="card-tag">Plays</div>
+           <div class="detail-card glass-card">
+              <div class="card-icon">
+                <n-icon :component="Play" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">播放统计</div>
+                <div class="card-value">{{ song.play_count }}</div>
+                <div class="card-tag">Plays</div>
+              </div>
            </div>
 
            <!-- 文件信息 (Clickable) -->
-           <div class="info-card hover-effect clickable" @click="showFileInfo = true" :title="song.file_path">
-              <div class="card-label">源文件</div>
-              <div class="card-value file-name">{{ song.file_name }}</div>
-              <div class="card-tag">点击查看详细路径</div>
+           <div class="detail-card glass-card clickable" @click="showFileInfo = true" :title="song.file_path">
+              <div class="card-icon">
+                <n-icon :component="FolderCode" />
+              </div>
+              <div class="card-content">
+                <div class="card-label">源文件</div>
+                <div class="card-value file-name">{{ song.file_name }}</div>
+                <div class="card-tag">点击查看详细路径</div>
+              </div>
            </div>
-           
-           <!-- 占位卡片 (Ensure layout balance if needed) -->
-           <!-- But grid handles it well -->
         </div>
 
         <!-- File Detail Modal -->
@@ -134,6 +173,7 @@
                 size="huge"
                 role="dialog"
                 aria-modal="true"
+                class="modal-card"
             >
                 <div class="file-details">
                     <div class="detail-row">
@@ -159,19 +199,17 @@
                 </div>
             </n-card>
         </n-modal>
-        
-        <div class="intro-block" v-if="false">
-          <!-- 预留简介区域，目前数据库没有 -->
-          <h3>音乐简介</h3>
-          <p class="intro-text">暂无简介...</p>
-        </div>
-
       </div>
-
-    </div>
-    
-    <div v-else class="error-container">
-        <n-empty description="未找到歌曲信息" />
+      
+      <div v-else class="error-container">
+          <n-empty description="未找到歌曲信息">
+            <template #extra>
+              <n-button size="small" @click="router.back()">
+                返回上一页
+              </n-button>
+            </template>
+          </n-empty>
+      </div>
     </div>
   </div>
 </template>
@@ -180,7 +218,10 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMessage } from "naive-ui";
-import { User, RecordDisc, PlayOne, Like } from "@icon-park/vue-next";
+import { 
+  User, RecordDisc, PlayOne, Like, FileCodeOne, Time, 
+  Voice, DatabaseNetwork, Calendar, Play, FolderCode 
+} from "@icon-park/vue-next";
 import { getSongDetail, getSongCover, toggleLike } from "@/api/song";
 import { useMusicDataStore } from "@/store/musicData";
 
@@ -261,235 +302,338 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.song-view {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-  
-  .loading-container {
-    display: flex;
-    gap: 40px;
-    padding-top: 20px;
-    .info-placeholders {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-  }
+.song-view-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
 
-  .header-section {
-    display: flex;
-    gap: 50px;
-    margin-bottom: 60px;
+  .dynamic-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
     
-    .cover-wrapper {
-      flex-shrink: 0;
-      width: 260px;
-      height: 260px;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    .backdrop-blur {
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(60px) saturate(180%);
+      background: rgba(255, 255, 255, 0.5);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 100%);
       
-      .cover-img {
-        width: 100%;
-        height: 100%;
-        display: block; // Remove extra space
-        
-        :deep(img) {
-             width: 100%;
-             height: 100%;
-             object-fit: contain !important;
-        }
-      }
-    }
-
-    .info-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      
-      .song-title {
-        font-size: 36px;
-        font-weight: 800;
-        margin: 0 0 20px;
-        line-height: 1.2;
-      }
-
-      .meta-row {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 30px;
-        
-        .meta-item {
-          display: flex;
-          align-items: center;
-          font-size: 16px;
-          color: var(--n-text-color-2); // Use Naive UI var if available, or fallback
-          
-          .n-icon {
-            margin-right: 8px;
-            font-size: 18px;
-          }
-          
-          .value {
-            margin-left: 5px;
-            font-weight: 500;
-            &.link {
-              cursor: pointer;
-              color: var(--n-primary-color);
-              &:hover {
-                text-decoration: underline;
-              }
-            }
-          }
-        }
-      }
-
-      .actions {
-        display: flex;
-        gap: 20px;
+      @media (prefers-color-scheme: dark) {
+        background: rgba(0, 0, 0, 0.6);
       }
     }
   }
 
-  .details-section {
-    
-    .info-cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      margin-bottom: 40px;
-
-      @media (max-width: 1024px) {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      @media (max-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .info-card {
-        background-color: var(--n-card-color); 
-        border-radius: 12px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        background: #f5f5f7; 
-        height: 140px; // Unified height
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
-        
-        @media (prefers-color-scheme: dark) {
-           background: #2c2c2e;
-        }
-
-        &.hover-effect:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            z-index: 10;
-        }
-
-        &.clickable {
-            cursor: pointer;
-            &:active {
-                transform: scale(0.98);
-            }
-        }
-        
-        .card-label {
-            font-size: 13px;
-            color: #86868b;
-            margin-bottom: 8px;
-        }
-        
-        .card-value {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis; 
-
-            &.file-name {
-                 font-size: 15px;
-            }
-        }
-        
-        .card-tag {
-            font-size: 12px;
-            padding: 2px 8px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 4px;
-            width: fit-content;
-        }
-      }
-    }
-
-    .intro-block {
-        h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            position: relative;
-            padding-left: 12px;
-             &::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 4px;
-                bottom: 4px;
-                width: 4px;
-                background-color: var(--n-primary-color);
-                border-radius: 2px;
-            }
-        }
-        .intro-text {
-            line-height: 1.8;
-            color: var(--n-text-color-2);
-            font-size: 15px;
-        }
-    }
-  }
-  
-  .file-details {
-     display: flex;
-     flex-direction: column;
-     gap: 15px;
-     
-     .detail-row {
-         display: flex;
-         flex-direction: column;
-         gap: 5px;
-         
-         .label {
-             font-size: 13px;
-             color: var(--n-text-color-3);
-             font-weight: bold;
-         }
-         .value {
-             font-size: 14px;
-             color: var(--n-text-color-1);
-             word-break: break-all;
-             background: rgba(100,100,100,0.1);
-             padding: 10px;
-             border-radius: 8px;
-             font-family: monospace;
-             
-             &.path-value {
-                 max-height: 150px;
-                 overflow-y: auto;
-             }
-         }
-     }
+  .song-view-content {
+    position: relative;
+    z-index: 1;
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
 }
 
-// Dark mode overrides if Naive UI classes available globally on body/container
-:root[theme='dark'] .info-card {
-    background: #333 !important;
-    .card-label { color: #aaa; }
-    .card-tag { background: rgba(255,255,255,0.1); }
+.loading-container {
+  display: flex;
+  gap: 40px;
+  padding-top: 40px;
+  
+  .info-placeholders {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+.content-wrapper {
+  animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  
+  @media (prefers-color-scheme: dark) {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.header-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 30px;
+  
+  .cover-wrapper {
+    flex-shrink: 0;
+    width: 260px;
+    height: 260px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+    
+    .cover-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      
+      :deep(img) {
+         width: 100%;
+         height: 100%;
+         object-fit: cover !important;
+      }
+    }
+  }
+
+  .info-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    
+    .song-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin: 0 0 20px;
+      line-height: 1.1;
+      color: var(--n-text-color);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+      
+      .meta-item {
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        color: var(--n-text-color-2);
+        
+        .icon {
+          margin-right: 8px;
+          font-size: 20px;
+          color: var(--n-primary-color);
+        }
+        
+        .label {
+          margin-right: 4px;
+          font-weight: 500;
+        }
+        
+        .value {
+          font-weight: 600;
+          color: var(--n-text-color-1);
+          
+          &.link {
+            cursor: pointer;
+            transition: color 0.2s;
+            &:hover {
+              color: var(--n-primary-color);
+              text-decoration: underline;
+            }
+          }
+        }
+        
+        .separator {
+          margin: 0 4px;
+          color: var(--n-text-color-3);
+        }
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 16px;
+      
+      .action-btn {
+        padding: 0 24px;
+        font-weight: bold;
+        height: 48px;
+        font-size: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        
+        .btn-text {
+          color: var(--n-text-color);
+        }
+        
+        &.play-btn {
+          background: linear-gradient(135deg, var(--n-primary-color) 0%, var(--n-primary-color-hover) 100%);
+          border: none;
+          
+          .btn-text {
+            color: #040404;
+          }
+        }
+      }
+    }
+  }
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .detail-card {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    @media (prefers-color-scheme: dark) {
+      background: rgba(40, 40, 40, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    &:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      
+      @media (prefers-color-scheme: dark) {
+        background: rgba(60, 60, 60, 0.6);
+      }
+      
+      .card-icon {
+        transform: scale(1.1) rotate(5deg);
+        background: var(--n-primary-color);
+        color: white;
+      }
+    }
+    
+    &.clickable {
+      cursor: pointer;
+      &:active {
+        transform: scale(0.98);
+      }
+    }
+    
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(var(--n-primary-color-rgb), 0.1);
+      color: var(--n-primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    
+    .card-content {
+      flex: 1;
+      min-width: 0;
+      
+      .card-label {
+        font-size: 12px;
+        color: var(--n-text-color-3);
+        margin-bottom: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .card-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--n-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+        
+        &.file-name {
+          font-size: 14px;
+        }
+      }
+      
+      .card-tag {
+        font-size: 12px;
+        color: var(--n-text-color-3);
+      }
+    }
+  }
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    
+    .label {
+      font-size: 13px;
+      color: var(--n-text-color-3);
+      font-weight: bold;
+    }
+    
+    .value {
+      font-size: 14px;
+      color: var(--n-text-color-1);
+      word-break: break-all;
+      background: rgba(128, 128, 128, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      border: 1px solid rgba(128, 128, 128, 0.1);
+      
+      &.path-value {
+        max-height: 120px;
+        overflow-y: auto;
+      }
+    }
+  }
+}
+
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

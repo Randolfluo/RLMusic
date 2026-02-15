@@ -36,7 +36,7 @@ type Album struct {
 // FindOrCreateArtist 查找或创建艺术家
 func FindOrCreateArtist(db *gorm.DB, name string) (*Artist, error) {
 	var artist Artist
-	if err := db.FirstOrCreate(&artist, Artist{Name: name}).Error; err != nil {
+	if err := db.FirstOrCreate(&artist, Artist{Name: name, Description: ""}).Error; err != nil {
 		return nil, err
 	}
 	return &artist, nil
@@ -62,8 +62,9 @@ func FindOrCreateAlbum(db *gorm.DB, title string, artistID *int) (*Album, error)
 	if album.ID == 0 {
 		// 没找到，创建
 		album = Album{
-			Title:    title,
-			ArtistID: artistID,
+			Title:       title,
+			ArtistID:    artistID,
+			Description: "",
 		}
 		if err := db.Create(&album).Error; err != nil {
 			return nil, err

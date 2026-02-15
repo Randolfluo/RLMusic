@@ -1,8 +1,8 @@
 ### 全局变量
 @baseUrl = http://localhost:12345/api
 @contentType = application/json
-@username = testuser001
-@password = password123
+@username = admin
+@password = 123456
 @email = test001@example.com
 
 # 登录请求用于获取 Token

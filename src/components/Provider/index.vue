@@ -64,8 +64,10 @@ const changeTheme = () => {
    // 从 Store 中读取用户的设置
   if (setting.getSiteTheme == "light") {
     theme.value = null;
+    document.documentElement.classList.remove("dark");
   } else if (setting.getSiteTheme == "dark") {
     theme.value = darkTheme;
+    document.documentElement.classList.add("dark");
   }
 };
 

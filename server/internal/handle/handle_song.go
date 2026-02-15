@@ -26,29 +26,34 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 		return
 	}
 
+	if user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可扫描")
+		return
+	}
+
 	db := GetDB(c)
 	basePath := g.GetConfig().BasicPath
-	// 获取用户根目录: basicPath/username
-	userPath := filepath.Join(basePath.FilePath, basePath.FileName, user.Username)
+	// 获取基础目录: basicPath
+	// 修改扫描逻辑：不再扫描 username 目录，而是扫描 basicPath 下的所有文件夹（排除 data 文件夹）
+	rootPath := filepath.Join(basePath.FilePath, basePath.FileName)
 
 	// 支持的音频扩展名
 	supportedExts := map[string]bool{
-		".flac": true, //".wav": true, ".ogg": true, ".m4a": true,
+		".flac": true, ".mp3": true, ".wav": true, ".ogg": true, ".m4a": true,
 	}
 
 	addedCount := 0
 	updatedCount := 0
 	var scannedDuration float64 = 0
 
-	// 读取用户目录下的一级子目录
-	entries, err := os.ReadDir(userPath)
+	// 读取根目录下的一级子目录
+	entries, err := os.ReadDir(rootPath)
 	if err != nil {
-		// 如果目录不存在，可能只是用户还没传文件，不报错
 		if os.IsNotExist(err) {
 			ReturnSuccess(c, gin.H{"message": "目录为空"})
 			return
 		}
-		slog.Error("Failed to read user directory", "path", userPath, "error", err)
+		slog.Error("Failed to read root directory", "path", rootPath, "error", err)
 		ReturnError(c, g.Err, "读取目录失败")
 		return
 	}
@@ -59,15 +64,12 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 		}
 
 		subDirName := entry.Name()
-		targetDir := filepath.Join(userPath, subDirName)
-
-		// 查找或创建歌单 (歌单名 = 文件夹名)
-		// 移除权限控制，permission参数不再使用，默认公开
-		currentPlaylist, err := model.FindOrCreatePlaylist(db, user.ID, subDirName)
-		if err != nil {
-			slog.Error("Failed to create/find Playlist", "name", subDirName, "error", err)
-			continue // 歌单创建失败，跳过该文件夹的扫描? 或者继续扫描但不加歌单? 这里选择跳过
+		// 跳过 data, avatar, podcast 文件夹
+		if subDirName == "data" || subDirName == "avatar" || subDirName == "podcast" {
+			continue
 		}
+
+		targetDir := filepath.Join(rootPath, subDirName)
 
 		err = filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -82,6 +84,16 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			ext := strings.ToLower(filepath.Ext(path))
 			if !supportedExts[ext] {
 				return nil
+			}
+
+			// 获取歌曲所在目录名作为歌单名
+			dirName := filepath.Base(filepath.Dir(path))
+
+			// 查找或创建歌单 (歌单名 = 歌曲所在目录名)
+			currentPlaylist, err := model.FindOrCreatePlaylist(db, user.ID, dirName)
+			if err != nil {
+				slog.Error("Failed to create/find Playlist", "name", dirName, "error", err)
+				return nil // 跳过该文件
 			}
 
 			// ... (rest of the logic)
@@ -155,14 +167,16 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			var coverUrl string // 用于歌单封面
 			if m != nil && m.Picture() != nil {
 				pic := m.Picture()
-				// 保存目录: ./data/covers (相对运行目录)
-				hash, filename, width, height, err := imgtool.ProcessAndSaveCover(pic.Data, "./data/covers")
+				// 保存目录: config/data/cover
+				conf := g.GetConfig()
+				saveDir := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "data", "cover")
+				hash, filename, width, height, err := imgtool.ProcessAndSaveCover(pic.Data, saveDir)
 				if err == nil {
 					// 数据库记录
 					cover, err := model.FindOrCreateCover(db, hash, filename, pic.Ext, int64(len(pic.Data)), width, height)
 					if err == nil {
 						coverID = &cover.ID
-						coverUrl = "/covers/" + filename
+						coverUrl = filename
 					} else {
 						slog.Error("Failed to find/create Cover", "error", err)
 					}
@@ -207,7 +221,7 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			song.FileSize = info.Size()
 			song.Format = strings.TrimPrefix(ext, ".")
 
-			// 读取音频参数 (目前仅支持 FLAC)
+			// 读取音频参数
 			if ext == ".flac" {
 				if props, err := audio.ParseFlacProps(path); err == nil {
 					song.Duration = props.Duration
@@ -218,6 +232,24 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				} else {
 					slog.Warn("Failed to parse FLAC props", "path", path, "error", err)
 				}
+			} else if ext == ".mp3" {
+				if props, err := audio.ParseMp3Props(path); err == nil {
+					song.Duration = props.Duration
+					song.BitRate = props.BitRate
+				} else {
+					slog.Warn("Failed to parse MP3 props", "path", path, "error", err)
+				}
+			} else if ext == ".wav" {
+				if props, err := audio.ParseWavProps(path); err == nil {
+					song.Duration = props.Duration
+					song.BitRate = props.BitRate
+				} else {
+					slog.Warn("Failed to parse WAV props", "path", path, "error", err)
+				}
+			} else {
+				// TODO: 其他格式 (OGG, M4A) 暂未实现原生解析
+				// 可以考虑引入 ffmpeg wrapper
+				slog.Info("Duration parsing not implemented for this format yet", "format", ext)
 			}
 
 			// 保存
@@ -359,7 +391,25 @@ func (*SongAuth) GetSongCover(c *gin.Context) {
 
 	// 2. 如果源文件没有封面或读取失败，降级使用缓存的缩略图
 	if song.CoverID == nil || song.Cover.Path == "" {
-		// 404 Not Found if no cover
+		// 尝试返回默认封面
+		// 查找可能的路径 (兼容不同的运行目录)
+		candidates := []string{
+			"public/images/logo/favicon.png",
+			"../public/images/logo/favicon.png",
+			"../../public/images/logo/favicon.png",
+			filepath.Join(g.GetConfig().BasicPath.FilePath, "localmusicplayer", "public", "images", "logo", "favicon.png"),
+		}
+
+		for _, path := range candidates {
+			// 转换为绝对路径（如果是相对路径）
+			absPath, _ := filepath.Abs(path)
+			if _, err := os.Stat(absPath); err == nil {
+				c.File(absPath)
+				return
+			}
+		}
+
+		// 404 Not Found if no cover and no default
 		c.Status(404)
 		return
 	}
@@ -406,6 +456,10 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 		return
 	}
 
+	if artist.Cover != "" && !strings.HasPrefix(artist.Cover, "/covers/") && !strings.HasPrefix(artist.Cover, "http") {
+		artist.Cover = "/covers/" + artist.Cover
+	}
+
 	ReturnSuccess(c, artist)
 }
 
@@ -417,6 +471,10 @@ func (*SongAuth) GetAlbumDetail(c *gin.Context) {
 	if err := db.Preload("Artist").Preload("Songs").First(&album, idStr).Error; err != nil {
 		ReturnError(c, g.ErrDbOp, "专辑不存在")
 		return
+	}
+
+	if album.Cover != "" && !strings.HasPrefix(album.Cover, "/covers/") && !strings.HasPrefix(album.Cover, "http") {
+		album.Cover = "/covers/" + album.Cover
 	}
 
 	ReturnSuccess(c, album)
@@ -1029,7 +1087,7 @@ func (*SongAuth) AddSongsToPlaylist(c *gin.Context) {
 		var fullSong model.Song
 		if err := db.Preload("Cover").First(&fullSong, s.ID).Error; err == nil {
 			if fullSong.CoverID != nil && fullSong.Cover.ID != 0 {
-				coverUrl := "/covers/" + fullSong.Cover.Path
+				coverUrl := fullSong.Cover.Path
 				if err := db.Model(&playlist).Update("cover_url", coverUrl).Error; err == nil {
 					break // 成功设置后退出
 				}
