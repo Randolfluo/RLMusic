@@ -1,8 +1,8 @@
 ### 全局变量
 @baseUrl = http://localhost:12345/api
 @contentType = application/json
-@username = testuser001
-@password = password123
+@username = admin
+@password = 123456
 @email = test001@example.com
 
 # 登录请求用于获取 Token
@@ -21,6 +21,10 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/user/info
 Authorization: Bearer {{login.response.body.data.token}}
 
+### 3.1 检查是否为管理员 (需要登录)
+GET {{baseUrl}}/user/is-admin
+Authorization: Bearer {{login.response.body.data.token}}
+
 ### 4. 注销用户 (需要登录后获取Token)
 DELETE {{baseUrl}}/user
 Authorization: Bearer {{login.response.body.data.token}}
@@ -30,3 +34,21 @@ POST {{baseUrl}}/user/avatar
 Authorization: Bearer {{login.response.body.data.token}}
 Content-Type: multipart/form-data; boundary=MyBoundary
 
+### 7. 管理员删除用户 (需要管理员权限)
+# 删除 ID 为 3 的用户
+DELETE {{baseUrl}}/admin/user/3
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 5. 管理员获取所有用户列表 (需要管理员权限)
+GET {{baseUrl}}/admin/user/list?page=1&limit=10
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 6. 管理员修改用户权限 (需要管理员权限)
+# 将用户 ID 为 2 的用户修改为 admin
+PUT {{baseUrl}}/admin/user/role/2
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "user_group": "admin"
+}

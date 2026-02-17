@@ -10,6 +10,7 @@ import type { ConfigEnv } from "vite";
 
 
 // https://vite.dev/config/
+// Force update
 export default ({ mode }: ConfigEnv) => {
   const VITE_MUSIC_API = loadEnv(mode, process.cwd()).VITE_MUSIC_API;
   console.log("VITE_MUSIC_API:", VITE_MUSIC_API); // 在终端输出环境变量，方便调试
@@ -83,7 +84,7 @@ export default ({ mode }: ConfigEnv) => {
       })
     ],
     server: {
-      port: 8888,      // 开发服务器端口
+      port: 23456,      // 开发服务器端口
       open: true,      // 自动打开浏览器
       host: true,     // 如果需要外部访问，可以添加 host
       proxy: {  // API 代理配置

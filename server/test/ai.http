@@ -2,6 +2,23 @@
 @baseUrl = http://localhost:12345/api
 @contentType = application/json
 
+@contentType = application/json
+@username = admin
+@password = 123456
+
+# 登录请求用于获取 Token
+### 2. 用户登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "username": "{{username}}",
+    "password": "{{password}}"
+}
+
+
+
 ### 1. 语音合成 (TTS)
 # @name tts
 POST {{baseUrl}}/ai/tts
@@ -24,3 +41,84 @@ Content-Type: {{contentType}}
 {
     "prompt": "写一个20字的周杰伦的歌曲青花瓷的推荐语，用空格表示情感"
 }
+
+
+
+
+
+
+### 获取歌单详情 (精简版，随机返回歌曲，上限100) (需要登录)
+GET {{baseUrl}}/song/playlist/detail/11
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 3. 获取歌单AI分析
+GET {{baseUrl}}/song/playlist/analysis/11
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 4. 获取歌单AI描述
+GET {{baseUrl}}/song/playlist/description/11
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 5. 批量生成所有公共歌单AI描述 (Admin only)
+POST {{baseUrl}}/song/playlist/generate-public-descriptions
+Authorization: Bearer {{login.response.body.data.token}}
+# {
+#   "code": 1001,
+#   "message": "服务器端错误",
+#   "data": "api call failed: Post \"https://api.siliconflow.cn/v1/chat/completions\": read tcp 192.168.101.51:5315-\u003e47.102.37.23:443: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."
+# }
+
+# {
+#   "code": 1000,
+#   "message": "success",
+#   "data": {
+#     "dominant_artist": "Aimer",
+#     "highlight_songs": [
+#       "六等星の夜 Magic Blue ver.",
+#       "眠りの森",
+#       "Snowy Day",
+#       "冬のダイヤモンド",
+#       "STAND-ALONE"
+#     ],
+#     "main_era": "2010s",
+#     "mood_guess": "Melancholic, Emotional, Reflective, Hopeful",
+#     "style_guess": "J-Rock, Ballad, Pop, Electropop, Anime Theme",
+#     "year_range": "2011-2023"
+#   }
+# }
+
+
+
+### 6. 获取艺术家详情 (随机歌曲)
+GET {{baseUrl}}/song/artist/detail/1?limit=100
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 7. 获取艺术家AI分析 (Step 1: JSON) (仅管理员)
+GET {{baseUrl}}/song/artist/analysis/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 8. 获取艺术家AI描述 (Step 2: Text) (仅管理员)
+GET {{baseUrl}}/song/artist/description/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 9. 批量生成所有艺术家AI描述 (Admin only)
+POST {{baseUrl}}/song/artist/generate-descriptions
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 10. 获取专辑详情 (随机歌曲)
+GET {{baseUrl}}/song/album/detail/1?limit=100
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 11. 获取专辑AI分析 (Step 1: JSON) (仅管理员)
+GET {{baseUrl}}/song/album/analysis/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 12. 获取专辑AI描述 (Step 2: Text) (仅管理员)
+GET {{baseUrl}}/song/album/description/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 13. 批量生成所有专辑AI描述 (Admin only)
+POST {{baseUrl}}/song/album/generate-descriptions
+Authorization: Bearer {{login.response.body.data.token}}
+
+

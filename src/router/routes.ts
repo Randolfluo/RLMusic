@@ -174,6 +174,36 @@ const routes: any = [
     },
     component: () => import("@/views/State/404.vue"),
   },
+  // 管理员后台
+  {
+    path: "/admin",
+    name: "admin",
+    meta: {
+      title: "管理员后台",
+      needLogin: true,
+    },
+    component: () => import("@/views/Admin/index.vue"),
+  },
+  // 管理员用户管理
+  {
+    path: "/admin/users",
+    name: "admin-users",
+    meta: {
+      title: "用户管理",
+      needLogin: true,
+    },
+    component: () => import("@/views/Admin/UserManage.vue"),
+  },
+  // 管理员公共歌单管理
+  {
+    path: "/admin/playlists",
+    name: "admin-playlists",
+    meta: {
+      title: "公共歌单管理",
+      needLogin: true,
+    },
+    component: () => import("@/views/Admin/PlaylistManage.vue"),
+  },
 
   {
     path: "/:pathMatch(.*)",

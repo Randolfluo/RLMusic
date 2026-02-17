@@ -73,6 +73,115 @@ func FindOrCreateAlbum(db *gorm.DB, title string, artistID *int) (*Album, error)
 	return &album, nil
 }
 
+// GetArtistRandomSongs 获取艺术家随机歌曲(上限100首)
+func GetArtistRandomSongs(db *gorm.DB, artistIDStr string, limit int) ([]SimpleSongResponse, error) {
+	if limit > 100 {
+		limit = 100
+	}
+
+	var songsRaw []Song
+	// 关联查询: Song join song_artists
+	// SQLite 使用 RANDOM()
+	err := db.Joins("JOIN song_artists ON song_artists.song_id = song.id").
+		Where("song_artists.artist_id = ?", artistIDStr).
+		Order("RANDOM()").
+		Limit(limit).
+		Preload("Artist").
+		Preload("Album").
+		Preload("Cover").
+		Find(&songsRaw).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var songs []SimpleSongResponse
+	for _, s := range songsRaw {
+		artistId := 0
+		albumId := 0
+		if s.ArtistID != nil {
+			artistId = *s.ArtistID
+		}
+		if s.AlbumID != nil {
+			albumId = *s.AlbumID
+		}
+
+		coverUrl := ""
+		if s.CoverID != nil && s.Cover.ID != 0 {
+			coverUrl = "/covers/" + s.Cover.Path
+		}
+
+		songs = append(songs, SimpleSongResponse{
+			ID:         s.ID,
+			Title:      s.Title,
+			ArtistName: s.ArtistName,
+			AlbumTitle: s.AlbumName,
+			AlbumName:  s.AlbumName,
+			Duration:   s.Duration,
+			Year:       s.Year,
+			ArtistID:   artistId,
+			AlbumID:    albumId,
+			CoverUrl:   coverUrl,
+		})
+	}
+	return songs, nil
+}
+
+// GetAlbumRandomSongs 获取专辑随机歌曲(上限100首)
+func GetAlbumRandomSongs(db *gorm.DB, albumIDStr string, limit int) ([]SimpleSongResponse, error) {
+	if limit > 100 {
+		limit = 100
+	}
+
+	var songsRaw []Song
+	// 专辑ID直接在Song表里
+	err := db.Where("album_id = ?", albumIDStr).
+		Order("track_num ASC"). // 专辑通常按音轨排序更好，但为了保持"随机"接口语义一致性，或者如果真要随机分析：
+		// Order("RANDOM()"). // AI分析通常需要完整专辑感，但如果只想取样...
+		// 专辑歌曲通常不多，直接全部取出，前端或调用方自己截取。
+		// 但为了兼容大专辑或一致性，我们还是支持limit
+		Limit(limit).
+		Preload("Artist").
+		Preload("Album").
+		Preload("Cover").
+		Find(&songsRaw).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var songs []SimpleSongResponse
+	for _, s := range songsRaw {
+		artistId := 0
+		albumId := 0
+		if s.ArtistID != nil {
+			artistId = *s.ArtistID
+		}
+		if s.AlbumID != nil {
+			albumId = *s.AlbumID
+		}
+
+		coverUrl := ""
+		if s.CoverID != nil && s.Cover.ID != 0 {
+			coverUrl = "/covers/" + s.Cover.Path
+		}
+
+		songs = append(songs, SimpleSongResponse{
+			ID:         s.ID,
+			Title:      s.Title,
+			ArtistName: s.ArtistName,
+			AlbumTitle: s.AlbumName,
+			AlbumName:  s.AlbumName,
+			Duration:   s.Duration,
+			Year:       s.Year,
+			ArtistID:   artistId,
+			AlbumID:    albumId,
+			CoverUrl:   coverUrl,
+		})
+	}
+	return songs, nil
+}
+
 // Cover 封面图片模型
 type Cover struct {
 	ID int `gorm:"primaryKey;auto_increment" json:"id"`

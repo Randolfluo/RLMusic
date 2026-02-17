@@ -146,3 +146,10 @@ https://chatgpt.com/s/t_69875e32fe7c8191a6c1594adc92ccb5
 
 生活不止，修改为随机谚语
 修复个人信息错误的问题
+
+
+ai pipeline 实现
+
+两阶段 AI Pipeline（Analyze → Generate）
+
+修复重置系统

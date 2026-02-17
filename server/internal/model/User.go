@@ -138,3 +138,31 @@ func IsPlaylistSubscribed(db *gorm.DB, userID int, playlistID int) (bool, error)
 	}
 	return count > 0, nil
 }
+
+// GetAllUsers 获取所有用户列表 (支持分页和搜索)
+func GetAllUsers(db *gorm.DB, page, limit int, query string) ([]User, int64, error) {
+	var users []User
+	var total int64
+	offset := (page - 1) * limit
+
+	db = db.Model(&User{}).Where("is_delete = ?", false)
+
+	if query != "" {
+		db = db.Where("username LIKE ? OR email LIKE ?", "%"+query+"%", "%"+query+"%")
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := db.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
+}
+
+// UpdateUserGroup 修改用户组
+func UpdateUserGroup(db *gorm.DB, id int, group string) error {
+	return db.Model(&User{}).Where("id = ?", id).Update("user_group", group).Error
+}

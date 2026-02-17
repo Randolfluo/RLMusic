@@ -1,11 +1,14 @@
 package handle
 
 import (
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	g "server/internal/global"
 	"server/internal/model"
+	"server/internal/utils/ai"
 	"server/internal/utils/audio"
 	"server/internal/utils/imgtool"
 	"strconv"
@@ -318,7 +321,11 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 	var systemTotalDuration int64
 	db.Model(&model.User{}).Select("sum(total_duration)").Scan(&systemTotalDuration)
 
-	_ = model.UpdateSystemInfoStats(db, songCount, albumCount, artistCount, systemTotalDuration)
+	// 计算所有歌曲总大小
+	var systemTotalVolume int64
+	db.Model(&model.Song{}).Select("sum(file_size)").Scan(&systemTotalVolume)
+
+	_ = model.UpdateSystemInfoStats(db, songCount, albumCount, artistCount, systemTotalDuration, systemTotalVolume)
 
 	slog.Info("Music scan completed", "user", user.Username, "added", addedCount, "updated", updatedCount)
 	ReturnSuccess(c, gin.H{
@@ -776,6 +783,1036 @@ func (*SongAuth) GetPrivatePlaylistDetail(c *gin.Context) {
 	ReturnSuccess(c, playlistDetail)
 }
 
+// GetPlaylistDetail 获取歌单详情（随机返回歌曲，上限100首）
+func (*SongAuth) GetPlaylistDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	limitStr := c.Query("limit")
+
+	limit := 100
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l > 100 {
+			limit = 100
+		} else {
+			limit = l
+		}
+	}
+
+	db := GetDB(c)
+
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, limit)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ReturnError(c, g.ErrDbOp, "歌单不存在")
+		} else {
+			ReturnError(c, g.ErrDbOp, err)
+		}
+		return
+	}
+
+	user := GetCurrentUser(c)
+	// 权限检查
+	// 规则:
+	// 1. 当前用户为管理员时，允许访问公共歌单 (隐含: 也能访问自己的私有歌单)
+	// 2. 当前用户不为管理员时，只允许访问自己的私有歌单
+	allowed := false
+	isAdmin := user != nil && user.UserGroup == "admin"
+	isOwner := user != nil && playlistDetail.OwnerID == user.ID
+
+	if isAdmin {
+		if playlistDetail.IsPublic || isOwner {
+			allowed = true
+		}
+	} else {
+		if isOwner && !playlistDetail.IsPublic {
+			allowed = true
+		}
+	}
+
+	if !allowed {
+		ReturnError(c, g.ErrPermission, "无权访问此歌单(权限受限)")
+		return
+	}
+
+	// 构造返回数据
+	type SongInfo struct {
+		Title      string `json:"title"`
+		Year       string `json:"year"`
+		ArtistName string `json:"artist"`
+		AlbumName  string `json:"album"`
+	}
+
+	var songs []SongInfo
+	for _, song := range playlistDetail.Songs {
+		songs = append(songs, SongInfo{
+			Title:      song.Title,
+			Year:       song.Year,
+			ArtistName: song.ArtistName,
+			AlbumName:  song.AlbumName,
+		})
+	}
+
+	ReturnSuccess(c, gin.H{
+		"playlist": playlistDetail.Title,
+		"songs":    songs,
+	})
+}
+
+// GetPlaylistAIAnalysis 获取歌单AI分析
+func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
+	idStr := c.Param("id")
+
+	db := GetDB(c)
+
+	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制100首，用于分析
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			ReturnError(c, g.ErrDbOp, "歌单不存在")
+		} else {
+			ReturnError(c, g.ErrDbOp, err)
+		}
+		return
+	}
+
+	user := GetCurrentUser(c)
+	// 权限检查
+	allowed := false
+	isAdmin := user != nil && user.UserGroup == "admin"
+	isOwner := user != nil && playlistDetail.OwnerID == user.ID
+
+	if isAdmin {
+		if playlistDetail.IsPublic || isOwner {
+			allowed = true
+		}
+	} else {
+		if isOwner && !playlistDetail.IsPublic {
+			allowed = true
+		}
+	}
+
+	if !allowed {
+		ReturnError(c, g.ErrPermission, "无权访问此歌单(权限受限)")
+		return
+	}
+
+	// 读取 prompt1.md
+	promptBytes, err := os.ReadFile("prompt1.md")
+	if err != nil {
+		slog.Error("Failed to read prompt1.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板")
+		return
+	}
+	promptTemplate := string(promptBytes)
+
+	// 构造 AI 分析所需的简化数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range playlistDetail.Songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	// 替换 prompt 中的占位符
+	finalPrompt := strings.Replace(promptTemplate, "{{json数据}}", string(jsonData), 1)
+
+	// 调用 AI 接口
+	reply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 尝试解析返回的 JSON (如果是 JSON 格式的话)
+	var result interface{}
+	// 清理可能的 markdown 代码块标记 ```json ... ```
+	cleanReply := strings.TrimSpace(reply)
+	cleanReply = strings.TrimPrefix(cleanReply, "```json")
+	cleanReply = strings.TrimPrefix(cleanReply, "```")
+	cleanReply = strings.TrimSuffix(cleanReply, "```")
+
+	if err := json.Unmarshal([]byte(cleanReply), &result); err == nil {
+		ReturnSuccess(c, result)
+	} else {
+		// 如果不是 JSON，直接返回字符串
+		ReturnSuccess(c, gin.H{
+			"analysis": reply,
+		})
+	}
+}
+
+// internalGetAnalysis 内部方法：获取歌单分析结果
+func (h *SongAuth) internalGetAnalysis(c *gin.Context, idStr string) (string, *g.Result) {
+	db := GetDB(c)
+
+	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制100首，用于分析
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", &g.ErrDbOp
+		}
+		return "", &g.ErrDbOp
+	}
+
+	user := GetCurrentUser(c)
+	// 权限检查
+	allowed := false
+	isAdmin := user != nil && user.UserGroup == "admin"
+	isOwner := user != nil && playlistDetail.OwnerID == user.ID
+
+	if isAdmin {
+		if playlistDetail.IsPublic || isOwner {
+			allowed = true
+		}
+	} else {
+		if isOwner && !playlistDetail.IsPublic {
+			allowed = true
+		}
+	}
+
+	if !allowed {
+		return "", &g.ErrPermission
+	}
+
+	// 读取 prompt1.md
+	promptBytes, err := os.ReadFile("prompt1.md")
+	if err != nil {
+		slog.Error("Failed to read prompt1.md", "error", err)
+		return "", &g.Err
+	}
+	promptTemplate := string(promptBytes)
+
+	// 构造 AI 分析所需的简化数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range playlistDetail.Songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return "", &g.ErrRequest
+	}
+
+	// 替换 prompt 中的占位符
+	finalPrompt := strings.Replace(promptTemplate, "{{json数据}}", string(jsonData), 1)
+
+	// 调用 AI 接口
+	reply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		return "", &g.Err
+	}
+	return reply, nil
+}
+
+// GetPlaylistAIDescription 获取歌单AI描述
+func (h *SongAuth) GetPlaylistAIDescription(c *gin.Context) {
+	idStr := c.Param("id")
+
+	// 1. 获取分析结果
+	analysisReply, errRes := h.internalGetAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 2. 读取 prompt2.md
+	promptBytes, err := os.ReadFile("prompt2.md")
+	if err != nil {
+		slog.Error("Failed to read prompt2.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板")
+		return
+	}
+	promptTemplate := string(promptBytes)
+
+	// 3. 替换 prompt2 中的占位符 {{summary_json}}
+	finalPrompt := strings.Replace(promptTemplate, "{{summary_json}}", analysisReply, 1)
+
+	// 4. 调用 AI 接口生成描述
+	description, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 5. 保存描述到数据库
+	db := GetDB(c)
+	if err := db.Model(&model.Playlist{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		slog.Error("Failed to update playlist description", "error", err)
+		// 即使保存失败，也返回生成的描述给前端
+	}
+
+	ReturnSuccess(c, gin.H{
+		"description": description,
+	})
+}
+
+// GenerateAllPublicPlaylistsDescription 生成所有公共歌单的AI描述
+func (h *SongAuth) GenerateAllPublicPlaylistsDescription(c *gin.Context) {
+	// 1. 管理员权限检查
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 2. 获取所有公共歌单 ID
+	var playlistIDs []int
+	if err := db.Model(&model.Playlist{}).Where("is_public = ?", true).Pluck("id", &playlistIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "获取公共歌单失败")
+		return
+	}
+
+	// 3. 异步执行生成任务，避免阻塞 HTTP 请求
+	go func(ids []int) {
+		slog.Info("开始批量生成公共歌单描述", "count", len(ids))
+		for _, id := range ids {
+			idStr := strconv.Itoa(id)
+			// 复用 existing logic
+			// 注意：internalGetAnalysis 包含权限检查，但管理员有权访问所有公共歌单，所以没问题
+			// 为了复用，我们需要构造一个假的 context 或者重构 internalGetAnalysis 不依赖 context
+			// 这里简单起见，我们重构 internalGetAnalysis 的逻辑，或者直接在此处调用核心逻辑
+
+			// 为了代码复用，我们提取核心生成逻辑
+			if err := h.generateAndSaveDescription(db, idStr, user); err != nil {
+				slog.Error("生成歌单描述失败", "id", id, "error", err)
+			} else {
+				slog.Info("生成歌单描述成功", "id", id)
+			}
+		}
+		slog.Info("批量生成公共歌单描述完成")
+	}(playlistIDs)
+
+	ReturnSuccess(c, gin.H{
+		"message": fmt.Sprintf("已开始后台生成 %d 个公共歌单的描述", len(playlistIDs)),
+	})
+}
+
+// generateAndSaveDescription 生成并保存单个歌单描述 (内部核心逻辑)
+func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *model.User) error {
+	// 1. 获取歌单详情 (Limit 100)
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	if err != nil {
+		return err
+	}
+
+	// 2. 权限检查 (复用逻辑)
+	allowed := false
+	isAdmin := user != nil && user.UserGroup == "admin"
+	isOwner := user != nil && playlistDetail.OwnerID == user.ID
+
+	if isAdmin {
+		if playlistDetail.IsPublic || isOwner {
+			allowed = true
+		}
+	} else {
+		if isOwner && !playlistDetail.IsPublic {
+			allowed = true
+		}
+	}
+
+	if !allowed {
+		return fmt.Errorf("permission denied")
+	}
+
+	// 3. 读取 prompt1.md
+	promptBytes, err := os.ReadFile("prompt_playlist1.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate1 := string(promptBytes)
+
+	// 4. 构造 AI 分析所需的简化数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range playlistDetail.Songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return err
+	}
+
+	// 5. 生成分析 (Step 1)
+	finalPrompt1 := strings.Replace(promptTemplate1, "{{json数据}}", string(jsonData), 1)
+	analysisReply, err := ai.ChatWithQwen(finalPrompt1)
+	if err != nil {
+		return err
+	}
+
+	// 6. 读取 prompt2.md
+	promptBytes2, err := os.ReadFile("prompt_playlist2.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate2 := string(promptBytes2)
+
+	// 7. 生成描述 (Step 2)
+	finalPrompt2 := strings.Replace(promptTemplate2, "{{summary_json}}", analysisReply, 1)
+	description, err := ai.ChatWithQwen(finalPrompt2)
+	if err != nil {
+		return err
+	}
+
+	// 8. 保存描述
+	if err := db.Model(&model.Playlist{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetArtistAIAnalysis 获取艺术家AI分析
+func (h *SongAuth) GetArtistAIAnalysis(c *gin.Context) {
+	// 1. 权限检查 (仅管理员)
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 调用内部方法获取分析结果
+	analysisReply, errRes := h.internalGetArtistAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 尝试解析返回的 JSON
+	var result interface{}
+	cleanReply := strings.TrimSpace(analysisReply)
+	cleanReply = strings.TrimPrefix(cleanReply, "```json")
+	cleanReply = strings.TrimPrefix(cleanReply, "```")
+	cleanReply = strings.TrimSuffix(cleanReply, "```")
+
+	if err := json.Unmarshal([]byte(cleanReply), &result); err == nil {
+		ReturnSuccess(c, result)
+	} else {
+		ReturnSuccess(c, gin.H{
+			"analysis": analysisReply,
+		})
+	}
+}
+
+// GetArtistDetailRandom 获取艺术家详情（随机返回歌曲，上限100首）
+func (*SongAuth) GetArtistDetailRandom(c *gin.Context) {
+	idStr := c.Param("id")
+	limitStr := c.Query("limit")
+
+	limit := 100
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l > 100 {
+			limit = 100
+		} else {
+			limit = l
+		}
+	}
+
+	db := GetDB(c)
+
+	// 1. 获取艺术家信息
+	var artist model.Artist
+	if err := db.First(&artist, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "艺术家不存在")
+		return
+	}
+
+	// 2. 获取随机歌曲
+	songs, err := model.GetArtistRandomSongs(db, idStr, limit)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 3. 构造返回数据
+	type SongInfo struct {
+		Title      string `json:"title"`
+		Year       string `json:"year"`
+		ArtistName string `json:"artist"`
+		AlbumName  string `json:"album"`
+	}
+
+	var songInfos []SongInfo
+	for _, song := range songs {
+		songInfos = append(songInfos, SongInfo{
+			Title:      song.Title,
+			Year:       song.Year,
+			ArtistName: song.ArtistName,
+			AlbumName:  song.AlbumName,
+		})
+	}
+
+	ReturnSuccess(c, gin.H{
+		"artist": artist.Name,
+		"songs":  songInfos,
+	})
+}
+
+// GetAlbumDetailRandom 获取专辑详情（随机返回歌曲，上限100首）
+func (*SongAuth) GetAlbumDetailRandom(c *gin.Context) {
+	idStr := c.Param("id")
+	limitStr := c.Query("limit")
+
+	limit := 100
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l > 100 {
+			limit = 100
+		} else {
+			limit = l
+		}
+	}
+
+	db := GetDB(c)
+
+	// 1. 获取专辑信息
+	var album model.Album
+	if err := db.First(&album, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "专辑不存在")
+		return
+	}
+
+	// 2. 获取随机歌曲
+	songs, err := model.GetAlbumRandomSongs(db, idStr, limit)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 3. 构造返回数据
+	type SongInfo struct {
+		Title      string `json:"title"`
+		Year       string `json:"year"`
+		ArtistName string `json:"artist"`
+		AlbumName  string `json:"album"`
+	}
+
+	var songInfos []SongInfo
+	for _, song := range songs {
+		songInfos = append(songInfos, SongInfo{
+			Title:      song.Title,
+			Year:       song.Year,
+			ArtistName: song.ArtistName,
+			AlbumName:  song.AlbumName,
+		})
+	}
+
+	ReturnSuccess(c, gin.H{
+		"album": album.Title,
+		"songs": songInfos,
+	})
+}
+
+// internalGetArtistAnalysis 内部方法：获取艺术家分析结果
+func (h *SongAuth) internalGetArtistAnalysis(c *gin.Context, idStr string) (string, *g.Result) {
+	db := GetDB(c)
+
+	// 1. 获取艺术家随机歌曲 (Limit 100)
+	songs, err := model.GetArtistRandomSongs(db, idStr, 100)
+	if err != nil {
+		return "", &g.ErrDbOp
+	}
+
+	if len(songs) == 0 {
+		return "", &g.Err
+	}
+
+	// 2. 读取 prompt_artist1.md
+	promptBytes, err := os.ReadFile("prompt_artist1.md")
+	if err != nil {
+		slog.Error("Failed to read prompt_artist1.md", "error", err)
+		return "", &g.Err
+	}
+	promptTemplate := string(promptBytes)
+
+	// 3. 构造 AI 分析所需的简化数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return "", &g.ErrRequest
+	}
+
+	// 4. 替换 prompt 中的占位符
+	finalPrompt := strings.Replace(promptTemplate, "{{json数据}}", string(jsonData), 1)
+
+	// 5. 调用 AI 接口
+	reply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		return "", &g.Err
+	}
+	return reply, nil
+}
+
+// GetArtistAIDescription 获取艺术家AI描述
+func (h *SongAuth) GetArtistAIDescription(c *gin.Context) {
+	// 1. 权限检查 (仅管理员)
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 获取分析结果
+	analysisReply, errRes := h.internalGetArtistAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 3. 读取 prompt_artist2.md
+	promptBytes, err := os.ReadFile("prompt_artist2.md")
+	if err != nil {
+		slog.Error("Failed to read prompt_artist2.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板")
+		return
+	}
+	promptTemplate := string(promptBytes)
+
+	// 4. 替换 prompt_artist2 中的占位符 {{summary_json}}
+	finalPrompt := strings.Replace(promptTemplate, "{{summary_json}}", analysisReply, 1)
+
+	// 5. 调用 AI 接口生成描述
+	description, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 6. 保存描述到数据库
+	db := GetDB(c)
+	if err := db.Model(&model.Artist{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		slog.Error("Failed to update artist description", "error", err)
+	}
+
+	ReturnSuccess(c, gin.H{
+		"description": description,
+	})
+}
+
+// GenerateAllArtistDescriptions 批量生成艺术家AI描述
+func (h *SongAuth) GenerateAllArtistDescriptions(c *gin.Context) {
+	// 1. 管理员权限检查
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 2. 获取所有艺术家 ID
+	var artistIDs []int
+	if err := db.Model(&model.Artist{}).Pluck("id", &artistIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "获取艺术家失败")
+		return
+	}
+
+	// 3. 异步执行
+	go func(ids []int) {
+		slog.Info("开始批量生成艺术家描述", "count", len(ids))
+		for _, id := range ids {
+			idStr := strconv.Itoa(id)
+			if err := h.generateAndSaveArtistDescription(db, idStr); err != nil {
+				slog.Error("生成艺术家描述失败", "id", id, "error", err)
+			} else {
+				slog.Info("生成艺术家描述成功", "id", id)
+			}
+		}
+		slog.Info("批量生成艺术家描述完成")
+	}(artistIDs)
+
+	ReturnSuccess(c, gin.H{
+		"message": fmt.Sprintf("已开始后台生成 %d 个艺术家的描述", len(artistIDs)),
+	})
+}
+
+// generateAndSaveArtistDescription 生成并保存单个艺术家描述 (内部核心逻辑)
+func (h *SongAuth) generateAndSaveArtistDescription(db *gorm.DB, idStr string) error {
+	// 1. 获取艺术家随机歌曲
+	songs, err := model.GetArtistRandomSongs(db, idStr, 100)
+	if err != nil {
+		return err
+	}
+	if len(songs) == 0 {
+		return fmt.Errorf("no songs found")
+	}
+
+	// 2. 读取 prompt_artist1.md
+	promptBytes1, err := os.ReadFile("prompt_artist1.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate1 := string(promptBytes1)
+
+	// 3. 构造 AI 分析数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return err
+	}
+
+	// 4. Step 1: 分析
+	finalPrompt1 := strings.Replace(promptTemplate1, "{{json数据}}", string(jsonData), 1)
+	analysisReply, err := ai.ChatWithQwen(finalPrompt1)
+	if err != nil {
+		return err
+	}
+
+	// 5. 读取 prompt_artist2.md
+	promptBytes2, err := os.ReadFile("prompt_artist2.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate2 := string(promptBytes2)
+
+	// 6. Step 2: 描述
+	finalPrompt2 := strings.Replace(promptTemplate2, "{{summary_json}}", analysisReply, 1)
+	description, err := ai.ChatWithQwen(finalPrompt2)
+	if err != nil {
+		return err
+	}
+
+	// 7. 保存
+	if err := db.Model(&model.Artist{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// internalGetAlbumAnalysis 内部方法：获取专辑分析结果
+func (h *SongAuth) internalGetAlbumAnalysis(c *gin.Context, idStr string) (string, *g.Result) {
+	db := GetDB(c)
+
+	// 1. 获取专辑随机歌曲 (Limit 100)
+	songs, err := model.GetAlbumRandomSongs(db, idStr, 100)
+	if err != nil {
+		return "", &g.ErrDbOp
+	}
+
+	if len(songs) == 0 {
+		return "", &g.Err
+	}
+
+	// 2. 读取 prompt_album1.md
+	promptBytes, err := os.ReadFile("prompt_album1.md")
+	if err != nil {
+		slog.Error("Failed to read prompt_album1.md", "error", err)
+		return "", &g.Err
+	}
+	promptTemplate := string(promptBytes)
+
+	// 3. 构造 AI 分析所需的简化数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return "", &g.ErrRequest
+	}
+
+	// 4. 替换 prompt 中的占位符
+	// 注意：prompt_album1.md 应该包含 {{json数据}} 占位符，
+	// 但用户提供的 prompt_album1.md 内容似乎没有显示该占位符？
+	// 假设用户会添加或者默认追加。为了稳妥，我们检查一下。
+	// 根据用户提供的 prompt_artist1.md，它是包含 {{json数据}} 的。
+	// 这里我们假设 prompt_album1.md 也需要这个占位符。
+	// 如果原文件没有，我们可能需要追加。
+	// 暂时假设用户提供的 prompt 模板是完整的或我们将数据附在最后。
+	// 不过根据之前的逻辑，应该是替换 {{json数据}}。
+	// 让我们假设 prompt_album1.md 应该有。如果没有，我们直接附在后面。
+	finalPrompt := promptTemplate
+	if strings.Contains(promptTemplate, "{{json数据}}") {
+		finalPrompt = strings.Replace(promptTemplate, "{{json数据}}", string(jsonData), 1)
+	} else {
+		finalPrompt = promptTemplate + "\n\n专辑数据：\n" + string(jsonData)
+	}
+
+	// 5. 调用 AI 接口
+	reply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		return "", &g.Err
+	}
+	return reply, nil
+}
+
+// GetAlbumAIAnalysis 获取专辑AI分析
+func (h *SongAuth) GetAlbumAIAnalysis(c *gin.Context) {
+	// 1. 权限检查 (仅管理员)
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 调用内部方法获取分析结果
+	analysisReply, errRes := h.internalGetAlbumAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 尝试解析返回的 JSON
+	var result interface{}
+	cleanReply := strings.TrimSpace(analysisReply)
+	cleanReply = strings.TrimPrefix(cleanReply, "```json")
+	cleanReply = strings.TrimPrefix(cleanReply, "```")
+	cleanReply = strings.TrimSuffix(cleanReply, "```")
+
+	if err := json.Unmarshal([]byte(cleanReply), &result); err == nil {
+		ReturnSuccess(c, result)
+	} else {
+		ReturnSuccess(c, gin.H{
+			"analysis": analysisReply,
+		})
+	}
+}
+
+// GetAlbumAIDescription 获取专辑AI描述
+func (h *SongAuth) GetAlbumAIDescription(c *gin.Context) {
+	// 1. 权限检查 (仅管理员)
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 获取分析结果
+	analysisReply, errRes := h.internalGetAlbumAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 3. 读取 prompt_album2.md
+	promptBytes, err := os.ReadFile("prompt_album2.md")
+	if err != nil {
+		slog.Error("Failed to read prompt_album2.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板")
+		return
+	}
+	promptTemplate := string(promptBytes)
+
+	// 4. 替换 prompt_album2 中的占位符 {{summary_json}}
+	finalPrompt := strings.Replace(promptTemplate, "{{summary_json}}", analysisReply, 1)
+
+	// 5. 调用 AI 接口生成描述
+	description, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 6. 保存描述到数据库
+	db := GetDB(c)
+	if err := db.Model(&model.Album{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		slog.Error("Failed to update album description", "error", err)
+	}
+
+	ReturnSuccess(c, gin.H{
+		"description": description,
+	})
+}
+
+// GenerateAllAlbumDescriptions 批量生成专辑AI描述
+func (h *SongAuth) GenerateAllAlbumDescriptions(c *gin.Context) {
+	// 1. 管理员权限检查
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 2. 获取所有专辑 ID
+	var albumIDs []int
+	if err := db.Model(&model.Album{}).Pluck("id", &albumIDs).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "获取专辑失败")
+		return
+	}
+
+	// 3. 异步执行
+	go func(ids []int) {
+		slog.Info("开始批量生成专辑描述", "count", len(ids))
+		for _, id := range ids {
+			idStr := strconv.Itoa(id)
+			if err := h.generateAndSaveAlbumDescription(db, idStr); err != nil {
+				slog.Error("生成专辑描述失败", "id", id, "error", err)
+			} else {
+				slog.Info("生成专辑描述成功", "id", id)
+			}
+		}
+		slog.Info("批量生成专辑描述完成")
+	}(albumIDs)
+
+	ReturnSuccess(c, gin.H{
+		"message": fmt.Sprintf("已开始后台生成 %d 个专辑的描述", len(albumIDs)),
+	})
+}
+
+// generateAndSaveAlbumDescription 生成并保存单个专辑描述 (内部核心逻辑)
+func (h *SongAuth) generateAndSaveAlbumDescription(db *gorm.DB, idStr string) error {
+	// 1. 获取专辑随机歌曲
+	songs, err := model.GetAlbumRandomSongs(db, idStr, 100)
+	if err != nil {
+		return err
+	}
+	if len(songs) == 0 {
+		return fmt.Errorf("no songs found")
+	}
+
+	// 2. 读取 prompt_album1.md
+	promptBytes1, err := os.ReadFile("prompt_album1.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate1 := string(promptBytes1)
+
+	// 3. 构造 AI 分析数据
+	type AISongData struct {
+		Title  string `json:"title"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+		Year   string `json:"year"`
+	}
+	var aiSongs []AISongData
+	for _, s := range songs {
+		aiSongs = append(aiSongs, AISongData{
+			Title:  s.Title,
+			Artist: s.ArtistName,
+			Album:  s.AlbumName,
+			Year:   s.Year,
+		})
+	}
+
+	jsonData, err := json.Marshal(aiSongs)
+	if err != nil {
+		return err
+	}
+
+	// 4. Step 1: 分析
+	finalPrompt1 := promptTemplate1
+	if strings.Contains(promptTemplate1, "{{json数据}}") {
+		finalPrompt1 = strings.Replace(promptTemplate1, "{{json数据}}", string(jsonData), 1)
+	} else {
+		finalPrompt1 = promptTemplate1 + "\n\n专辑数据：\n" + string(jsonData)
+	}
+
+	analysisReply, err := ai.ChatWithQwen(finalPrompt1)
+	if err != nil {
+		return err
+	}
+
+	// 5. 读取 prompt_album2.md
+	promptBytes2, err := os.ReadFile("prompt_album2.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate2 := string(promptBytes2)
+
+	// 6. Step 2: 描述
+	finalPrompt2 := strings.Replace(promptTemplate2, "{{summary_json}}", analysisReply, 1)
+	description, err := ai.ChatWithQwen(finalPrompt2)
+	if err != nil {
+		return err
+	}
+
+	// 7. 保存
+	if err := db.Model(&model.Album{}).Where("id = ?", idStr).Update("description", description).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetSongLyric 获取歌曲歌词
 func (*SongAuth) GetSongLyric(c *gin.Context) {
 	idStr := c.Param("id")
@@ -1203,6 +2240,51 @@ func (*SongAuth) DeletePrivatePlaylist(c *gin.Context) {
 
 	if playlist.OwnerID != user.ID {
 		ReturnError(c, g.ErrPermission, "无权删除此歌单")
+		return
+	}
+
+	// 3. 执行删除
+	if err := model.DeletePlaylist(db, id); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, "删除成功")
+}
+
+// DeletePublicPlaylist 删除公共歌单 (仅限管理员)
+func (*SongAuth) DeletePublicPlaylist(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, "无效的ID")
+		return
+	}
+
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	// 检查是否为管理员
+	if user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "无权操作")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 1. 查找歌单
+	var playlist model.Playlist
+	if err := db.First(&playlist, id).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 2. 检查类型
+	if !playlist.IsPublic {
+		ReturnError(c, g.ErrPermission, "此接口仅用于删除公共歌单")
 		return
 	}
 

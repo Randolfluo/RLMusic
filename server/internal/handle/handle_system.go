@@ -2,10 +2,11 @@ package handle
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"runtime"
 	g "server/internal/global"
 	"server/internal/model"
-	"server/internal/utils/jwt"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -229,6 +230,7 @@ type UpdateConfigReq struct {
 
 type StatsVO struct {
 	SongCount     int64 `json:"song_count"`
+	SongVolume    int64 `json:"song_volume"`
 	AlbumCount    int64 `json:"album_count"`
 	ArtistCount   int64 `json:"artist_count"`
 	MusicDuration int64 `json:"music_duration"`
@@ -236,13 +238,15 @@ type StatsVO struct {
 	PlaylistCount int64 `json:"playlist_count"`
 	UserCount     int64 `json:"user_count"`
 	SystemUptime  int64 `json:"system_uptime"`
+}
 
-	UserListeningDuration int64 `json:"user_listening_duration"`
-	UserScannedDuration   int64 `json:"user_scanned_duration"`
-
+type SystemStatusVO struct {
 	CpuUsage     float64 `json:"cpu_usage"`
 	MemUsage     float64 `json:"mem_usage"`
 	ApiCallCount int64   `json:"api_call_count"`
+	SystemUptime int64   `json:"system_uptime"`
+	GoRoutines   int     `json:"go_routines"`
+	DbSize       int64   `json:"db_size"`
 }
 
 // GetStats 获取系统统计信息（包含原有 Settings 和 Duration）
@@ -270,6 +274,32 @@ func (*SystemAuth) GetStats(c *gin.Context) {
 	// 补充统计: 系统运行时间
 	systemRunTime := int64(time.Since(g.StartTime).Seconds())
 
+	ReturnSuccess(c, StatsVO{
+		SongCount:     info.TotalSongs,
+		SongVolume:    info.TotalVolume,
+		AlbumCount:    info.TotalAlbums,
+		ArtistCount:   info.TotalArtists,
+		MusicDuration: info.TotalDuration,
+		PlaylistCount: totalPlaylists,
+		UserCount:     totalUsers,
+		SystemUptime:  systemRunTime,
+	})
+}
+
+// GetSystemStatus 获取系统实时状态 (CPU, Mem, API Count)
+func (*SystemAuth) GetSystemStatus(c *gin.Context) {
+	// 1. Check Auth (Admin only)
+	userVal, exists := c.Get(g.CtxUserAuth)
+	if !exists {
+		ReturnError(c, g.ErrTokenRuntime, nil)
+		return
+	}
+	user := userVal.(*model.User)
+	if user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, nil)
+		return
+	}
+
 	// 系统负载 (CPU & Mem)
 	var cpuUsage float64 = 0
 	percent, err := cpu.Percent(0, false)
@@ -285,36 +315,40 @@ func (*SystemAuth) GetStats(c *gin.Context) {
 	// API 调用次数
 	apiCount := atomic.LoadInt64(&g.ApiCallCount)
 
-	// 2. 获取当前用户时长信息 (可选登录)
-	var listeningDuration int64 = 0
-	var totalDuration int64 = 0
-	authorization := c.GetHeader("Authorization")
-	if authorization != "" {
-		parts := strings.Split(authorization, " ")
-		if len(parts) == 2 && parts[0] == "Bearer" {
-			claims, err := jwt.ParseToken(g.Conf.JWT.Secret, parts[1])
-			if err == nil && time.Now().Unix() <= claims.ExpiresAt.Unix() {
-				if user, err := model.GetUserAuthInfoById(db, claims.UserId); err == nil {
-					listeningDuration = user.ListeningDuration
-					totalDuration = user.TotalDuration
-				}
+	// 系统运行时间
+	systemRunTime := int64(time.Since(g.StartTime).Seconds())
+
+	// Go Routines
+	goRoutines := runtime.NumGoroutine()
+
+	// DB Size (SQLite)
+	var dbSize int64 = 0
+	if g.Conf.SQLite.Dsn != "" {
+		// DSN might be relative or absolute, usually it's a file path
+		// e.g. "data/data.db"
+		dbPath := g.Conf.SQLite.Dsn
+		// handle potential params in DSN (though usually not for sqlite file path in simple cases)
+		// But let's assume it's a file path for now
+		info, err := os.Stat(dbPath)
+		if err == nil {
+			dbSize = info.Size()
+		} else {
+			// Try to resolve relative path if failed
+			absPath, _ := filepath.Abs(dbPath)
+			info, err = os.Stat(absPath)
+			if err == nil {
+				dbSize = info.Size()
 			}
 		}
 	}
 
-	ReturnSuccess(c, StatsVO{
-		SongCount:             info.TotalSongs,
-		AlbumCount:            info.TotalAlbums,
-		ArtistCount:           info.TotalArtists,
-		MusicDuration:         info.TotalDuration,
-		PlaylistCount:         totalPlaylists,
-		UserCount:             totalUsers,
-		SystemUptime:          systemRunTime,
-		UserListeningDuration: listeningDuration,
-		UserScannedDuration:   totalDuration,
-		CpuUsage:              cpuUsage,
-		MemUsage:              memUsage,
-		ApiCallCount:          apiCount,
+	ReturnSuccess(c, SystemStatusVO{
+		CpuUsage:     cpuUsage,
+		MemUsage:     memUsage,
+		ApiCallCount: apiCount,
+		SystemUptime: systemRunTime,
+		GoRoutines:   goRoutines,
+		DbSize:       dbSize,
 	})
 }
 
@@ -362,4 +396,109 @@ func (*SystemAuth) UpdateConfig(c *gin.Context) {
 	g.Conf.BasicPath.FilePath = req.FilePath
 
 	ReturnSuccess(c, nil)
+}
+
+// ResetSystem 重置系统数据 (Admin only)
+func (*SystemAuth) ResetSystem(c *gin.Context) {
+	// 1. Check Auth (Admin only)
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+		return
+	}
+
+	// 2. Define data directory
+	// 假设 data 目录在运行根目录下，或者根据配置获取
+	// 这里默认使用 ./data
+	dataDir := "data"
+	absPath, err := filepath.Abs(dataDir)
+	if err != nil {
+		ReturnError(c, g.Err, "无法解析数据目录路径")
+		return
+	}
+
+	// 3. Delete all contents in data directory except database file
+	// 遍历目录内容
+	files, err := filepath.Glob(filepath.Join(absPath, "*"))
+	if err != nil {
+		ReturnError(c, g.Err, "无法读取数据目录: "+err.Error())
+		return
+	}
+
+	deletedCount := 0
+	var errorMsgs []string
+
+	for _, f := range files {
+		baseName := filepath.Base(f)
+		// 跳过数据库文件 (假设扩展名为 .db 或者名字为 data.db)
+		if strings.HasSuffix(baseName, ".db") || baseName == "data.db" || baseName == "music.db" {
+			continue
+		}
+
+		// 强制删除
+		if err := os.RemoveAll(f); err != nil {
+			errorMsgs = append(errorMsgs, fmt.Sprintf("无法删除 %s: %v", baseName, err))
+		} else {
+			deletedCount++
+		}
+	}
+
+	// 4. Clean up Database (Preserve Admin)
+	db := GetDB(c)
+	tx := db.Begin()
+	if tx.Error != nil {
+		ReturnError(c, g.ErrDbOp, "无法开启事务")
+		return
+	}
+
+	// 禁用外键约束 (SQLite)
+	tx.Exec("PRAGMA foreign_keys = OFF")
+
+	// 清空数据表
+	// 关联表
+	tx.Exec("DELETE FROM playlist_songs")
+	tx.Exec("DELETE FROM song_artists")
+	tx.Exec("DELETE FROM user_subscribed_playlists")
+	tx.Exec("DELETE FROM podcast_episodes")
+
+	// 主实体表
+	tx.Exec("DELETE FROM histories")
+	tx.Exec("DELETE FROM songs")
+	tx.Exec("DELETE FROM playlists")
+	tx.Exec("DELETE FROM albums")
+	tx.Exec("DELETE FROM artists")
+	tx.Exec("DELETE FROM covers")
+	tx.Exec("DELETE FROM podcasts")
+
+	// 重置 SQLite 自增计数器 (可选，但推荐)
+	tx.Exec("DELETE FROM sqlite_sequence WHERE name IN ('songs', 'playlists', 'albums', 'artists', 'covers', 'podcasts', 'histories')")
+
+	// 删除非管理员用户
+	if err := tx.Where("user_group != ?", "admin").Delete(&model.User{}).Error; err != nil {
+		tx.Rollback()
+		ReturnError(c, g.ErrDbOp, "清理用户失败: "+err.Error())
+		return
+	}
+
+	// 重新启用外键约束
+	tx.Exec("PRAGMA foreign_keys = ON")
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		ReturnError(c, g.ErrDbOp, "数据库提交失败: "+err.Error())
+		return
+	}
+
+	msg := fmt.Sprintf("文件清理: 成功删除 %d 个项目 (保留数据库)。数据库清理: 已重置所有数据，仅保留管理员账户。", deletedCount)
+	if len(errorMsgs) > 0 {
+		msg += fmt.Sprintf(" 文件删除警告: %s", strings.Join(errorMsgs, "; "))
+		ReturnSuccess(c, gin.H{
+			"message": msg,
+			"warning": true,
+		})
+	} else {
+		ReturnSuccess(c, gin.H{
+			"message": msg,
+		})
+	}
 }

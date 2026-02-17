@@ -14,9 +14,13 @@ declare module 'vue' {
     AboutSite: typeof import('./src/components/DataModel/AboutSite.vue')['default']
     AddPlaylist: typeof import('./src/components/DataModel/AddPlaylist.vue')['default']
     AddToPlaylistModal: typeof import('./src/components/DataModel/AddToPlaylistModal.vue')['default']
+    AdminDashboard: typeof import('./src/components/Admin/AdminDashboard.vue')['default']
+    AIFeatureSection: typeof import('./src/components/Admin/AIFeatureSection.vue')['default']
     AllArtists: typeof import('./src/components/DataList/AllArtists.vue')['default']
     BigPlayer: typeof import('./src/components/Player/BigPlayer.vue')['default']
+    BusinessOverviewSection: typeof import('./src/components/Admin/BusinessOverviewSection.vue')['default']
     CreatePlaylistModal: typeof import('./src/components/DataModel/CreatePlaylistModal.vue')['default']
+    DangerZone: typeof import('./src/components/Admin/DangerZone.vue')['default']
     NA: typeof import('naive-ui')['NA']
     Nav: typeof import('./src/components/Nav/index.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
@@ -76,6 +80,8 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SongList: typeof import('./src/components/DataList/SongList.vue')['default']
+    SystemMonitorSection: typeof import('./src/components/Admin/SystemMonitorSection.vue')['default']
     SystemStats: typeof import('./src/components/Home/SystemStats.vue')['default']
+    SystemStatusBadge: typeof import('./src/components/Admin/SystemStatusBadge.vue')['default']
   }
 }

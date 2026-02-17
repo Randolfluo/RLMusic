@@ -51,6 +51,16 @@
       </div>
 
       <div class="right">
+        <!-- 管理员入口 -->
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <div class="admin-trigger" @click="handleAdminClick">
+              <n-icon :component="Permissions" size="20" />
+            </div>
+          </template>
+          管理员入口
+        </n-tooltip>
+
         <!-- 下拉菜单 -->
         <n-dropdown
           class="user-dropdown"
@@ -86,7 +96,7 @@
 </template>
 
 <script setup>
-import { NIcon, NAvatar, NText, NProgress, NButton, NDropdown } from "naive-ui";
+import { NIcon, NAvatar, NText, NProgress, NButton, NDropdown, NTooltip } from "naive-ui";
 import {
   Left,
   Right,
@@ -97,15 +107,18 @@ import {
   History,
   SunOne,
   Moon,
+  Permissions,
 } from "@icon-park/vue-next";
 import { userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
 import AboutSite from "@/components/DataModel/AboutSite.vue";
+import { useMessage } from "naive-ui";
 
 const router = useRouter();
 const user = userStore();
 const setting = settingStore();
 const aboutSiteRef = ref(null);
+const message = useMessage();
 
 // 下拉菜单显隐
 const showDropdown = ref(false);
@@ -123,6 +136,20 @@ const handleAvatarClick = () => {
     router.push("/login");
   } else {
     showDropdown.value = !showDropdown.value;
+  }
+};
+
+const handleAdminClick = () => {
+  if (user.userLogin) {
+    // 假设后端返回了 userGroup，并在登录时保存到了 userData
+    if (user.getUserData.userGroup === 'admin') {
+      message.success("欢迎管理员");
+      router.push("/admin"); 
+    } else {
+      message.warning("当前账号非管理员");
+    }
+  } else {
+    router.push("/login");
   }
 };
 
@@ -483,7 +510,8 @@ const dropdownSelect = (key) => {
     justify-content: flex-end;
     gap: 16px;
 
-    .about-trigger {
+    .about-trigger,
+    .admin-trigger {
         width: 36px;
         height: 36px;
         display: flex;
@@ -497,6 +525,7 @@ const dropdownSelect = (key) => {
         &:hover {
             background: rgba(0,0,0,0.05);
             color: var(--n-text-color);
+            transform: scale(1.1);
         }
     }
 

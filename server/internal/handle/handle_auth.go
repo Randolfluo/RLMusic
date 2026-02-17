@@ -30,6 +30,7 @@ type LoginVO struct {
 	LastLogin *time.Time `json:"last_login"`
 	Username  string     `json:"username"`
 	Email     string     `json:"email"`
+	UserGroup string     `json:"user_group"`
 	Avatar    string     `json:"avatar"`
 	Token     string     `json:"token"`
 }
@@ -155,6 +156,7 @@ func (*UserAuth) Login(c *gin.Context) {
 		Username:  user.Username,
 		Email:     user.Email,
 		Avatar:    user.Avatar,
+		UserGroup: user.UserGroup,
 		LastLogin: user.LastLogin,
 		Token:     token,
 	})
@@ -165,6 +167,18 @@ func (*UserAuth) Logout(c *gin.Context) {
 	// 目前使用JWT无状态认证，服务端无需特殊处理，客户端丢弃Token即可
 	// 后续如果引入Redis，可在此处将Token加入黑名单
 	ReturnSuccess(c, nil)
+}
+
+// CheckIsAdmin 检查当前用户是否为管理员
+func (*UserAuth) CheckIsAdmin(c *gin.Context) {
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnSuccess(c, gin.H{"is_admin": false})
+		return
+	}
+
+	isAdmin := user.UserGroup == "admin"
+	ReturnSuccess(c, gin.H{"is_admin": isAdmin})
 }
 
 // DeleteUser 用户注销

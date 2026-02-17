@@ -8,6 +8,7 @@ export interface UserInfo {
   last_login: string;
   ip_src: string;
   total_duration: number;
+  user_group: string;
 }
 
 /**
@@ -17,6 +18,48 @@ export const getUserInfo = () => {
   return axios({
     method: "GET",
     url: "/user/info",
+  });
+};
+
+/**
+ * 管理员获取所有用户列表
+ */
+export const adminGetAllUsers = (params: { page: number; limit: number; query?: string }) => {
+  return axios({
+    method: "GET",
+    url: "/admin/user/list",
+    params,
+  });
+};
+
+/**
+ * 管理员删除用户
+ */
+export const adminDeleteUser = (id: number) => {
+  return axios({
+    method: "DELETE",
+    url: `/admin/user/delete/${id}`,
+  });
+};
+
+/**
+ * 管理员修改用户权限
+ */
+export const adminUpdateUserRole = (id: number, user_group: string) => {
+  return axios({
+    method: "PUT",
+    url: `/admin/user/role/${id}`,
+    data: { user_group },
+  });
+};
+
+/**
+ * 检查是否为管理员
+ */
+export const checkIsAdmin = () => {
+  return axios({
+    method: "GET",
+    url: "/user/is-admin",
   });
 };
 

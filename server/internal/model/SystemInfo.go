@@ -11,6 +11,7 @@ const (
 	KeyTotalAlbums   = "total_albums"
 	KeyTotalArtists  = "total_artists"
 	KeyTotalDuration = "total_duration"
+	KeyTotalVolume   = "total_volume"
 )
 
 // SystemInfo 系统信息模型 (Key-Value)
@@ -25,6 +26,7 @@ type SystemInfoStruct struct {
 	TotalAlbums   int64
 	TotalArtists  int64
 	TotalDuration int64
+	TotalVolume   int64
 }
 
 // GetSystemInfoValue 获取单个系统设置
@@ -61,13 +63,15 @@ func GetSystemInfoStruct(db *gorm.DB) (*SystemInfoStruct, error) {
 			res.TotalArtists, _ = strconv.ParseInt(info.Value, 10, 64)
 		case KeyTotalDuration:
 			res.TotalDuration, _ = strconv.ParseInt(info.Value, 10, 64)
+		case KeyTotalVolume:
+			res.TotalVolume, _ = strconv.ParseInt(info.Value, 10, 64)
 		}
 	}
 	return res, nil
 }
 
 // UpdateSystemInfoStats 更新统计数据
-func UpdateSystemInfoStats(db *gorm.DB, songs, albums, artists, duration int64) error {
+func UpdateSystemInfoStats(db *gorm.DB, songs, albums, artists, duration, volume int64) error {
 	if err := SetSystemInfoValue(db, KeyTotalSongs, strconv.FormatInt(songs, 10)); err != nil {
 		return err
 	}
@@ -78,6 +82,9 @@ func UpdateSystemInfoStats(db *gorm.DB, songs, albums, artists, duration int64) 
 		return err
 	}
 	if err := SetSystemInfoValue(db, KeyTotalDuration, strconv.FormatInt(duration, 10)); err != nil {
+		return err
+	}
+	if err := SetSystemInfoValue(db, KeyTotalVolume, strconv.FormatInt(volume, 10)); err != nil {
 		return err
 	}
 	return nil

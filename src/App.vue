@@ -85,7 +85,8 @@ onMounted(() => {
                         userId: res.data.id,
                         nickname: res.data.username,
                         email: res.data.email,
-                        avatarUrl: res.data.avatar || "" 
+                        userGroup: res.data.user_group,
+                        avatarUrl: res.data.avatar,
                     };
                     user.setUserData(userData);
                     localStorage.setItem("token", res.data.token); 

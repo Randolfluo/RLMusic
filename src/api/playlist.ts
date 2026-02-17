@@ -181,4 +181,15 @@ export const updatePlaylist = (id: string | number, data: any) => {
     });
 };
 
+/**
+ * 删除公共歌单 (管理员) - Force Update
+ * @param {string|number} id - 歌单ID
+ */
+export const deletePublicPlaylist = (id: string | number) => {
+    return axios({
+        method: "DELETE",
+        url: `/song/playlist/public/${id}`,
+    });
+};
+
 

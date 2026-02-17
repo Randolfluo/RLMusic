@@ -227,6 +227,7 @@ const handleLogin = (e) => {
              userId: res.data.id,
              nickname: res.data.username,
              email: res.data.email,
+             userGroup: res.data.user_group,
              avatarUrl: res.data.avatar || "" 
           };
           user.setUserData(userData);

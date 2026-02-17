@@ -10,6 +10,7 @@ export const useUserDataStore = defineStore("userData", {
         nickname: "",
         userId: 0,
         email: "",
+        userGroup: "",
       },
       userOtherData: {},
     };
@@ -33,6 +34,7 @@ export const useUserDataStore = defineStore("userData", {
         nickname: "",
         userId: 0,
         email: "",
+        userGroup: "",
       };
       this.userOtherData = {};
     },

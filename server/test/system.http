@@ -25,6 +25,36 @@ Content-Type: {{contentType}}
 
 ### 7. 获取系统统计信息 (无需登录) (系统设置+时长统计)
 GET {{baseUrl}}/system/stats
+# Response example:
+# {
+#   "code": 200,
+#   "msg": "success",
+#   "data": {
+#     "song_count": 123,
+#     "song_volume": 1234567890,
+#     "album_count": 10,
+#     "artist_count": 50,
+#     "music_duration": 10000,
+#     "playlist_count": 5,
+#     "user_count": 2,
+#     "system_uptime": 3600
+#   }
+# }
+
+### 17. 获取系统实时状态 (仅管理员) (CPU/Mem/API)
+GET {{baseUrl}}/system/status
+Authorization: Bearer {{adminLogin.response.body.data.token}}
+# Response example:
+# {
+#   "code": 200,
+#   "msg": "success",
+#   "data": {
+#     "cpu_usage": 15.5,
+#     "mem_usage": 45.2,
+#     "api_call_count": 1024,
+#     "system_uptime": 221
+#   }
+# }
 
 ### 15. 获取局域网IP列表 (无需登录)
 # 默认使用后端端口
@@ -32,7 +62,7 @@ GET {{baseUrl}}/system/local-ips
 
 ### 16. 获取局域网IP列表 (指定前端端口)
 # 用于前端生成二维码
-GET {{baseUrl}}/system/local-ips?port=8888
+GET {{baseUrl}}/system/local-ips?port=23456
 
 ### 13. 更新系统配置 (仅管理员)
 POST {{baseUrl}}/system/config
@@ -45,4 +75,8 @@ Authorization: Bearer {{adminLogin.response.body.data.token}}
 
 ### 14. 导出数据库为Excel (仅管理员)
 GET {{baseUrl}}/system/export/excel
+Authorization: Bearer {{adminLogin.response.body.data.token}}
+
+### 15. 重置系统数据 (仅管理员)
+DELETE {{baseUrl}}/system/reset
 Authorization: Bearer {{adminLogin.response.body.data.token}}

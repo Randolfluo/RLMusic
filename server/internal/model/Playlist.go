@@ -114,7 +114,9 @@ type SimpleSongResponse struct {
 	Title      string  `json:"title"`
 	ArtistName string  `json:"artist_name"` // from Artist.Name
 	AlbumTitle string  `json:"album_title"` // from Album.Title
+	AlbumName  string  `json:"album_name"`  // Alias for AlbumTitle
 	Duration   float64 `json:"duration"`
+	Year       string  `json:"year"` // Added Year field
 
 	// 补充字段适配前端播放
 	ArtistID int    `json:"artist_id"`
@@ -244,7 +246,93 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 			Title:      s.Title,
 			ArtistName: s.ArtistName,
 			AlbumTitle: s.AlbumName,
+			AlbumName:  s.AlbumName, // Fill AlbumName
 			Duration:   s.Duration,
+			Year:       s.Year, // Fill Year
+			ArtistID:   artistId,
+			AlbumID:    albumId,
+			CoverUrl:   coverUrl,
+		})
+	}
+
+	return &PlaylistResponse{
+		ID:          playlist.ID,
+		Title:       playlist.Title,
+		Description: playlist.Description,
+		IsPublic:    playlist.IsPublic,
+		OwnerID:     playlist.OwnerID,
+		CoverUrl:    playlist.CoverUrl,
+		PlayCount:   playlist.PlayCount,
+		Total:       total,
+		TotalSongs:  int(total),
+		Songs:       songs,
+	}, nil
+}
+
+// GetPlaylistRandomSongs 获取歌单随机歌曲(上限100首)
+func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*PlaylistResponse, error) {
+	var playlist Playlist
+	// 1. 获取歌单基本信息
+	if err := db.First(&playlist, playlistIDStr).Error; err != nil {
+		return nil, err
+	}
+
+	// 增加播放计数
+	db.Model(&playlist).UpdateColumn("play_count", gorm.Expr("play_count + ?", 1))
+	playlist.PlayCount++
+
+	// 2. 获取该歌单下的歌曲总数
+	total := db.Model(&playlist).Association("Songs").Count()
+
+	// 3. 随机获取歌曲
+	var songsRaw []Song
+	if limit > 100 {
+		limit = 100
+	}
+
+	// 关联查询: Song join playlist_songs
+	// SQLite 使用 RANDOM()
+	err := db.Joins("JOIN playlist_songs ON playlist_songs.song_id = song.id").
+		Where("playlist_songs.playlist_id = ?", playlist.ID).
+		Order("RANDOM()").
+		Limit(limit).
+		Preload("Artist").
+		Preload("Album").
+		Preload("Cover").
+		Find(&songsRaw).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
+		playlist.CoverUrl = "/covers/" + playlist.CoverUrl
+	}
+
+	var songs []SimpleSongResponse
+	for _, s := range songsRaw {
+		artistId := 0
+		albumId := 0
+		if s.ArtistID != nil {
+			artistId = *s.ArtistID
+		}
+		if s.AlbumID != nil {
+			albumId = *s.AlbumID
+		}
+
+		coverUrl := ""
+		if s.CoverID != nil && s.Cover.ID != 0 {
+			coverUrl = "/covers/" + s.Cover.Path
+		}
+
+		songs = append(songs, SimpleSongResponse{
+			ID:         s.ID,
+			Title:      s.Title,
+			ArtistName: s.ArtistName,
+			AlbumTitle: s.AlbumName,
+			AlbumName:  s.AlbumName,
+			Duration:   s.Duration,
+			Year:       s.Year,
 			ArtistID:   artistId,
 			AlbumID:    albumId,
 			CoverUrl:   coverUrl,

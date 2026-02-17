@@ -2,17 +2,27 @@ import axios from "@/utils/request";
 
 export interface SystemStats {
     song_count: number;
+    song_volume?: number;
     album_count: number;
     artist_count: number;
     music_duration: number;
     playlist_count: number;
     user_count: number;
     system_uptime: number;
-    user_listening_duration: number;
-    user_scanned_duration: number;
+    user_listening_duration?: number; // Optional now as it's removed from main stats
+    user_scanned_duration?: number;   // Optional now as it's removed from main stats
     cpu_usage?: number;
     mem_usage?: number;
     api_call_count?: number;
+}
+
+export interface SystemStatus {
+    cpu_usage: number;
+    mem_usage: number;
+    api_call_count: number;
+    system_uptime: number;
+    go_routines: number;
+    db_size: number;
 }
 
 /**
@@ -23,6 +33,17 @@ export const getSystemStats = () => {
         method: "GET",
         url: "/system/stats"
     }) as Promise<{ code: number, msg: string, data: SystemStats }>;
+};
+
+/**
+ * 获取系统实时状态
+ */
+export const getSystemStatus = () => {
+    return axios({
+        method: "GET",
+        url: "/system/status",
+        hiddenBar: true // 不显示顶部进度条
+    }) as Promise<{ code: number, msg: string, data: SystemStatus }>;
 };
 
 /**
@@ -57,4 +78,14 @@ export const getLocalIPs = (port?: string) => {
         url: "/system/local-ips",
         params: { port }
     }) as Promise<{ code: number, msg: string, data: { ips: string[], port: string, urls: string[] } }>;
+};
+
+/**
+ * 重置系统数据 (Admin)
+ */
+export const resetSystem = () => {
+    return axios({
+        method: "DELETE",
+        url: "/system/reset"
+    });
 };

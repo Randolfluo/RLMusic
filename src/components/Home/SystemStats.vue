@@ -20,7 +20,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="歌曲总数">
-            <n-number-animation :from="0" :to="stats.song_count" />
+            <n-number-animation :from="prevStats.song_count" :to="stats.song_count" />
             <template #suffix>首</template>
           </n-statistic>
         </div>
@@ -32,7 +32,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="专辑总数">
-            <n-number-animation :from="0" :to="stats.album_count" />
+            <n-number-animation :from="prevStats.album_count" :to="stats.album_count" />
             <template #suffix>张</template>
           </n-statistic>
         </div>
@@ -44,7 +44,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="艺术家">
-            <n-number-animation :from="0" :to="stats.artist_count" />
+            <n-number-animation :from="prevStats.artist_count" :to="stats.artist_count" />
             <template #suffix>位</template>
           </n-statistic>
         </div>
@@ -56,7 +56,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="歌单总数">
-            <n-number-animation :from="0" :to="stats.playlist_count" />
+            <n-number-animation :from="prevStats.playlist_count" :to="stats.playlist_count" />
             <template #suffix>个</template>
           </n-statistic>
         </div>
@@ -69,7 +69,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="运行时长">
-            <n-number-animation :from="0" :to="calcTime(stats.system_uptime, units.uptime)" />
+            <n-number-animation :from="calcTime(prevStats.system_uptime, units.uptime)" :to="calcTime(stats.system_uptime, units.uptime)" />
             <template #suffix>{{ getUnitText(units.uptime) }}</template>
           </n-statistic>
         </div>
@@ -81,7 +81,7 @@
         </div>
         <div class="card-content">
           <n-statistic label="歌曲时长">
-            <n-number-animation :from="0" :to="calcTime(stats.music_duration, units.music)" />
+            <n-number-animation :from="calcTime(prevStats.music_duration, units.music)" :to="calcTime(stats.music_duration, units.music)" />
             <template #suffix>{{ getUnitText(units.music) }}</template>
           </n-statistic>
         </div>
@@ -105,48 +105,13 @@
         </div>
         <div class="card-content">
           <n-statistic label="用户总数">
-            <n-number-animation :from="0" :to="stats.user_count" />
+            <n-number-animation :from="prevStats.user_count" :to="stats.user_count" />
             <template #suffix>人</template>
           </n-statistic>
         </div>
       </div>
 
-      <!-- 系统性能 -->
-      <div class="stats-card glass-card red-theme">
-        <div class="card-icon">
-          <n-icon :component="Cpu" />
-        </div>
-        <div class="card-content">
-          <n-statistic label="CPU">
-            <n-number-animation :from="0" :to="stats.cpu_usage || 0" :precision="1" />
-            <template #suffix>%</template>
-          </n-statistic>
-        </div>
-      </div>
 
-      <div class="stats-card glass-card yellow-theme">
-        <div class="card-icon">
-          <n-icon :component="MicroSd" />
-        </div>
-        <div class="card-content">
-          <n-statistic label="内存">
-            <n-number-animation :from="0" :to="stats.mem_usage || 0" :precision="1" />
-            <template #suffix>%</template>
-          </n-statistic>
-        </div>
-      </div>
-
-      <div class="stats-card glass-card gray-theme span-2-desktop">
-        <div class="card-icon">
-          <n-icon :component="Api" />
-        </div>
-        <div class="card-content">
-          <n-statistic label="API 调用">
-            <n-number-animation :from="0" :to="stats.api_call_count || 0" />
-            <template #suffix>次</template>
-          </n-statistic>
-        </div>
-      </div>
     </div>
     <n-divider class="divider" />
   </div>
@@ -158,11 +123,26 @@ import { getSystemStats, type SystemStats } from "@/api/system";
 import { ResultCode } from "@/utils/request";
 import { 
   Refresh, Music, RecordDisc, People, MusicList, 
-  Time, Customer, Headset, User, Cpu, MicroSd, Api, ChartGraph 
+  Time, Customer, Headset, User, ChartGraph 
 } from "@icon-park/vue-next";
 
 const loading = ref(false);
 const stats = ref<SystemStats>({
+  song_count: 0,
+  album_count: 0,
+  artist_count: 0,
+  music_duration: 0,
+  playlist_count: 0,
+  user_count: 0,
+  system_uptime: 0,
+  user_listening_duration: 0,
+  user_scanned_duration: 0,
+  cpu_usage: 0,
+  mem_usage: 0,
+  api_call_count: 0
+});
+
+const prevStats = ref<SystemStats>({
   song_count: 0,
   album_count: 0,
   artist_count: 0,
@@ -206,6 +186,7 @@ const getStats = async () => {
     try {
         const res = await getSystemStats();
         if (res.code === ResultCode.SUCCESS) {
+            prevStats.value = { ...stats.value };
             stats.value = res.data;
         }
     } catch (e) {
