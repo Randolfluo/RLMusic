@@ -246,7 +246,7 @@ type SystemStatusVO struct {
 	ApiCallCount int64   `json:"api_call_count"`
 	SystemUptime int64   `json:"system_uptime"`
 	GoRoutines   int     `json:"go_routines"`
-	DbSize       int64   `json:"db_size"`
+	TotalVolume  int64   `json:"total_volume"`
 }
 
 // GetStats 获取系统统计信息（包含原有 Settings 和 Duration）
@@ -321,25 +321,10 @@ func (*SystemAuth) GetSystemStatus(c *gin.Context) {
 	// Go Routines
 	goRoutines := runtime.NumGoroutine()
 
-	// DB Size (SQLite)
-	var dbSize int64 = 0
-	if g.Conf.SQLite.Dsn != "" {
-		// DSN might be relative or absolute, usually it's a file path
-		// e.g. "data/data.db"
-		dbPath := g.Conf.SQLite.Dsn
-		// handle potential params in DSN (though usually not for sqlite file path in simple cases)
-		// But let's assume it's a file path for now
-		info, err := os.Stat(dbPath)
-		if err == nil {
-			dbSize = info.Size()
-		} else {
-			// Try to resolve relative path if failed
-			absPath, _ := filepath.Abs(dbPath)
-			info, err = os.Stat(absPath)
-			if err == nil {
-				dbSize = info.Size()
-			}
-		}
+	// Total Song Volume (from SystemInfo)
+	var totalVolume int64 = 0
+	if info, err := model.GetSystemInfoStruct(GetDB(c)); err == nil && info != nil {
+		totalVolume = info.TotalVolume
 	}
 
 	ReturnSuccess(c, SystemStatusVO{
@@ -348,7 +333,7 @@ func (*SystemAuth) GetSystemStatus(c *gin.Context) {
 		ApiCallCount: apiCount,
 		SystemUptime: systemRunTime,
 		GoRoutines:   goRoutines,
-		DbSize:       dbSize,
+		TotalVolume:  totalVolume,
 	})
 }
 

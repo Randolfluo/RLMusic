@@ -26,7 +26,7 @@ Content-Type: {{contentType}}
 
 {
     "text": "你好，这是一段测试语音，用于验证阿里百炼语音合成接口。",
-    "voice": "longxiaochun",
+    "voice": "Neil",
     "format": "flac",
     "sample_rate": 24000,
     "volume": 50,
@@ -47,78 +47,93 @@ Content-Type: {{contentType}}
 
 
 
-### 获取歌单详情 (精简版，随机返回歌曲，上限100) (需要登录)
-GET {{baseUrl}}/song/playlist/detail/11
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 获取歌单详情 (精简版，随机返回歌曲，上限100) (需要登录)
+# GET {{baseUrl}}/song/playlist/detail/11
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 3. 获取歌单AI分析
-GET {{baseUrl}}/song/playlist/analysis/11
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 3. 获取歌单AI分析
+# GET {{baseUrl}}/song/playlist/analysis/11
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 4. 获取歌单AI描述
+### 4. 生成歌单AI描述
 GET {{baseUrl}}/song/playlist/description/11
 Authorization: Bearer {{login.response.body.data.token}}
 
 ### 5. 批量生成所有公共歌单AI描述 (Admin only)
 POST {{baseUrl}}/song/playlist/generate-public-descriptions
 Authorization: Bearer {{login.response.body.data.token}}
-# {
-#   "code": 1001,
-#   "message": "服务器端错误",
-#   "data": "api call failed: Post \"https://api.siliconflow.cn/v1/chat/completions\": read tcp 192.168.101.51:5315-\u003e47.102.37.23:443: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."
-# }
-
-# {
-#   "code": 1000,
-#   "message": "success",
-#   "data": {
-#     "dominant_artist": "Aimer",
-#     "highlight_songs": [
-#       "六等星の夜 Magic Blue ver.",
-#       "眠りの森",
-#       "Snowy Day",
-#       "冬のダイヤモンド",
-#       "STAND-ALONE"
-#     ],
-#     "main_era": "2010s",
-#     "mood_guess": "Melancholic, Emotional, Reflective, Hopeful",
-#     "style_guess": "J-Rock, Ballad, Pop, Electropop, Anime Theme",
-#     "year_range": "2011-2023"
-#   }
-# }
 
 
 
-### 6. 获取艺术家详情 (随机歌曲)
-GET {{baseUrl}}/song/artist/detail/1?limit=100
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 6. 获取艺术家详情 (随机歌曲)
+# GET {{baseUrl}}/song/artist/detail/1?limit=100
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 7. 获取艺术家AI分析 (Step 1: JSON) (仅管理员)
-GET {{baseUrl}}/song/artist/analysis/1
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 7. 获取艺术家AI分析 (Step 1: JSON) (仅管理员)
+# GET {{baseUrl}}/song/artist/analysis/1
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 8. 获取艺术家AI描述 (Step 2: Text) (仅管理员)
+### 8. 生成艺术家AI描述 (Step 2: Text) (需要登录)
 GET {{baseUrl}}/song/artist/description/1
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 9. 批量生成所有艺术家AI描述 (Admin only)
+### 9. 批量生成所有艺术家AI描述 (需要登录)
 POST {{baseUrl}}/song/artist/generate-descriptions
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 10. 获取专辑详情 (随机歌曲)
-GET {{baseUrl}}/song/album/detail/1?limit=100
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 10. 获取专辑详情 (随机歌曲)
+# GET {{baseUrl}}/song/album/detail/1?limit=100
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 11. 获取专辑AI分析 (Step 1: JSON) (仅管理员)
-GET {{baseUrl}}/song/album/analysis/1
-Authorization: Bearer {{login.response.body.data.token}}
+# ### 11. 获取专辑AI分析 (Step 1: JSON) (需要登录)
+# GET {{baseUrl}}/song/album/analysis/1
+# Authorization: Bearer {{login.response.body.data.token}}
 
-### 12. 获取专辑AI描述 (Step 2: Text) (仅管理员)
+### 12. 生成专辑AI描述 (Step 2: Text) (需要登录)
 GET {{baseUrl}}/song/album/description/1
 Authorization: Bearer {{login.response.body.data.token}}
 
-### 13. 批量生成所有专辑AI描述 (Admin only)
+### 13. 批量生成所有专辑AI描述 (需要登录)
 POST {{baseUrl}}/song/album/generate-descriptions
 Authorization: Bearer {{login.response.body.data.token}}
+
+
+
+
+# ### 14. 获取歌曲AI分析 (Step 1: JSON)
+# GET {{baseUrl}}/song/podcast/analysis/1
+# Authorization: Bearer {{login.response.body.data.token}}
+
+# ### 15. 获取歌曲AI开场白草稿 (Step 2: Text)
+# GET {{baseUrl}}/song/podcast/draft/1
+# Authorization: Bearer {{login.response.body.data.token}}
+
+# ### 16. 获取歌曲AI最终开场白 (Step 3: Text)
+# GET {{baseUrl}}/song/podcast/opening/1
+# Authorization: Bearer {{login.response.body.data.token}}
+
+### 17. 生成歌曲AI最终开场白并转语音 (Step 4: TTS)
+GET {{baseUrl}}/song/podcast/opening-tts/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 18. 批量生成歌单内歌曲的开场白
+POST {{baseUrl}}/song/podcast/generate-playlist-intros/14
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "voice": "Neil"
+}
+
+### 19. 获取歌曲开场白文本
+GET {{baseUrl}}/song/opening/text/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 20. 获取歌曲开场白语音 (Stream)
+GET {{baseUrl}}/song/opening/1
+Authorization: Bearer {{login.response.body.data.token}}
+
+
+
 
 

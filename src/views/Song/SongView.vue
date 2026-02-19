@@ -55,6 +55,12 @@
                 <span class="value link" @click="router.push(`/album?id=${song.album_id}`)" v-if="song.album_id">{{ song.album_name }}</span>
                 <span class="value" v-else>{{ song.album_name || '未知专辑' }}</span>
               </div>
+
+              <div class="meta-item" v-if="song.description">
+                <n-icon :component="BookOne" class="icon" />
+                <span class="label">简介：</span>
+                <span class="value desc-text">{{ song.description }}</span>
+              </div>
             </div>
 
             <div class="actions">
@@ -220,7 +226,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useMessage } from "naive-ui";
 import { 
   User, RecordDisc, PlayOne, Like, FileCodeOne, Time, 
-  Voice, DatabaseNetwork, Calendar, Play, FolderCode 
+  Voice, DatabaseNetwork, Calendar, Play, FolderCode, BookOne
 } from "@icon-park/vue-next";
 import { getSongDetail, getSongCover, toggleLike } from "@/api/song";
 import { useMusicDataStore } from "@/store/musicData";
@@ -433,16 +439,28 @@ onMounted(() => {
           margin-right: 8px;
           font-size: 20px;
           color: var(--n-primary-color);
+          flex-shrink: 0;
         }
         
         .label {
           margin-right: 4px;
           font-weight: 500;
+          flex-shrink: 0;
         }
         
         .value {
           font-weight: 600;
           color: var(--n-text-color-1);
+          
+          &.desc-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 1.6;
+          }
           
           &.link {
             cursor: pointer;

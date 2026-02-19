@@ -363,6 +363,52 @@ func (*SongAuth) StreamSong(c *gin.Context) {
 	c.File(song.FilePath)
 }
 
+// GetSongOpeningAudio 获取歌曲开场白音频
+func (*SongAuth) GetSongOpeningAudio(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	var song model.Song
+	if err := db.First(&song, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌曲不存在")
+		return
+	}
+
+	if song.OpeningAudioFile == "" {
+		ReturnError(c, g.ErrFileNotExist, "开场白音频不存在")
+		return
+	}
+
+	// 拼接音频文件路径: BasicPath/data/Podcast/filename
+	// 注意：这里需要确保 song.OpeningAudioFile 只是文件名
+	conf := g.GetConfig()
+	audioPath := filepath.Join(conf.BasicPath.FilePath, conf.BasicPath.FileName, "data", "Podcast", song.OpeningAudioFile)
+
+	// 检查文件是否存在
+	if _, err := os.Stat(audioPath); os.IsNotExist(err) {
+		ReturnError(c, g.ErrFileNotExist, "音频文件丢失")
+		return
+	}
+
+	c.File(audioPath)
+}
+
+// GetSongOpeningText 获取歌曲开场白文本
+func (*SongAuth) GetSongOpeningText(c *gin.Context) {
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	var song model.Song
+	if err := db.First(&song, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌曲不存在")
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"description": song.Description,
+	})
+}
+
 // GetSongCover 获取歌曲封面
 func (*SongAuth) GetSongCover(c *gin.Context) {
 	idStr := c.Param("id")
@@ -876,15 +922,16 @@ func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
 
 	user := GetCurrentUser(c)
 	// 权限检查
+	// 管理员可为所有歌单生成描述，普通用户只能为自己的私有歌单生成描述。
 	allowed := false
 	isAdmin := user != nil && user.UserGroup == "admin"
 	isOwner := user != nil && playlistDetail.OwnerID == user.ID
 
 	if isAdmin {
-		if playlistDetail.IsPublic || isOwner {
-			allowed = true
-		}
+		allowed = true // Admin can access all
 	} else {
+		// Regular user can only access their own private playlists (and public if they own it? User request says "own private playlists")
+		// "普通用户只能为自己的私有歌单生成描述"
 		if isOwner && !playlistDetail.IsPublic {
 			allowed = true
 		}
@@ -896,9 +943,9 @@ func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
 	}
 
 	// 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompt1.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
 	if err != nil {
-		slog.Error("Failed to read prompt1.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_playlist1.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
 		return
 	}
@@ -989,9 +1036,9 @@ func (h *SongAuth) internalGetAnalysis(c *gin.Context, idStr string) (string, *g
 	}
 
 	// 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompt1.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
 	if err != nil {
-		slog.Error("Failed to read prompt1.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_playlist1.md", "error", err)
 		return "", &g.Err
 	}
 	promptTemplate := string(promptBytes)
@@ -1040,10 +1087,10 @@ func (h *SongAuth) GetPlaylistAIDescription(c *gin.Context) {
 		return
 	}
 
-	// 2. 读取 prompt2.md
-	promptBytes, err := os.ReadFile("prompt2.md")
+	// 2.// 读取 prompt2.md
+	promptBytes, err := os.ReadFile("prompts/prompt_playlist2.md")
 	if err != nil {
-		slog.Error("Failed to read prompt2.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_playlist2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
 		return
 	}
@@ -1142,7 +1189,7 @@ func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *m
 	}
 
 	// 3. 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompt_playlist1.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
 	if err != nil {
 		return err
 	}
@@ -1178,7 +1225,7 @@ func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *m
 	}
 
 	// 6. 读取 prompt2.md
-	promptBytes2, err := os.ReadFile("prompt_playlist2.md")
+	promptBytes2, err := os.ReadFile("prompts/prompt_playlist2.md")
 	if err != nil {
 		return err
 	}
@@ -1201,10 +1248,10 @@ func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *m
 
 // GetArtistAIAnalysis 获取艺术家AI分析
 func (h *SongAuth) GetArtistAIAnalysis(c *gin.Context) {
-	// 1. 权限检查 (仅管理员)
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1356,9 +1403,9 @@ func (h *SongAuth) internalGetArtistAnalysis(c *gin.Context, idStr string) (stri
 	}
 
 	// 2. 读取 prompt_artist1.md
-	promptBytes, err := os.ReadFile("prompt_artist1.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_artist1.md")
 	if err != nil {
-		slog.Error("Failed to read prompt_artist1.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_artist1.md", "error", err)
 		return "", &g.Err
 	}
 	promptTemplate := string(promptBytes)
@@ -1398,10 +1445,10 @@ func (h *SongAuth) internalGetArtistAnalysis(c *gin.Context, idStr string) (stri
 
 // GetArtistAIDescription 获取艺术家AI描述
 func (h *SongAuth) GetArtistAIDescription(c *gin.Context) {
-	// 1. 权限检查 (仅管理员)
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1415,9 +1462,9 @@ func (h *SongAuth) GetArtistAIDescription(c *gin.Context) {
 	}
 
 	// 3. 读取 prompt_artist2.md
-	promptBytes, err := os.ReadFile("prompt_artist2.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_artist2.md")
 	if err != nil {
-		slog.Error("Failed to read prompt_artist2.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_artist2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
 		return
 	}
@@ -1446,10 +1493,10 @@ func (h *SongAuth) GetArtistAIDescription(c *gin.Context) {
 
 // GenerateAllArtistDescriptions 批量生成艺术家AI描述
 func (h *SongAuth) GenerateAllArtistDescriptions(c *gin.Context) {
-	// 1. 管理员权限检查
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1493,7 +1540,7 @@ func (h *SongAuth) generateAndSaveArtistDescription(db *gorm.DB, idStr string) e
 	}
 
 	// 2. 读取 prompt_artist1.md
-	promptBytes1, err := os.ReadFile("prompt_artist1.md")
+	promptBytes1, err := os.ReadFile("prompts/prompt_artist1.md")
 	if err != nil {
 		return err
 	}
@@ -1529,7 +1576,7 @@ func (h *SongAuth) generateAndSaveArtistDescription(db *gorm.DB, idStr string) e
 	}
 
 	// 5. 读取 prompt_artist2.md
-	promptBytes2, err := os.ReadFile("prompt_artist2.md")
+	promptBytes2, err := os.ReadFile("prompts/prompt_artist2.md")
 	if err != nil {
 		return err
 	}
@@ -1565,9 +1612,9 @@ func (h *SongAuth) internalGetAlbumAnalysis(c *gin.Context, idStr string) (strin
 	}
 
 	// 2. 读取 prompt_album1.md
-	promptBytes, err := os.ReadFile("prompt_album1.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_album1.md")
 	if err != nil {
-		slog.Error("Failed to read prompt_album1.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_album1.md", "error", err)
 		return "", &g.Err
 	}
 	promptTemplate := string(promptBytes)
@@ -1621,10 +1668,10 @@ func (h *SongAuth) internalGetAlbumAnalysis(c *gin.Context, idStr string) (strin
 
 // GetAlbumAIAnalysis 获取专辑AI分析
 func (h *SongAuth) GetAlbumAIAnalysis(c *gin.Context) {
-	// 1. 权限检查 (仅管理员)
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1655,10 +1702,10 @@ func (h *SongAuth) GetAlbumAIAnalysis(c *gin.Context) {
 
 // GetAlbumAIDescription 获取专辑AI描述
 func (h *SongAuth) GetAlbumAIDescription(c *gin.Context) {
-	// 1. 权限检查 (仅管理员)
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1672,9 +1719,9 @@ func (h *SongAuth) GetAlbumAIDescription(c *gin.Context) {
 	}
 
 	// 3. 读取 prompt_album2.md
-	promptBytes, err := os.ReadFile("prompt_album2.md")
+	promptBytes, err := os.ReadFile("prompts/prompt_album2.md")
 	if err != nil {
-		slog.Error("Failed to read prompt_album2.md", "error", err)
+		slog.Error("Failed to read prompts/prompt_album2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
 		return
 	}
@@ -1703,10 +1750,10 @@ func (h *SongAuth) GetAlbumAIDescription(c *gin.Context) {
 
 // GenerateAllAlbumDescriptions 批量生成专辑AI描述
 func (h *SongAuth) GenerateAllAlbumDescriptions(c *gin.Context) {
-	// 1. 管理员权限检查
+	// 1. 权限检查: 允许所有登录用户
 	user := GetCurrentUser(c)
-	if user == nil || user.UserGroup != "admin" {
-		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
 		return
 	}
 
@@ -1750,7 +1797,7 @@ func (h *SongAuth) generateAndSaveAlbumDescription(db *gorm.DB, idStr string) er
 	}
 
 	// 2. 读取 prompt_album1.md
-	promptBytes1, err := os.ReadFile("prompt_album1.md")
+	promptBytes1, err := os.ReadFile("prompts/prompt_album1.md")
 	if err != nil {
 		return err
 	}
@@ -1792,7 +1839,7 @@ func (h *SongAuth) generateAndSaveAlbumDescription(db *gorm.DB, idStr string) er
 	}
 
 	// 5. 读取 prompt_album2.md
-	promptBytes2, err := os.ReadFile("prompt_album2.md")
+	promptBytes2, err := os.ReadFile("prompts/prompt_album2.md")
 	if err != nil {
 		return err
 	}
@@ -2250,6 +2297,438 @@ func (*SongAuth) DeletePrivatePlaylist(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, "删除成功")
+}
+
+// internalGetSongAnalysis 内部方法：获取歌曲分析结果
+func (h *SongAuth) internalGetSongAnalysis(c *gin.Context, idStr string) (string, *g.Result) {
+	db := GetDB(c)
+
+	// 1. 获取歌曲信息
+	song, err := model.GetSongByID(db, idStr)
+	if err != nil {
+		return "", &g.ErrDbOp
+	}
+
+	// 2. 读取 prompts/prompt_podcast1.md
+	promptBytes, err := os.ReadFile("prompts/prompt_podcast1.md")
+	if err != nil {
+		slog.Error("Failed to read prompts/prompt_podcast1.md", "error", err)
+		return "", &g.Err
+	}
+	promptTemplate := string(promptBytes)
+
+	// 3. 构造 AI 分析所需的简化数据
+	type SongData struct {
+		Title  string `json:"title"`
+		Year   string `json:"year"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+	}
+	songData := SongData{
+		Title:  song.Title,
+		Year:   song.Year,
+		Artist: song.ArtistName,
+		Album:  song.AlbumName,
+	}
+
+	jsonData, err := json.Marshal(songData)
+	if err != nil {
+		return "", &g.ErrRequest
+	}
+
+	// 4. 替换 prompt 中的占位符
+	finalPrompt := strings.Replace(promptTemplate, "{{song_json}}", string(jsonData), 1)
+
+	// 5. 调用 AI 接口
+	reply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		return "", &g.Err
+	}
+	return reply, nil
+}
+
+// GetSongAIAnalysis 获取歌曲AI分析 (Step 1)
+func (h *SongAuth) GetSongAIAnalysis(c *gin.Context) {
+	// 1. 权限检查: 允许所有登录用户
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 调用内部方法获取分析结果
+	analysisReply, errRes := h.internalGetSongAnalysis(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取分析失败")
+		return
+	}
+
+	// 尝试解析返回的 JSON
+	var result interface{}
+	cleanReply := strings.TrimSpace(analysisReply)
+	cleanReply = strings.TrimPrefix(cleanReply, "```json")
+	cleanReply = strings.TrimPrefix(cleanReply, "```")
+	cleanReply = strings.TrimSuffix(cleanReply, "```")
+
+	if err := json.Unmarshal([]byte(cleanReply), &result); err == nil {
+		ReturnSuccess(c, result)
+	} else {
+		ReturnSuccess(c, gin.H{
+			"analysis": analysisReply,
+		})
+	}
+}
+
+// internalGetSongDraft 内部方法：获取开场白草稿 (Step 2)
+func (h *SongAuth) internalGetSongDraft(c *gin.Context, idStr string) (string, *g.Result) {
+	// 1. 获取分析结果 (Step 1)
+	analysisReply, errRes := h.internalGetSongAnalysis(c, idStr)
+	if errRes != nil {
+		return "", errRes
+	}
+
+	// 2. 读取 prompts/prompt_podcast2.md
+	promptBytes2, err := os.ReadFile("prompts/prompt_podcast2.md")
+	if err != nil {
+		slog.Error("Failed to read prompts/prompt_podcast2.md", "error", err)
+		return "", &g.Err
+	}
+	promptTemplate2 := string(promptBytes2)
+
+	// 3. 生成开场白草稿 (Step 2)
+	finalPrompt2 := strings.Replace(promptTemplate2, "{{analysis_json}}", analysisReply, 1)
+	openingDraft, err := ai.ChatWithQwen(finalPrompt2)
+	if err != nil {
+		return "", &g.Err
+	}
+	return openingDraft, nil
+}
+
+// GetSongAIDraft 获取歌曲AI开场白草稿 (Step 2)
+func (h *SongAuth) GetSongAIDraft(c *gin.Context) {
+	// 1. 权限检查: 允许所有登录用户
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 获取草稿
+	openingDraft, errRes := h.internalGetSongDraft(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取草稿失败")
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"draft": openingDraft,
+	})
+}
+
+// GetSongAIOpeningRemark 获取歌曲AI最终开场白 (Step 3)
+func (h *SongAuth) GetSongAIOpeningRemark(c *gin.Context) {
+	// 1. 权限检查: 允许所有登录用户
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 获取草稿 (Step 2)
+	openingDraft, errRes := h.internalGetSongDraft(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取草稿失败")
+		return
+	}
+
+	// 3. 读取 prompts/prompt_podcast3.md
+	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	if err != nil {
+		slog.Error("Failed to read prompts/prompt_podcast3.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板3")
+		return
+	}
+	promptTemplate3 := string(promptBytes3)
+
+	// 4. 生成最终语音脚本 (Step 3)
+	// 注意：prompt_podcast3.md 中的占位符是 {{analysis_json}}，但实际上我们传入的是 Step 2 生成的文本
+	finalPrompt3 := strings.Replace(promptTemplate3, "{{analysis_json}}", openingDraft, 1)
+	finalScript, err := ai.ChatWithQwen(finalPrompt3)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	ReturnSuccess(c, gin.H{
+		"opening_remark": finalScript,
+		"draft":          openingDraft, // 可选：同时也返回草稿方便调试
+	})
+}
+
+// GetSongAIOpeningRemarkTTS 获取歌曲AI开场白并转语音 (Step 4)
+func (h *SongAuth) GetSongAIOpeningRemarkTTS(c *gin.Context) {
+	// 1. 权限检查: 允许所有登录用户
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	idStr := c.Param("id")
+
+	// 2. 获取草稿 (Step 2)
+	openingDraft, errRes := h.internalGetSongDraft(c, idStr)
+	if errRes != nil {
+		ReturnError(c, *errRes, "获取草稿失败")
+		return
+	}
+
+	// 3. 读取 prompts/prompt_podcast3.md
+	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	if err != nil {
+		slog.Error("Failed to read prompts/prompt_podcast3.md", "error", err)
+		ReturnError(c, g.Err, "无法读取提示词模板3")
+		return
+	}
+	promptTemplate3 := string(promptBytes3)
+
+	// 4. 生成最终语音脚本 (Step 3)
+	finalPrompt3 := strings.Replace(promptTemplate3, "{{analysis_json}}", openingDraft, 1)
+	finalScript, err := ai.ChatWithQwen(finalPrompt3)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 5. 调用 TTS 生成语音 (Step 4)
+	// 默认参数配置
+	params := &ai.Params{
+		Voice:      "Neil",
+		Format:     "flac",
+		SampleRate: 24000,
+		Volume:     50,
+		Rate:       1.0,
+		Pitch:      1.0,
+	}
+
+	audioPath, err := ai.SynthesizeAudio(finalScript, params)
+	if err != nil {
+		slog.Error("TTS generation failed", "error", err)
+		ReturnError(c, g.Err, "语音合成失败")
+		return
+	}
+
+	// 6. 保存开场白和语音文件路径到数据库
+	audioFileName := filepath.Base(audioPath)
+	db := GetDB(c)
+	updates := map[string]interface{}{
+		"description":        finalScript,
+		"opening_audio_file": audioFileName,
+	}
+	if err := db.Model(&model.Song{}).Where("id = ?", idStr).Updates(updates).Error; err != nil {
+		slog.Error("Failed to update song description and audio file", "id", idStr, "error", err)
+		// 不返回错误，因为生成已经成功
+	}
+
+	// 尝试找到该歌曲所属的歌单，并更新歌单的 HasIntro 为 true
+	// 注意：一首歌曲可能属于多个歌单，这里我们更新包含该歌曲的所有歌单
+	// 或者，我们可以只更新"当前上下文"的歌单，但接口没有传 playlist_id。
+	// 简单起见，我们更新包含此歌曲的所有歌单的 HasIntro 为 true
+	// 这样任何包含此歌曲的歌单都会被标记为有开场白（这是合理的，因为只要有一首有开场白，歌单就可以认为有开场白内容）
+	var playlistIDs []int
+	if err := db.Table("playlist_songs").Where("song_id = ?", idStr).Pluck("playlist_id", &playlistIDs).Error; err == nil && len(playlistIDs) > 0 {
+		if err := db.Model(&model.Playlist{}).Where("id IN ?", playlistIDs).Update("has_intro", true).Error; err != nil {
+			slog.Error("Failed to update playlists HasIntro status", "song_id", idStr, "error", err)
+		}
+	}
+
+	ReturnSuccess(c, gin.H{
+		"opening_remark": finalScript,
+		"audio_path":     audioFileName,
+	})
+}
+
+// BatchGenerateSongIntros 批量生成歌单内歌曲的开场白
+func (h *SongAuth) BatchGenerateSongIntros(c *gin.Context) {
+	// 1. 权限检查: 允许所有登录用户
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, "用户未登录")
+		return
+	}
+
+	idStr := c.Param("id")
+	db := GetDB(c)
+
+	// 2. 获取歌单内的所有歌曲
+	// 这里我们需要获取歌单的所有歌曲，而不是随机 100 首
+	// 复用 GetPlaylistDetail 的逻辑，但 limit 设大一点或者获取全部
+	// 由于 GetPlaylistRandomSongs 可能会乱序，这里我们最好按顺序获取或者全部获取
+	// 考虑到歌单可能很大，建议异步处理
+
+	// 获取歌单信息用于权限检查
+	var playlist model.Playlist
+	if err := db.First(&playlist, idStr).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 权限检查
+	allowed := false
+	isAdmin := user.UserGroup == "admin"
+	isOwner := playlist.OwnerID == user.ID
+
+	if isAdmin {
+		if playlist.IsPublic || isOwner {
+			allowed = true
+		}
+	} else {
+		if isOwner && !playlist.IsPublic {
+			allowed = true
+		}
+	}
+
+	if !allowed {
+		ReturnError(c, g.ErrPermission, "无权访问此歌单")
+		return
+	}
+
+	// 获取歌单所有歌曲 ID
+	var songIDs []int
+	err := db.Table("playlist_songs").Where("playlist_id = ?", idStr).Pluck("song_id", &songIDs).Error
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, "获取歌单歌曲失败")
+		return
+	}
+
+	if len(songIDs) == 0 {
+		ReturnError(c, g.ErrRequest, "歌单为空")
+		return
+	}
+
+	// 3. 异步执行批量生成任务
+	go func(ids []int, userID int) {
+		slog.Info("开始批量生成歌曲开场白", "playlist_id", idStr, "count", len(ids))
+		for _, songID := range ids {
+			// 检查是否已经生成过（可选，这里强制重新生成或者跳过已存在的）
+			// 这里假设全部生成
+
+			// 调用内部逻辑生成单个歌曲的开场白
+			// 由于 internalGetSongDraft 等方法依赖 gin.Context，我们需要重构或者模拟
+			// 或者提取核心逻辑为独立函数。
+			// 这里我们直接调用核心生成逻辑
+
+			if err := h.generateAndSaveSongIntro(db, strconv.Itoa(songID)); err != nil {
+				slog.Error("生成歌曲开场白失败", "song_id", songID, "error", err)
+			} else {
+				slog.Info("生成歌曲开场白成功", "song_id", songID)
+			}
+		}
+		slog.Info("批量生成歌曲开场白完成", "playlist_id", idStr)
+	}(songIDs, user.ID)
+
+	// 更新歌单 HasIntro 状态为 true
+	if err := db.Model(&model.Playlist{}).Where("id = ?", idStr).Update("has_intro", true).Error; err != nil {
+		slog.Error("Failed to update playlist HasIntro status", "id", idStr, "error", err)
+	}
+
+	ReturnSuccess(c, gin.H{
+		"message": fmt.Sprintf("已开始后台生成 %d 首歌曲的开场白", len(songIDs)),
+	})
+}
+
+// generateAndSaveSongIntro 生成并保存单个歌曲开场白 (内部核心逻辑)
+func (h *SongAuth) generateAndSaveSongIntro(db *gorm.DB, idStr string) error {
+	// 1. 获取歌曲信息
+	song, err := model.GetSongByID(db, idStr)
+	if err != nil {
+		return err
+	}
+
+	// 2. Step 1: 分析
+	promptBytes, err := os.ReadFile("prompts/prompt_podcast1.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate := string(promptBytes)
+
+	type SongData struct {
+		Title  string `json:"title"`
+		Year   string `json:"year"`
+		Artist string `json:"artist"`
+		Album  string `json:"album"`
+	}
+	songData := SongData{
+		Title:  song.Title,
+		Year:   song.Year,
+		Artist: song.ArtistName,
+		Album:  song.AlbumName,
+	}
+	jsonData, err := json.Marshal(songData)
+	if err != nil {
+		return err
+	}
+	finalPrompt := strings.Replace(promptTemplate, "{{song_json}}", string(jsonData), 1)
+	analysisReply, err := ai.ChatWithQwen(finalPrompt)
+	if err != nil {
+		return err
+	}
+
+	// 3. Step 2: 草稿
+	promptBytes2, err := os.ReadFile("prompts/prompt_podcast2.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate2 := string(promptBytes2)
+	finalPrompt2 := strings.Replace(promptTemplate2, "{{analysis_json}}", analysisReply, 1)
+	openingDraft, err := ai.ChatWithQwen(finalPrompt2)
+	if err != nil {
+		return err
+	}
+
+	// 4. Step 3: 最终脚本
+	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	if err != nil {
+		return err
+	}
+	promptTemplate3 := string(promptBytes3)
+	finalPrompt3 := strings.Replace(promptTemplate3, "{{analysis_json}}", openingDraft, 1)
+	finalScript, err := ai.ChatWithQwen(finalPrompt3)
+	if err != nil {
+		return err
+	}
+
+	// 5. Step 4: TTS
+	params := &ai.Params{
+		Voice:      "Neil",
+		Format:     "flac",
+		SampleRate: 24000,
+		Volume:     50,
+		Rate:       1.0,
+		Pitch:      1.0,
+	}
+	audioPath, err := ai.SynthesizeAudio(finalScript, params)
+	if err != nil {
+		return err
+	}
+
+	// 6. 保存
+	audioFileName := filepath.Base(audioPath)
+	updates := map[string]interface{}{
+		"description":        finalScript,
+		"opening_audio_file": audioFileName,
+	}
+	if err := db.Model(&model.Song{}).Where("id = ?", idStr).Updates(updates).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeletePublicPlaylist 删除公共歌单 (仅限管理员)

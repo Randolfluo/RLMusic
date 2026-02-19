@@ -64,6 +64,8 @@ func registerBaseHandler(r *gin.Engine) {
 		song.GET("/playlists/public", songAuthAPI.GetAllPlaylists)            // 获取所有公开歌单
 		song.GET("/playlist/public/:id", songAuthAPI.GetPublicPlaylistDetail) // 获取公开歌单详情
 		song.GET("/stream/:id", songAuthAPI.StreamSong)                       // 播放歌曲
+		song.GET("/opening/:id", songAuthAPI.GetSongOpeningAudio)             // 播放歌曲开场白
+		song.GET("/opening/text/:id", songAuthAPI.GetSongOpeningText)         // 获取歌曲开场白文本
 		song.GET("/detail/:id", songAuthAPI.GetSongDetail)                    // 获取歌曲详情
 		song.GET("/cover/:id", songAuthAPI.GetSongCover)                      // 获取歌曲封面
 		song.GET("/lyric/:id", songAuthAPI.GetSongLyric)                      // 获取歌曲歌词
@@ -164,6 +166,12 @@ func registerAuthHandler(r *gin.Engine) {
 		song.GET("/album/analysis/:id", songAuthAPI.GetAlbumAIAnalysis)                     // 获取专辑AI分析
 		song.GET("/album/description/:id", songAuthAPI.GetAlbumAIDescription)               // 获取专辑AI描述
 		song.POST("/album/generate-descriptions", songAuthAPI.GenerateAllAlbumDescriptions) // 批量生成专辑描述
+
+		song.GET("/podcast/analysis/:id", songAuthAPI.GetSongAIAnalysis)                        // 获取歌曲AI分析 (Step 1)
+		song.GET("/podcast/draft/:id", songAuthAPI.GetSongAIDraft)                              // 获取歌曲AI开场白草稿 (Step 2)
+		song.GET("/podcast/opening/:id", songAuthAPI.GetSongAIOpeningRemark)                    // 获取歌曲AI最终开场白 (Step 3)
+		song.GET("/podcast/opening-tts/:id", songAuthAPI.GetSongAIOpeningRemarkTTS)             // 获取歌曲AI开场白并转语音 (Step 4)
+		song.POST("/podcast/generate-playlist-intros/:id", songAuthAPI.BatchGenerateSongIntros) // 批量生成歌单内歌曲开场白
 
 		song.POST("/like/:id", songAuthAPI.ToggleLike) // 点赞/取消点赞
 		song.GET("/like", songAuthAPI.GetLikedSongs)   // 获取喜欢的歌曲列表

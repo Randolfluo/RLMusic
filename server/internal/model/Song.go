@@ -45,6 +45,9 @@ type Song struct {
 	// 统计信息
 	PlayCount int `gorm:"default:0" json:"play_count"` // 播放次数
 
+	Description      string `gorm:"type:text" json:"description"`          // AI生成的描述/开场白
+	OpeningAudioFile string `gorm:"type:varchar(500)" json:"opening_file"` // AI生成的开场白语音文件路径
+
 	IsDelete bool `gorm:"default:false" json:"-"`
 }
 

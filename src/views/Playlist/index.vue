@@ -45,6 +45,18 @@
             </template>
             {{ isSubscribed ? '取消收藏' : '收藏' }}
           </n-button>
+
+          <n-button 
+            v-if="canGenerateIntro"
+            round size="large" 
+            style="margin-left: 12px;" 
+            @click="handleGenerateIntro"
+          >
+            <template #icon>
+              <n-icon :component="Voice" />
+            </template>
+            生成开场白
+          </n-button>
         </div>
       </div>
     </div>
@@ -87,15 +99,17 @@ import {
   unsubscribePlaylist,
   checkIsSubscribed
 } from "@/api/playlist";
+import { generatePlaylistIntros } from "@/api/ai";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NButton, NIcon, NImage, NDivider, NSpin } from "naive-ui";
-import { Play, Like } from "@icon-park/vue-next";
+import { useMessage, NButton, NIcon, NImage, NDivider, NSpin, useDialog } from "naive-ui";
+import { Play, Like, Voice } from "@icon-park/vue-next";
 import { musicStore, userStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
 
 const route = useRoute();
 const message = useMessage();
+const dialog = useDialog();
 const music = musicStore();
 const user = userStore();
 
@@ -109,6 +123,11 @@ const limit = ref(30);
 const isOwner = computed(() => {
     if (!user.userLogin || !playlist.value.owner_id) return false;
     return Number(user.userData.userId) === Number(playlist.value.owner_id);
+});
+
+const canGenerateIntro = computed(() => {
+    // 只有拥有者或者是管理员才能生成开场白
+    return isOwner.value || user.userData.userGroup === 'admin';
 });
 
 onMounted(() => {
@@ -194,6 +213,28 @@ const handleSubscribe = async () => {
         subLoading.value = false;
     }
 }
+
+const handleGenerateIntro = () => {
+    dialog.info({
+        title: "生成开场白",
+        content: `确定要为歌单 "${playlist.value.title}" 生成开场白吗？`,
+        positiveText: "生成",
+        negativeText: "取消",
+        onPositiveClick: () => {
+            generatePlaylistIntros(playlist.value.id)
+                .then((res) => {
+                    if (res.code === ResultCode.SUCCESS) {
+                        message.success("已开始生成开场白，请稍后查看");
+                    } else {
+                        message.error(res.message || "生成失败");
+                    }
+                })
+                .catch(() => {
+                    message.error("请求失败");
+                });
+        },
+    });
+};
 
 const onPageChange = (val: number) => {
   page.value = val;

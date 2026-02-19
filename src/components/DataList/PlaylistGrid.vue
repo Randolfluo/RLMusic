@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, h } from "vue";
-import { Play, Like, Delete, FolderPlus, More, PlayOne } from "@icon-park/vue-next";
+import { Play, Like, Delete, FolderPlus, More, PlayOne, Voice } from "@icon-park/vue-next";
 import { useRouter } from "vue-router";
 import { NDropdown, NIcon, NImage, useMessage, useDialog } from "naive-ui";
 import { useUserDataStore } from "@/store/userData";
@@ -98,9 +98,13 @@ const props = defineProps({
     type: Number,
     default: 1,
   },
+  enableAiIntro: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits(['refresh', 'generate-intro']);
 
 const showDropdown = ref(false);
 const dropdownX = ref(0);
@@ -184,6 +188,19 @@ const menuOptions = computed(() => {
         });
     }
 
+    // AI 生成开场白 (受 props 控制)
+    if (props.enableAiIntro) {
+        options.push({
+            type: 'divider',
+            key: 'd2'
+        });
+        options.push({
+            label: '生成开场白 (AI)',
+            key: 'generate-intro',
+            icon: renderIcon(Voice)
+        });
+    }
+
     return options;
 });
 
@@ -231,6 +248,9 @@ const handleSelect = (key: string) => {
             break;
         case 'delete':
             handleDelete(playlist);
+            break;
+        case 'generate-intro':
+            emit('generate-intro', playlist);
             break;
     }
 };

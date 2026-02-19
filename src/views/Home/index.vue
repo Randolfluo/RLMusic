@@ -62,7 +62,7 @@
       </n-modal>
 
       <!-- 一起听歌入口 -->
-      <div class="banner-card listen-card" @click="router.push('/listen-together')">
+      <!-- <div class="banner-card listen-card" @click="router.push('/listen-together')">
         <div class="card-bg-deco-listen"></div>
         <div class="card-content">
           <div class="text-info">
@@ -73,7 +73,7 @@
             <n-icon :component="MusicOne" size="48" />
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <div class="content-section">

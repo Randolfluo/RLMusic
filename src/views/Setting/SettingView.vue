@@ -64,6 +64,16 @@
           <n-card class="setting-card" :bordered="false">
             <div class="card-inner">
               <div class="info">
+                <div class="name">播客模式</div>
+                <div class="desc">启用播客优化的播放体验，在歌曲播放前会播放开场白</div>
+              </div>
+              <n-switch v-model:value="podcastMode" :round="false" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
                 <div class="name">智能暂停滚动</div>
                 <div class="desc">鼠标悬停时暂停歌词滚动</div>
               </div>
@@ -232,6 +242,7 @@ const {
   themeColor,
   searchHistory,
   bottomLyricShow,
+  podcastMode,
   lrcMousePause,
   playerStyle,
   playerBgBlur,

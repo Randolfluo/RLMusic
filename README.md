@@ -152,4 +152,6 @@ ai pipeline 实现
 
 两阶段 AI Pipeline（Analyze → Generate）
 
-修复重置系统
+修复重置系统数据库不完全
+
+检查setting.view的每个配置是否都能正常工作

@@ -35,7 +35,7 @@ Redis:
 QwenTTS:
   ApiKey: "" # 阿里云百炼 API Key，若为空则从环境变量中获取
   Model: "qwen3-tts-flash"  # 模型名称
-  Voice: "longxiaochun"  # 语音名称
+  Voice: "Neil"  # 语音名称
   Format: "flac"  # 音频格式
   SampleRate: 24000  # 采样率
   Volume: 50  # 音量

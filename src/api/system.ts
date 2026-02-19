@@ -22,7 +22,7 @@ export interface SystemStatus {
     api_call_count: number;
     system_uptime: number;
     go_routines: number;
-    db_size: number;
+    total_volume: number;
 }
 
 /**

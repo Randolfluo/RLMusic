@@ -42,6 +42,8 @@ export const useSettingDataStore = defineStore("settingData", {
       musicFrequencyScale: 90,
       // 鼠标移入歌词区域暂停滚动
       lrcMousePause: true,
+      // 播客模式
+      podcastMode: false,
     };
   },
   getters: {
@@ -62,6 +64,10 @@ export const useSettingDataStore = defineStore("settingData", {
     // 设置主题色
     setThemeColor(value: string) {
       this.themeColor = value;
+    },
+    // 设置播客模式
+    setPodcastMode(value: boolean) {
+      this.podcastMode = value;
     },
   },
   // 开启数据持久化

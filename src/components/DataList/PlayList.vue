@@ -23,7 +23,7 @@
         <div class="list" v-if="music.getPlaylists[0]">
           <div
             v-for="(item, index) in music.getPlaylists"
-            :key="item.id"
+            :key="index"
             :class="
               index == music.getPlaySongIndex ? 'item active' : 'item'
             "

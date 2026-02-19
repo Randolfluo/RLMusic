@@ -65,6 +65,7 @@ This document describes the database schema for the LocalMusicPlayer server, bas
 | `id` | int | Playlist ID | Primary Key, Auto Increment |
 | `title` | varchar(255) | Playlist Title | Not Null, Index |
 | `description` | text | Description | |
+| `has_intro` | bool | Has Intro | Default: false |
 | `is_public` | bool | Is Public | Index |
 | `cover_url` | varchar(500) | Cover URL | |
 | `owner_id` | int | Owner User ID | Index |

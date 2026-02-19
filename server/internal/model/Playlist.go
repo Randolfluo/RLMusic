@@ -12,6 +12,7 @@ type Playlist struct {
 
 	Title       string `gorm:"type:varchar(255);not null;index" json:"title"` // 歌单标题
 	Description string `gorm:"type:text" json:"description"`                  // 歌单描述
+	HasIntro    bool   `gorm:"default:false" json:"has_intro"`                // 是否有开场白
 	IsPublic    bool   `gorm:"index" json:"is_public"`                        // 是否公开 (GORM Default tag removed to allow false/zero-value insert)
 	CoverUrl    string `gorm:"type:varchar(500)" json:"cover_url"`            // 歌单封面
 
@@ -122,12 +123,14 @@ type SimpleSongResponse struct {
 	ArtistID int    `json:"artist_id"`
 	AlbumID  int    `json:"album_id"`
 	CoverUrl string `json:"cover_url"`
+	HasIntro bool   `json:"has_intro"` // 是否有开场白
 }
 
 type PlaylistResponse struct {
 	ID          int                  `json:"id"`
 	Title       string               `json:"title"`
 	Description string               `json:"description"`
+	HasIntro    bool                 `json:"has_intro"` // 是否有开场白
 	IsPublic    bool                 `json:"is_public"`
 	OwnerID     int                  `json:"owner_id"`
 	CoverUrl    string               `json:"cover_url"` // 新增封面字段返回
@@ -252,6 +255,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 			ArtistID:   artistId,
 			AlbumID:    albumId,
 			CoverUrl:   coverUrl,
+			HasIntro:   s.OpeningAudioFile != "",
 		})
 	}
 
@@ -259,6 +263,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		ID:          playlist.ID,
 		Title:       playlist.Title,
 		Description: playlist.Description,
+		HasIntro:    playlist.HasIntro,
 		IsPublic:    playlist.IsPublic,
 		OwnerID:     playlist.OwnerID,
 		CoverUrl:    playlist.CoverUrl,
@@ -336,6 +341,7 @@ func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*Play
 			ArtistID:   artistId,
 			AlbumID:    albumId,
 			CoverUrl:   coverUrl,
+			HasIntro:   s.OpeningAudioFile != "",
 		})
 	}
 
@@ -368,6 +374,7 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 			ID:          p.ID,
 			Title:       p.Title,
 			Description: p.Description,
+			HasIntro:    p.HasIntro,
 			IsPublic:    p.IsPublic,
 			OwnerID:     p.OwnerID,
 			CoverUrl:    coverUrl,

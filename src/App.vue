@@ -35,7 +35,7 @@
           <router-view v-slot="{ Component }">  
             <keep-alive>
               <Transition name="fade-slide" mode="out-in">
-                <component :is="Component" />
+                <component :is="Component" v-if="Component"/>
               </Transition>
             </keep-alive>
           </router-view>

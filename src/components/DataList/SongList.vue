@@ -843,8 +843,38 @@ const rowProps = (row: any, index: number) => {
         }
 
         const tracks = mapSongsToPlayer(props.songs);
+        if (!tracks || tracks.length === 0) return;
+        
+        // Calculate correct play index (handling potential filtering in mapSongsToPlayer)
+        let playIndex = index;
+        if (tracks.length !== props.songs.length) {
+            const clickedSong = props.songs[index];
+            if (clickedSong && clickedSong.id) {
+                // Find which occurrence of this song ID was clicked
+                let occurrence = 0;
+                for (let i = 0; i < index; i++) {
+                    if (props.songs[i] && props.songs[i].id === clickedSong.id) occurrence++;
+                }
+                
+                // Find corresponding index in filtered tracks
+                let matchCount = 0;
+                for (let i = 0; i < tracks.length; i++) {
+                    if (tracks[i].id === clickedSong.id) {
+                        if (matchCount === occurrence) {
+                            playIndex = i;
+                            break;
+                        }
+                        matchCount++;
+                    }
+                }
+                if (playIndex === -1) playIndex = tracks.findIndex(t => t.id === clickedSong.id);
+            }
+        }
+        
+        if (playIndex === -1) playIndex = 0;
+
         music.setPlaylists(tracks);
-        music.setPlaySongIndex(index);
+        music.setPlaySongIndex(playIndex);
         music.setPlayState(true);
     },
     onContextmenu: (e: MouseEvent) => handleContextMenu(e, row)
@@ -853,18 +883,22 @@ const rowProps = (row: any, index: number) => {
 
 // 映射歌曲到播放器格式
 const mapSongsToPlayer = (list: any[]) => {
-    return list.map(song => ({
-        ...song,
-        name: song.title,
-        // Ensure artist format is consistent for player
-        artist: song.artists || [{ name: song.artist_name, id: song.artist_id }],
-        album: song.album || { 
-            name: song.album_name || song.album_title, // 优先使用 album_name
-            id: song.album_id, 
-            picUrl: song.cover_url || `/api/song/cover/${song.id}` 
-        },
-        picUrl: song.cover_url || `/api/song/cover/${song.id}`
-    }));
+    if (!list || !Array.isArray(list)) return [];
+    return list.map(song => {
+        if (!song) return null;
+        return {
+            ...song,
+            name: song.title || 'Unknown Song',
+            // Ensure artist format is consistent for player
+            artist: song.artists || (song.artist_name ? [{ name: song.artist_name, id: song.artist_id || 0 }] : []),
+            album: song.album || { 
+                name: song.album_name || song.album_title || 'Unknown Album', // 优先使用 album_name
+                id: song.album_id || 0, 
+                picUrl: song.cover_url || (song.id ? `/api/song/cover/${song.id}` : '')
+            },
+            picUrl: song.cover_url || (song.id ? `/api/song/cover/${song.id}` : '')
+        };
+    }).filter(item => item !== null && item.id);
 };
 
 // 当前播放的歌曲

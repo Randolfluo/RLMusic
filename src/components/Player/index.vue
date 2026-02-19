@@ -132,16 +132,18 @@
             "
           />
         </div>
-        <div class="add-playlist">
+
+        <!-- 播客模式 -->
+        <div class="podcast">
           <n-icon
-            class="add-icon"
-            size="30"
-            :component="PlaylistAddRound"
-            @click.stop="
-              addPlayListRef.openAddToPlaylist(music.getPlaySongData.id)
-            "
+            size="22"
+            :component="Fm"
+            :class="{ active: setting.podcastMode }"
+            @click.stop="togglePodcastMode"
+            :title="setting.podcastMode ? '关闭播客模式' : '开启播客模式'"
           />
         </div>
+
         <div class="pattern">
           <n-icon
             :component="
@@ -222,7 +224,7 @@
       @pause="songPause"
       @canplay="songCanplay"
       @error="songError"
-      @ended="music.setPlaySongIndex('next')"
+      @ended="handleSongEnded"
       :src="music.getPlaySongLink"
     ></audio>
   </n-card>
@@ -231,6 +233,7 @@
 
 <script setup>
 import { checkMusicCanUse, getMusicUrl, getMusicLyric } from "@/api/song";
+import { getSongOpeningAudioUrl } from "@/api/ai";
 import { updateListeningDuration } from "@/api/user";
 import { NIcon } from "naive-ui";
 import {
@@ -251,7 +254,7 @@ import {
   PlaylistAddRound,
   SlowMotionVideoRound,
 } from "@vicons/material";
-import { PlayCycle, PlayOnce, ShuffleOne } from "@icon-park/vue-next";
+import { PlayCycle, PlayOnce, ShuffleOne, Fm } from "@icon-park/vue-next";
 import { storeToRefs } from "pinia";
 import { musicStore, settingStore, userStore } from "@/store";
 import { useRouter } from "vue-router";
@@ -270,20 +273,33 @@ const addPlayListRef = ref(null);
 
 // 音频标签
 const player = ref(null);
+const isPlayingIntro = ref(false);
 
 // 获取歌曲播放数据
 const getPlaySongData = (id, level = setting.songLevel) => {
   checkMusicCanUse(id).then((res) => {
     if (res.success) {
       console.log("音乐可用");
-      // 获取音乐地址
-      getMusicUrl(id, level).then((res) => {
-        if (res.data[0].fee == 1) {
-          $message.warning("当前歌曲为 VIP 专享，仅可试听");
-        }
-        const songUrl = res.data[0].url;
-        music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
-      });
+      
+      const currentSong = music.getPlaySongData;
+      // 播客模式且有开场白
+      if (setting.podcastMode && (currentSong?.has_intro || currentSong?.opening_file)) {
+        console.log("播放开场白");
+        isPlayingIntro.value = true;
+        const introUrl = getSongOpeningAudioUrl(id);
+        music.setPlaySongLink(introUrl);
+      } else {
+        isPlayingIntro.value = false;
+        // 获取音乐地址
+        getMusicUrl(id, level).then((res) => {
+          if (res.data[0].fee == 1) {
+            $message.warning("当前歌曲为 VIP 专享，仅可试听");
+          }
+          const songUrl = res.data[0].url;
+          music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
+        });
+      }
+
       // 获取歌词
       getMusicLyric(id).then((res) => {
         music.setPlaySongLyric(res);
@@ -296,6 +312,33 @@ const getPlaySongData = (id, level = setting.songLevel) => {
       }
     }
   });
+};
+
+// 歌曲播放结束
+const handleSongEnded = () => {
+  if (isPlayingIntro.value) {
+    console.log("开场白结束，切换到正文");
+    isPlayingIntro.value = false;
+    const id = music.getPlaySongData.id;
+    const level = setting.songLevel;
+    
+    // 延迟1秒播放正文
+    setTimeout(() => {
+      getMusicUrl(id, level).then((res) => {
+        if (res.data[0].fee == 1) {
+          $message.warning("当前歌曲为 VIP 专享，仅可试听");
+        }
+        const songUrl = res.data[0].url;
+        music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
+        music.setPlayState(true);
+      });
+    }, 1000);
+  } else {
+    // 延迟1秒切换下一首
+    setTimeout(() => {
+      music.setPlaySongIndex("next");
+    }, 1000);
+  }
 };
 
 // 歌曲进度更新事件
@@ -461,6 +504,16 @@ const volumeMute = () => {
     persistData.value.playVolume = 0;
   } else {
     persistData.value.playVolume = persistData.value.playVolumeMute;
+  }
+};
+
+// 切换播客模式
+const togglePodcastMode = () => {
+  setting.setPodcastMode(!setting.podcastMode);
+  if (setting.podcastMode) {
+    $message.success("已开启播客模式");
+  } else {
+    $message.info("已关闭播客模式");
   }
 };
 
@@ -726,7 +779,8 @@ watch(
         .volume,
         .like,
         .add-playlist,
-        .pattern {
+        .pattern,
+        .podcast {
           display: none !important;
         }
       }
@@ -756,6 +810,20 @@ watch(
         .n-icon {
           padding: 7px;
           margin-top: 1px;
+        }
+      }
+      .podcast {
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .n-icon {
+          font-size: 22px;
+          padding: 8px;
+          &.active {
+            background-color: $mainColor;
+            color: var(--n-color-embedded);
+          }
         }
       }
       .add-playlist {

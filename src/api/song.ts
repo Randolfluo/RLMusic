@@ -167,33 +167,3 @@ export const getAlbumDetail = (id: number | string) => {
         url: `/song/album/${id}`
     });
 };
-
-/**
- * 批量生成公共歌单描述 (Admin)
- */
-export const generatePublicPlaylistDescriptions = () => {
-    return request({
-        method: "POST",
-        url: "/song/playlist/generate-public-descriptions"
-    });
-};
-
-/**
- * 批量生成艺术家描述 (Admin)
- */
-export const generateArtistDescriptions = () => {
-    return request({
-        method: "POST",
-        url: "/song/artist/generate-descriptions"
-    });
-};
-
-/**
- * 批量生成专辑描述 (Admin)
- */
-export const generateAlbumDescriptions = () => {
-    return request({
-        method: "POST",
-        url: "/song/album/generate-descriptions"
-    });
-};

@@ -24,8 +24,11 @@ Authorization: Bearer {{login.response.body.data.token}}
 ### 11. 播放歌曲 (无需登录，替换 ID)
 GET {{baseUrl}}/song/stream/1
 
+### 11-0. 播放歌曲开场白 (无需登录，替换 ID)
+GET {{baseUrl}}/song/opening/1
+
 ### 11-1. 获取歌曲详情
-GET {{baseUrl}}/song/detail/1023
+GET {{baseUrl}}/song/detail/1
 
 ### 11-2. 获取歌曲封面
 GET {{baseUrl}}/song/cover/1

@@ -4,7 +4,13 @@
       <h2>公共歌单</h2>
     </div>
 
-    <PlaylistGrid :loading="loading" :playlists="playlists" empty-text="暂无公共歌单" />
+    <PlaylistGrid
+      :loading="loading"
+      :playlists="playlists"
+      empty-text="暂无公共歌单"
+      :enable-ai-intro="userStore.userData.userGroup === 'admin'"
+      @generate-intro="handleGenerateIntro"
+    />
     
     <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
       <Pagination
@@ -22,12 +28,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { getPublicPlaylists } from "@/api/playlist";
+import { generatePlaylistIntros } from "@/api/ai";
 import { ResultCode } from "@/utils/request";
-import { useMessage } from "naive-ui";
+import { useMessage, useDialog } from "naive-ui";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import { useUserDataStore } from "@/store/userData";
 
 const message = useMessage();
+const dialog = useDialog();
+const userStore = useUserDataStore();
 const loading = ref(false);
 const playlists = ref<any[]>([]);
 const page = ref(1);
@@ -68,6 +78,28 @@ const onPageSizeChange = (val: number) => {
   limit.value = val;
   page.value = 1;
   getPlaylists();
+};
+
+const handleGenerateIntro = (playlist: any) => {
+  dialog.info({
+    title: "生成开场白",
+    content: `确定要为歌单 "${playlist.title}" 生成开场白吗？`,
+    positiveText: "生成",
+    negativeText: "取消",
+    onPositiveClick: () => {
+      generatePlaylistIntros(playlist.id)
+        .then((res) => {
+          if (res.code === ResultCode.SUCCESS) {
+            message.success("已开始生成开场白，请稍后查看");
+          } else {
+            message.error(res.message || "生成失败");
+          }
+        })
+        .catch(() => {
+          message.error("请求失败");
+        });
+    },
+  });
 };
 </script>
 
