@@ -26,7 +26,7 @@
             </template>
             添加到
           </n-button>
-          <n-button @click="handleBatchDownload">
+          <n-button v-if="!isMobile" @click="handleBatchDownload">
             <template #icon>
               <n-icon :component="Download" />
             </template>
@@ -120,10 +120,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, nextTick } from "vue";
+import { ref, computed, h, nextTick, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage, useDialog } from "naive-ui";
-import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, PauseOne, Download, FolderPlus, Copy, CheckOne, More, CloudStorage, Delete, VolumeNotice } from "@icon-park/vue-next";
+import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, PauseOne, Download, FolderPlus, Copy, CheckOne, More, Delete, VolumeNotice } from "@icon-park/vue-next";
 import { musicStore, settingStore } from "@/store";
 import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
 import { removeSongsFromPlaylist } from "@/api/playlist";
@@ -177,6 +177,19 @@ const dropdownY = ref(0);
 const currentSong = ref<any>(null);
 const isMultiSelectMode = ref(false);
 const selectedRowKeys = ref<Array<string | number>>([]);
+const isMobile = ref(window.innerWidth < 640);
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 640;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
 
 // 添加到歌单模态框状态
 const showAddToPlaylistModal = ref(false);
@@ -223,7 +236,14 @@ const handleBatchAddToPlaylist = () => {
 };
 
 const handleBatchDownload = () => {
-    message.info(`批量下载: ${selectedRowKeys.value.length} 首 (功能开发中)`);
+    if (selectedRowKeys.value.length === 0) return;
+    const selectedSongs = props.songs.filter(s => selectedRowKeys.value.includes(s.id));
+    selectedSongs.forEach((song, index) => {
+        setTimeout(() => {
+            handleDownload(song);
+        }, index * 500);
+    });
+    toggleMultiSelect();
 };
 
 const handleBatchDelete = () => {
@@ -262,10 +282,7 @@ const renderIcon = (icon: any, color?: string) => {
 // 渲染操作按钮组
 const renderActionButtons = (row: any) => {
     const isLiked = music.getSongIsLike(row.id);
-    return h('div', { 
-        class: 'action-buttons',
-        onClick: (e: Event) => e.stopPropagation() // 防止触发行动点击
-    }, [
+    const buttons = [
         h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
             trigger: () => h(NButton, {
                 quaternary: true,
@@ -280,36 +297,43 @@ const renderActionButtons = (row: any) => {
                 icon: () => h(NIcon, { component: Like, color: isLiked ? '#d03050' : undefined }) 
             }),
             default: () => isLiked ? '取消喜欢' : '喜欢'
-        }),
-        h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
-            trigger: () => h(NButton, {
-                quaternary: true,
-                circle: true,
-                size: 'small',
-                onClick: (e: Event) => {
-                    e.stopPropagation();
-                    message.info('功能开发中');
-                }
-            }, { 
-                icon: () => h(NIcon, { component: Download }) 
-            }),
-            default: () => '下载'
-        }),
-        h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
-            trigger: () => h(NButton, {
-                quaternary: true,
-                circle: true,
-                size: 'small',
-                onClick: (e: Event) => {
-                    e.stopPropagation();
-                    handleContextMenu(e as MouseEvent, row);
-                }
-            }, { 
-                icon: () => h(NIcon, { component: More }) 
-            }),
-            default: () => '更多'
         })
-    ]);
+    ];
+
+    // 桌面端显示下载按钮
+    if (!isMobile.value) {
+        buttons.push(
+            h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
+                trigger: () => h(NButton, {
+                    quaternary: true,
+                    circle: true,
+                    size: 'small',
+                    onClick: (e: Event) => {
+                        e.stopPropagation();
+                        handleDownload(row);
+                    }
+                }, { 
+                    icon: () => h(NIcon, { component: Download }) 
+                }),
+                default: () => '下载'
+            })
+        );
+    }
+
+    return h('div', { 
+        class: 'action-buttons',
+        onClick: (e: Event) => e.stopPropagation() // 防止触发行动点击
+    }, buttons);
+};
+
+const handleDownload = (row: any) => {
+    const url = `/api/song/stream/${row.id}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${row.title || 'audio'}.${row.format || 'mp3'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 };
 
 // 渲染菜单头部 (歌曲信息)
@@ -375,16 +399,16 @@ const menuOptions = computed(() => {
             key: 'like',
             icon: renderIcon(Like, isLiked ? '#d03050' : undefined)
         },
+        ...(isMobile.value ? [] : [{
+            label: '下载',
+            key: 'download',
+            icon: renderIcon(Download)
+        }]),
         {
             label: '更多操作',
             key: 'more',
             icon: renderIcon(More),
             children: [
-                {
-                    label: '下载',
-                    key: 'download',
-                    icon: renderIcon(Download)
-                },
                 {
                     label: '复制链接',
                     key: 'copy-link',
@@ -460,17 +484,18 @@ const handleSelect = (key: string) => {
             const isLiked = music.getSongIsLike(song.id);
             music.changeLikeList(song.id, !isLiked);
             break;
+        case 'download':
+            handleDownload(song);
+            break;
         case 'add-to-playlist':
             openAddToPlaylist([song.id]);
             break;
-        case 'download':
-            message.info('开始下载 (功能开发中)');
-            break;
         case 'copy-link':
-             const link = `${window.location.origin}/song/${song.id}`;
-             navigator.clipboard.writeText(link).then(() => {
-                 message.success('链接已复制');
-             });
+            const routeData = router.resolve({ name: 'song', params: { id: song.id } });
+            const link = `${window.location.origin}${routeData.href}`;
+            navigator.clipboard.writeText(link).then(() => {
+                message.success('链接已复制');
+            });
             break;
         case 'delete-from-playlist':
             if (!props.playlistId || !props.isOwner) {
@@ -551,7 +576,7 @@ const columns = computed(() => {
               },
               onClick: (e: Event) => {
                  e.stopPropagation();
-                 router.push(`/song/${row.id}`);
+                 router.push({ name: 'song', params: { id: row.id } });
               },
               class: 'song-title-link'
             }, row.title),
@@ -568,9 +593,39 @@ const columns = computed(() => {
         let artistName = row.artist_name;
         let artistId = row.artist_id;
 
-        if (!artistName && row.artists && row.artists.length > 0) {
-             artistName = row.artists.map((a: any) => a.name).join(' / ');
-             artistId = row.artists[0]?.id;
+        if (row.artists && row.artists.length > 0) {
+            return h('div', {
+                class: 'artist-links-container',
+                style: { 
+                    whiteSpace: 'nowrap', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%'
+                }
+            }, row.artists.map((artist: any, index: number) => {
+                const nodes = [];
+                nodes.push(h('span', {
+                    class: 'artist-link',
+                    style: { cursor: 'pointer', transition: 'color 0.3s', fontSize: '13px', opacity: 0.75 },
+                    onClick: (e: Event) => {
+                        e.stopPropagation();
+                        router.push({ name: 'artist', query: { id: artist.id } });
+                    },
+                    onMouseover: (e: Event) => {
+                        (e.target as HTMLElement).style.color = setting.themeColor;
+                        (e.target as HTMLElement).style.opacity = '1';
+                    },
+                    onMouseout: (e: Event) => {
+                        (e.target as HTMLElement).style.color = 'inherit';
+                        (e.target as HTMLElement).style.opacity = '0.75';
+                    }
+                }, artist.name));
+                
+                if (index < row.artists.length - 1) {
+                    nodes.push(h('span', { style: { margin: '0 4px', opacity: 0.5, fontSize: '12px' } }, '/'));
+                }
+                return nodes;
+            }).flat());
         }
 
         return h('span', {
@@ -696,11 +751,17 @@ const columns = computed(() => {
               fontWeight: isCurrent ? 'bold' : '600',
               color: isCurrent ? setting.themeColor : 'var(--n-text-color)',
               marginRight: '8px',
-              lineHeight: '1.2'
+              lineHeight: '1.2',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+              display: 'inline-block'
           },
           onClick: (e: Event) => {
              e.stopPropagation();
-             router.push(`/song/${row.id}`);
+             // 使用 name 跳转更稳健
+             router.push({ name: 'song', params: { id: row.id } });
           },
           class: 'song-title-link'
         }, row.title);
@@ -708,63 +769,90 @@ const columns = computed(() => {
         // 歌手
         let artistName = row.artist_name;
         let artistId = row.artist_id;
-        if (!artistName && row.artists && row.artists.length > 0) {
-             artistName = row.artists.map((a: any) => a.name).join(' / ');
-             artistId = row.artists[0]?.id;
-        }
+        
+        // Render artist node(s)
+        let artistNode;
 
-        const artistNode = h('span', {
-            class: 'artist-link',
-            style: { 
-                cursor: 'pointer', 
-                transition: 'color 0.3s', 
-                fontSize: '14px', 
-                opacity: 0.6,
-                fontWeight: '400'
-            },
-            onClick: (e: Event) => {
-                e.stopPropagation();
-                if (artistId) router.push({ name: 'artist', query: { id: artistId } });
-            },
-            onMouseover: (e: Event) => {
-                (e.target as HTMLElement).style.color = setting.themeColor;
-                (e.target as HTMLElement).style.opacity = '1';
-            },
-            onMouseout: (e: Event) => {
-                (e.target as HTMLElement).style.color = 'inherit';
-                (e.target as HTMLElement).style.opacity = '0.6';
-            }
-        }, artistName || "Unknown");
+        if (row.artists && row.artists.length > 0) {
+             // Multiple artists
+             artistNode = h('div', {
+                 style: {
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    display: 'inline-block',
+                    fontSize: '14px',
+                    fontWeight: '400',
+                    color: 'var(--n-text-color)'
+                 }
+             }, row.artists.map((artist: any, index: number) => {
+                const nodes = [];
+                nodes.push(h('span', {
+                    class: 'artist-link',
+                    style: { cursor: 'pointer', transition: 'color 0.3s', opacity: 0.6 },
+                    onClick: (e: Event) => {
+                        e.stopPropagation();
+                        router.push({ name: 'artist', query: { id: artist.id } });
+                    },
+                    onMouseover: (e: Event) => {
+                        (e.target as HTMLElement).style.color = setting.themeColor;
+                        (e.target as HTMLElement).style.opacity = '1';
+                    },
+                    onMouseout: (e: Event) => {
+                        (e.target as HTMLElement).style.color = 'inherit';
+                        (e.target as HTMLElement).style.opacity = '0.6';
+                    }
+                }, artist.name));
+                
+                if (index < row.artists.length - 1) {
+                    nodes.push(h('span', { style: { margin: '0 4px', opacity: 0.4 } }, '/'));
+                }
+                return nodes;
+            }).flat());
+        } else {
+             // Single/Unknown artist
+             if (!artistName && row.artists && row.artists.length > 0) {
+                 // Fallback if logic above failed (should not happen)
+                 artistName = row.artists.map((a: any) => a.name).join(' / ');
+                 artistId = row.artists[0]?.id;
+             }
+             
+             artistNode = h('span', {
+                class: 'artist-link',
+                style: { 
+                    cursor: 'pointer', 
+                    transition: 'color 0.3s', 
+                    fontSize: '14px', 
+                    opacity: 0.6,
+                    fontWeight: '400',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    display: 'inline-block'
+                },
+                onClick: (e: Event) => {
+                    e.stopPropagation();
+                    if (artistId) router.push({ name: 'artist', query: { id: artistId } });
+                },
+                onMouseover: (e: Event) => {
+                    (e.target as HTMLElement).style.color = setting.themeColor;
+                    (e.target as HTMLElement).style.opacity = '1';
+                },
+                onMouseout: (e: Event) => {
+                    (e.target as HTMLElement).style.color = 'inherit';
+                    (e.target as HTMLElement).style.opacity = '0.6';
+                }
+            }, artistName || "Unknown");
+        }
 
         // 分隔符
         const dividerNode = h('span', {
             style: { margin: '0 4px', opacity: 0.4, fontSize: '12px' }
         }, '-');
 
-        // 音质/格式标签 (模拟)
-        const tagNode = h('span', {
-            style: {
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px',
-                color: '#d6a354', // 金色
-                border: '1px solid rgba(214, 163, 84, 0.4)',
-                borderRadius: '4px',
-                padding: '0 3px',
-                height: '16px',
-                marginRight: '6px',
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(214, 163, 84, 0.05)'
-            }
-        }, 'SQ');
-        
-        // 组合：第一行 [标题 - 歌手]
-        const firstLine = h('div', { 
-            style: { display: 'flex', alignItems: 'center', marginBottom: '6px' } 
-        }, [titleNode, dividerNode, artistNode]);
-
-        // 组合：第二行 [标签 专辑(可选)] 
+        // 专辑
         const albumName = row.album_name || row.album_title || row.album?.name || row.album?.title || "Unknown Album";
         const albumId = row.album_id || row.album?.id;
         
@@ -774,7 +862,12 @@ const columns = computed(() => {
                fontSize: '12px', 
                opacity: 0.5,
                cursor: 'pointer',
-               transition: 'color 0.3s'
+               transition: 'color 0.3s',
+               whiteSpace: 'nowrap',
+               overflow: 'hidden',
+               textOverflow: 'ellipsis',
+               maxWidth: '100%',
+               display: 'inline-block'
            },
            onClick: (e: Event) => {
                e.stopPropagation();
@@ -790,9 +883,32 @@ const columns = computed(() => {
            }
         }, albumName);
 
+        let firstLineChildren = [];
+        let secondLineChildren = [];
+
+        if (isMobile.value) {
+            // 移动端：
+            // 第一行：标题
+            // 第二行：歌手 (不显示专辑)
+            firstLineChildren = [titleNode];
+            secondLineChildren = [artistNode];
+        } else {
+            // 桌面端：
+            // 第一行：标题 - 歌手
+            // 第二行：专辑 (移除 SQ 标签)
+            firstLineChildren = [titleNode, dividerNode, artistNode];
+            secondLineChildren = [albumNode];
+        }
+        
+        // 组合：第一行
+        const firstLine = h('div', { 
+            style: { display: 'flex', alignItems: 'center', marginBottom: '6px', overflow: 'hidden' } 
+        }, firstLineChildren);
+
+        // 组合：第二行 
         const secondLine = h('div', {
-            style: { display: 'flex', alignItems: 'center' }
-        }, [tagNode, albumNode]);
+            style: { display: 'flex', alignItems: 'center', overflow: 'hidden' }
+        }, secondLineChildren);
 
         // 文本容器
         const textContainer = h('div', {
@@ -829,7 +945,7 @@ const formatDuration = (seconds: number) => {
 const rowProps = (row: any, index: number) => {
   return {
     style: "cursor: pointer;",
-    onClick: (e: Event) => {
+    onClick: () => {
         // 多选模式下点击行不触发播放，而是切换选中状态（NDataTable 默认行为可能需要自行处理，或者仅禁止播放）
         if (isMultiSelectMode.value) {
            const id = row.id;

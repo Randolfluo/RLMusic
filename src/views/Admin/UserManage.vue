@@ -25,7 +25,7 @@
         :data="userList"
         :loading="loading"
         :pagination="pagination"
-        :row-key="row => row.id"
+        :row-key="(row: any) => row.id"
       />
     </div>
   </div>

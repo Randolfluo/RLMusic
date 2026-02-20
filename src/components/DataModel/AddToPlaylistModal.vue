@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, h } from 'vue';
+import { ref, watch } from 'vue';
 import { useMessage, NModal, NIcon, NDivider, NSpin, NImage } from 'naive-ui';
 import { Plus, Music } from '@icon-park/vue-next';
 import { getUserPrivatePlaylists, addSongsToPlaylist } from '@/api/playlist';
@@ -126,7 +126,7 @@ const openCreateModal = () => {
   showCreateModal.value = true;
 };
 
-const handlePlaylistCreated = (newPlaylist: any) => {
+const handlePlaylistCreated = (_newPlaylist: any) => {
   // Refresh list and optionally add to it immediately?
   // For now, just refresh list
   fetchPlaylists();

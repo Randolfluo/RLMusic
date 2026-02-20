@@ -308,14 +308,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch, defineAsyncComponent, computed } from 'vue';
-import { NInput, NButton, NAvatar, NModal, NEmpty, NSpace, NSlider, NIcon, NTabs, NTabPane, NTag, NTooltip, NImage, useThemeVars } from 'naive-ui';
+import { NInput, NButton, NAvatar, NModal, NEmpty, NSpace, NSlider, NIcon, NTag, NTooltip, NImage, useThemeVars } from 'naive-ui';
 import { 
   PlayCircleFilled, 
   PauseCircleFilled, 
   SkipPreviousRound, 
   SkipNextRound,
   MusicNoteFilled,
-  FavoriteBorderRound,
   PlaylistPlayRound,
   GTranslateFilled,
   FullscreenRound,
@@ -326,7 +325,7 @@ import {
   SlowMotionVideoRound,
   ExploreRound,
 } from "@vicons/material";
-import { chatStore, musicStore, settingStore, userStore } from '@/store';
+import { chatStore, musicStore, settingStore } from '@/store';
 import { storeToRefs } from 'pinia';
 import { getSongCover } from "@/api/song";
 import { timelineEngine } from "@/core/realtime/timeline";
@@ -337,9 +336,9 @@ const WebSocketDebug = defineAsyncComponent(() => import('@/components/WebSocket
 const chat = chatStore();
 const music = musicStore();
 const setting = settingStore();
-const user = userStore();
+// const user = userStore();
 const themeVars = useThemeVars();
-const { persistData } = storeToRefs(music);
+// const { persistData } = storeToRefs(music);
 
 const { 
   availableRooms, 
@@ -356,7 +355,7 @@ const newRoomName = ref('');
 const inputValue = ref('');
 const messagesRef = ref<HTMLElement | null>(null);
 const showLyric = ref(false);
-const lyricViewRef = ref<HTMLElement | null>(null);
+// const lyricViewRef = ref<HTMLElement | null>(null);
 
 // 拖拽调整大小逻辑
 const membersWidth = ref(240);

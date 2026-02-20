@@ -1,3 +1,148 @@
+<script setup>
+import { storeToRefs } from "pinia";
+import { settingStore, userStore } from "@/store";
+import { Config, MusicOne, Effects } from "@icon-park/vue-next";
+import { changePassword } from "@/api/user";
+
+const message = useMessage();
+const showPasswordModal = ref(false);
+const passwordLoading = ref(false);
+const passwordFormRef = ref(null);
+const passwordForm = reactive({
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+
+const validateConfirmPassword = (rule, value) => {
+  if (value !== passwordForm.newPassword) {
+    return new Error("两次输入的密码不一致");
+  }
+  return true;
+};
+
+const passwordRules = {
+  oldPassword: [{ required: true, message: "请输入旧密码", trigger: "blur" }],
+  newPassword: [
+    { required: true, message: "请输入新密码", trigger: "blur" },
+    { min: 4, max: 20, message: "密码长度在 4 到 20 个字符", trigger: "blur" },
+  ],
+  confirmPassword: [
+    { required: true, message: "请再次输入新密码", trigger: "blur" },
+    { validator: validateConfirmPassword, trigger: "blur" },
+  ],
+};
+
+const handlePasswordSubmit = (e) => {
+  e.preventDefault();
+  passwordFormRef.value?.validate((errors) => {
+    if (!errors) {
+      passwordLoading.value = true;
+      changePassword({
+        old_password: passwordForm.oldPassword,
+        new_password: passwordForm.newPassword,
+      })
+        .then(() => {
+          message.success("密码修改成功");
+          showPasswordModal.value = false;
+          // 重置表单
+          passwordForm.oldPassword = "";
+          passwordForm.newPassword = "";
+          passwordForm.confirmPassword = "";
+        })
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
+          passwordLoading.value = false;
+        });
+    }
+  });
+};
+
+const setting = settingStore();
+const user = userStore();
+const {
+  themeColor,
+  searchHistory,
+  bottomLyricShow,
+  podcastMode,
+  lrcMousePause,
+  playerStyle,
+  playerBgBlur,
+  lyricsFontSize,
+  lyricsBlock,
+  lyricsBlur,
+  musicFrequency,
+  musicFrequencyScale,
+  particleEffect,
+  particleLimit,
+  desktopLyricShow,
+  desktopLyricFontSize,
+  desktopLyricLock,
+  desktopLyricFollowTheme,
+  desktopLyricShowTranslation,
+} = storeToRefs(setting);
+
+// 桌面歌词设置
+const handleDesktopLyricToggle = (val) => {
+  if (window.ipcRenderer) {
+    if (val) {
+      window.ipcRenderer.send("open-desktop-lyric");
+    } else {
+      window.ipcRenderer.send("close-desktop-lyric");
+    }
+  }
+};
+
+const handleDesktopLyricLock = (val) => {
+  if (window.ipcRenderer) {
+    window.ipcRenderer.send("lock-desktop-lyric", val);
+  }
+};
+
+const handleDesktopLyricSettings = () => {
+  if (window.ipcRenderer) {
+    window.ipcRenderer.send("update-desktop-lyric-settings", {
+      fontSize: desktopLyricFontSize.value,
+      followTheme: desktopLyricFollowTheme.value,
+      themeColor: themeColor.value,
+      showTranslation: desktopLyricShowTranslation.value,
+    });
+  }
+};
+
+watch(themeColor, () => {
+  if (desktopLyricFollowTheme.value) {
+    handleDesktopLyricSettings();
+  }
+});
+
+// 歌词滚动位置
+const lyricsBlockOptions = [
+  {
+    label: "靠近顶部",
+    value: "start",
+  },
+  {
+    label: "水平居中",
+    value: "center",
+  },
+];
+
+// 播放器样式
+const playerStyleOptions = [
+  {
+    label: "封面模式",
+    value: "cover",
+  },
+  {
+    label: "唱片模式",
+    value: "record",
+  },
+];
+</script>
+
 <template>
   <div class="setting-view">
     <div class="setting-header">
@@ -51,6 +196,18 @@
                 <div class="desc">播放时在底部显示歌词</div>
               </div>
               <n-switch v-model:value="bottomLyricShow" :round="false" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">账号安全</div>
+                <div class="desc">修改您的登录密码</div>
+              </div>
+              <n-button secondary type="primary" size="small" @click="showPasswordModal = true">
+                修改密码
+              </n-button>
             </div>
           </n-card>
         </div>
@@ -226,59 +383,117 @@
           </transition>
         </div>
       </div>
+
+      <div class="setting-section">
+        <h2 class="section-title">
+          <n-icon :component="Config" /> 桌面歌词
+        </h2>
+        <div class="setting-grid">
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">开启桌面歌词</div>
+                <div class="desc">在屏幕上显示悬浮歌词</div>
+              </div>
+              <n-switch v-model:value="desktopLyricShow" :round="false" @update:value="handleDesktopLyricToggle" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">锁定歌词窗口</div>
+                <div class="desc">锁定后无法拖动和调整大小</div>
+              </div>
+              <n-switch v-model:value="desktopLyricLock" :round="false" @update:value="handleDesktopLyricLock" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">歌词跟随主题</div>
+                <div class="desc">歌词颜色跟随应用主题色</div>
+              </div>
+              <n-switch v-model:value="desktopLyricFollowTheme" :round="false" @update:value="handleDesktopLyricSettings" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">显示双语歌词</div>
+                <div class="desc">在桌面歌词中显示翻译</div>
+              </div>
+              <n-switch v-model:value="desktopLyricShowTranslation" :round="false" @update:value="handleDesktopLyricSettings" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card full-width" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">歌词字体大小</div>
+                <div class="desc">调整桌面歌词的显示大小: {{ desktopLyricFontSize }}rem</div>
+              </div>
+              <n-slider
+                class="control slider"
+                v-model:value="desktopLyricFontSize"
+                :step="0.1"
+                :min="1.0"
+                :max="5.0"
+                :tooltip="false"
+                @update:value="handleDesktopLyricSettings"
+              />
+            </div>
+          </n-card>
+        </div>
+      </div>
     </div>
+
+    <n-modal v-model:show="showPasswordModal" preset="card" title="修改密码" style="width: 400px">
+      <n-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-placement="left"
+        label-width="80"
+      >
+        <n-form-item label="旧密码" path="oldPassword">
+          <n-input
+            v-model:value="passwordForm.oldPassword"
+            type="password"
+            placeholder="请输入旧密码"
+            show-password-on="click"
+          />
+        </n-form-item>
+        <n-form-item label="新密码" path="newPassword">
+          <n-input
+            v-model:value="passwordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码"
+            show-password-on="click"
+          />
+        </n-form-item>
+        <n-form-item label="确认密码" path="confirmPassword">
+          <n-input
+            v-model:value="passwordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password-on="click"
+          />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 12px">
+          <n-button @click="showPasswordModal = false">取消</n-button>
+          <n-button type="primary" :loading="passwordLoading" @click="handlePasswordSubmit">
+            确认修改
+          </n-button>
+        </div>
+      </template>
+    </n-modal>
   </div>
 </template>
-
-<script setup>
-import { storeToRefs } from "pinia";
-import { settingStore, userStore } from "@/store";
-import { Config, MusicOne, Effects } from "@icon-park/vue-next";
-import { NIcon } from "naive-ui";
-
-const setting = settingStore();
-const user = userStore();
-const {
-  themeColor,
-  searchHistory,
-  bottomLyricShow,
-  podcastMode,
-  lrcMousePause,
-  playerStyle,
-  playerBgBlur,
-  lyricsFontSize,
-  lyricsBlock,
-  lyricsBlur,
-  musicFrequency,
-  musicFrequencyScale,
-  particleEffect,
-  particleLimit,
-} = storeToRefs(setting);
-
-// 歌词滚动位置
-const lyricsBlockOptions = [
-  {
-    label: "靠近顶部",
-    value: "start",
-  },
-  {
-    label: "水平居中",
-    value: "center",
-  },
-];
-
-// 播放器样式
-const playerStyleOptions = [
-  {
-    label: "封面模式",
-    value: "cover",
-  },
-  {
-    label: "唱片模式",
-    value: "record",
-  },
-];
-</script>
 
 <style lang="scss" scoped>
 .setting-view {
@@ -303,6 +518,7 @@ const playerStyleOptions = [
     margin: 0 0 12px 0;
     background: linear-gradient(120deg, var(--n-color-primary) 0%, #a78bfa 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -1px;
   }
@@ -446,6 +662,7 @@ const playerStyleOptions = [
         color: var(--n-color-primary);
         background: linear-gradient(120deg, var(--n-color-primary) 0%, #a78bfa 100%);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         transform: scale(1.05);
       }

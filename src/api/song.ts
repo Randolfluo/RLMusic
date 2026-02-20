@@ -5,7 +5,7 @@ import lyricFormat from "@/utils/lyricFormat.js";
  * 检查音乐是否可用
  * @param {Number} id - 歌曲 id
  */
-export function checkMusicCanUse(id: number | string) {
+export function checkMusicCanUse(_id: number | string) {
   return new Promise((resolve) => {
     resolve({ success: true, message: "ok" });
   });
@@ -16,7 +16,7 @@ export function checkMusicCanUse(id: number | string) {
  * @param {Number} id - 歌曲 id
  * @param {String} level - 音质
  */
-export function getMusicUrl(id: number | string, level?: string) {
+export function getMusicUrl(id: number | string, _level?: string) {
   return new Promise((resolve) => {
     resolve({
       data: [

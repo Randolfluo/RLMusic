@@ -195,6 +195,41 @@ const playAll = () => {
     }
   }
 
+  @media (max-width: 768px) {
+    padding: 16px;
+    
+    .header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      
+      .cover {
+        margin-right: 0;
+        margin-bottom: 16px;
+        width: 160px;
+        height: 160px;
+      }
+      
+      .info {
+        align-items: center;
+        
+        .tag {
+          align-self: center;
+        }
+        
+        .title {
+          font-size: 20px;
+        }
+        
+        .actions {
+          display: flex;
+          justify-content: center;
+          margin-top: 16px;
+        }
+      }
+    }
+  }
+
   .songs-list {
     margin-top: 20px;
   }

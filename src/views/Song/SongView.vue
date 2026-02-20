@@ -268,6 +268,7 @@ const loadData = async () => {
     }
 }
 
+
 const playMusic = () => {
     if (song.value) {
         const musicItem = {
@@ -422,6 +423,38 @@ onMounted(() => {
       color: var(--n-text-color);
       text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    
+    .cover-wrapper {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+    }
+    
+    .info-wrapper {
+      width: 100%;
+      align-items: center;
+      
+      .song-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+      
+      .meta-row {
+        align-items: center;
+      }
+
+      .actions {
+        justify-content: center;
+      }
+    }
+  }
 
     .meta-row {
       display: flex;
@@ -507,7 +540,6 @@ onMounted(() => {
       }
     }
   }
-}
 
 .details-grid {
   display: grid;
@@ -519,6 +551,9 @@ onMounted(() => {
   }
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
   }
   
   .detail-card {

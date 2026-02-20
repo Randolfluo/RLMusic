@@ -277,23 +277,7 @@ const playAll = () => {
     }
 }
 
-const rowProps = (_row: any, index: number) => {
-  return {
-    style: "cursor: pointer;",
-    onClick: () => {
-        // 单击播放（原双击逻辑改为单击）
-        const tracks = playlist.value.songs.map((song: any) => ({
-            ...song,
-            name: song.title, 
-            artist: [{ name: song.artist_name, id: song.artist_id }],
-            album: { name: song.album_title, id: song.album_id, picUrl: song.cover_url || playlist.value.cover_url }
-        }));
-        music.setPlaylists(tracks);
-        music.setPlaySongIndex(index);
-        music.setPlayState(true);
-    }
-  };
-};
+
 
 </script>
 
@@ -374,6 +358,48 @@ const rowProps = (_row: any, index: number) => {
 
       .actions {
         margin-top: auto;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    
+    .header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      
+      .cover {
+        margin-right: 0;
+        margin-bottom: 16px;
+        width: 160px;
+        height: 160px;
+      }
+      
+      .info {
+        align-items: center;
+        
+        .tag {
+          align-self: center;
+        }
+        
+        .title {
+          font-size: 20px;
+        }
+        
+        .actions {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 16px;
+          
+          .n-button {
+            margin-left: 0 !important;
+            margin-bottom: 8px;
+          }
+        }
       }
     }
   }

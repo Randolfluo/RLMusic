@@ -23,12 +23,9 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-const props = defineProps({
-  artistsData: {
-    type: Array,
-    default: () => [],
-  },
-});
+const props = defineProps<{
+  artistsData: { id: number; name: string }[]
+}>();
 
 const toArtist = (id: number) => {
   if (id) {

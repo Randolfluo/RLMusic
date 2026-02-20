@@ -1,0 +1,45 @@
+{
+  "appId": "com.randolfluo.localmusicplayer.server",
+  "productName": "LocalMusicPlayer-Server",
+  "directories": {
+    "output": "release/server/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron"
+  ],
+  "extraResources": [
+    {
+      "from": "resources/server.exe",
+      "to": "server.exe"
+    },
+    {
+      "from": "server/config.yml",
+      "to": "config.yml"
+    }
+  ],
+  "win": {
+    "icon": "public/images/logo/favicon.png",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "mac": {
+    "target": "dmg",
+    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "artifactName": "${productName}-Linux-${version}.${ext}"
+  }
+}

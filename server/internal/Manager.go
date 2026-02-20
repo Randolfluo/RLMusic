@@ -122,6 +122,7 @@ func registerAuthHandler(r *gin.Engine) {
 		user.GET("/is-admin", userAuthAPI.CheckIsAdmin)             // 检查是否为管理员
 		user.POST("/avatar", userAuthAPI.UploadAvatar)              // 上传头像
 		user.POST("/duration", userAuthAPI.UpdateListeningDuration) // 更新听歌时长
+		user.POST("/password", userAuthAPI.ChangePassword)          // 修改密码
 	}
 
 	// 管理员用户管理

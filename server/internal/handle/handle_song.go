@@ -223,7 +223,6 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			song.FileName = info.Name()
 			song.FileSize = info.Size()
 			song.Format = strings.TrimPrefix(ext, ".")
-
 			// 读取音频参数
 			if ext == ".flac" {
 				if props, err := audio.ParseFlacProps(path); err == nil {

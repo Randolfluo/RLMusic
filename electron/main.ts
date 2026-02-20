@@ -1,8 +1,9 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, screen } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import os from 'node:os'
+import { spawn } from 'child_process'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -50,11 +51,48 @@ if (!app.requestSingleInstanceLock()) {
 
 let win: BrowserWindow | null
 let splash: BrowserWindow | null
+let desktopLyricWindow: BrowserWindow | null = null
+let serverProcess: any = null // 保存后端进程实例
+
+// 启动后端服务
+function startServer() {
+  // 仅在生产环境尝试启动
+  if (VITE_DEV_SERVER_URL) return;
+
+  const serverName = process.platform === 'win32' ? 'server.exe' : 'server';
+  // resources 目录路径 (Electron 打包后资源目录)
+  const resourcesPath = process.resourcesPath;
+  const serverPath = path.join(resourcesPath, serverName);
+  
+  const fs = require('fs');
+  if (fs.existsSync(serverPath)) {
+    console.log(`Starting server from: ${serverPath}`);
+    // 启动服务，不显示窗口
+    serverProcess = spawn(serverPath, [], {
+      cwd: resourcesPath, // 设置工作目录为 resources
+      windowsHide: true,
+      stdio: 'ignore' // 忽略输出，避免缓冲区填满挂起
+    });
+
+    serverProcess.on('error', (err: any) => {
+      console.error('Failed to start server:', err);
+    });
+
+    serverProcess.on('close', (code: any) => {
+      console.log(`Server process exited with code ${code}`);
+      serverProcess = null;
+    });
+  } else {
+    console.log('Server binary not found, running in client-only mode.');
+  }
+}
 
 /**
  * 创建主窗口
  */
 function createWindow() {
+  startServer(); // 尝试启动后端
+
   // 优先查找 .ico 文件 (Windows 最佳实践)，如果不存在则使用 .png
   let iconPath = path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.ico')
   const fs = require('fs') // 引入 fs 模块用于检查文件是否存在
@@ -121,11 +159,109 @@ function createWindow() {
   })
 }
 
+// 创建桌面歌词窗口
+function createDesktopLyricWindow() {
+  if (desktopLyricWindow) return
+
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+
+  desktopLyricWindow = new BrowserWindow({
+    width: 800,
+    height: 120,
+    x: (width - 800) / 2,
+    y: height - 150,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: true, // 允许调整大小
+    webPreferences: {
+      preload: path.join(__dirname, '../dist-electron/preload.mjs'),
+      nodeIntegration: true,
+      contextIsolation: true,
+    },
+    backgroundColor: '#00000000', // Ensure transparency
+  })
+
+  // 加载路由
+  if (VITE_DEV_SERVER_URL) {
+    const url = VITE_DEV_SERVER_URL.endsWith('/') ? VITE_DEV_SERVER_URL : `${VITE_DEV_SERVER_URL}/`
+    desktopLyricWindow.loadURL(`${url}#/desktop-lyric`)
+  } else {
+    // 生产环境下加载 hash 路由
+    desktopLyricWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'desktop-lyric' })
+  }
+
+  desktopLyricWindow.on('closed', () => {
+    desktopLyricWindow = null
+  })
+}
+
+// IPC 监听
+ipcMain.on('open-desktop-lyric', () => {
+  createDesktopLyricWindow()
+})
+
+ipcMain.on('close-desktop-lyric', () => {
+  if (desktopLyricWindow) {
+    desktopLyricWindow.close()
+  }
+})
+
+ipcMain.on('update-desktop-lyric', (event, data) => {
+  if (desktopLyricWindow) {
+    desktopLyricWindow.webContents.send('update-lyric', data)
+  }
+})
+
+ipcMain.on('desktop-lyric-control', (event, action) => {
+  if (win) {
+    win.webContents.send('player-control', action)
+  }
+})
+
+ipcMain.on('lock-desktop-lyric', (event, locked) => {
+  if (desktopLyricWindow) {
+    desktopLyricWindow.setIgnoreMouseEvents(locked, { forward: true })
+    if (locked) {
+      desktopLyricWindow.setFocusable(false)
+      // 告诉渲染进程已锁定
+      desktopLyricWindow.webContents.send('desktop-lyric-locked', true)
+    } else {
+      desktopLyricWindow.setFocusable(true)
+      // 告诉渲染进程已解锁
+      desktopLyricWindow.webContents.send('desktop-lyric-locked', false)
+    }
+  }
+})
+
+// 添加解锁监听
+ipcMain.on('unlock-desktop-lyric', () => {
+  if (desktopLyricWindow) {
+    desktopLyricWindow.setIgnoreMouseEvents(false, { forward: true })
+    desktopLyricWindow.setFocusable(true)
+    desktopLyricWindow.webContents.send('desktop-lyric-locked', false)
+  }
+})
+
+ipcMain.on('update-desktop-lyric-settings', (event, settings) => {
+  if (desktopLyricWindow) {
+    desktopLyricWindow.webContents.send('update-settings', settings)
+  }
+})
+
 // Electron 初始化完成并准备创建浏览器窗口时调用
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
   win = null
+  
+  // 杀死后端进程
+  if (serverProcess) {
+    serverProcess.kill();
+    serverProcess = null;
+  }
+
   // 除了 macOS 外，所有窗口关闭时退出应用
   if (process.platform !== 'darwin') app.quit()
 })

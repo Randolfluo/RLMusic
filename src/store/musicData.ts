@@ -303,7 +303,7 @@ export const useMusicDataStore = defineStore("musicData", {
       this.playSongTransl = value.some((item) => item.lyricFy);
     },
     // 私人FM不感冒
-    setFmDislike(id: number) {
+    setFmDislike(_id: number) {
         // TODO: Implement API logic
     },
     // 更改喜欢列表

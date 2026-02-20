@@ -29,3 +29,14 @@ $mainSecondaryColor: var(--main-secondary-color, #0096881f);
 @media (max-width: 1200px) {
     @include changeWidth($padding:5vw);
 }
+
+/* 小于768px时 (移动端) */
+@media (max-width: 768px) {
+    @include changeWidth($padding: 16px);
+    
+    // 隐藏滚动条但保留功能
+    ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+}

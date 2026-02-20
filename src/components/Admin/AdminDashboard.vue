@@ -365,11 +365,11 @@
 
 <script setup lang="ts">
 // Force update
-import { ref, onMounted, onUnmounted, reactive, computed, provide, watch } from "vue";
+import { ref, onMounted, onUnmounted, reactive, computed, provide } from "vue";
 import { useRouter } from "vue-router";
 import { 
   Permissions, MusicList, People, RecordDisc, 
-  Scan, FileExcel, Delete, Music, User, Time, CheckOne,
+  Scan, FileExcel, Delete, Music, User, CheckOne,
   TrendingUp, Lightning, Play, Download, Power,
   DocDetail, Link, Cpu, Api, HardDisk, CloudStorage, Connection, Voice
 } from "@icon-park/vue-next";
@@ -405,11 +405,9 @@ provide(THEME_KEY, "light");
 const stats = ref<SystemStats | null>(null);
 const realtimeStats = ref<SystemStatus | null>(null);
 const prevApiCallCount = ref(0);
-const prevSystemUptime = ref(0);
 const prevCpuUsage = ref(0);
 const prevMemUsage = ref(0);
 const prevGoRoutines = ref(0);
-const prevTotalVolume = ref(0);
 const qps = ref(0);
 const intervalId = ref<number | null>(null);
 
@@ -425,8 +423,6 @@ const loading = reactive({
   intro: false,
   reset: false
 });
-
-const uptimeUnit = ref('auto'); // auto, s, m, h
 
 // Chart Options
 const getChartOption = (data: number[], color: string) => {
@@ -471,11 +467,9 @@ const fetchRealtimeStats = async () => {
     if (res.code === ResultCode.SUCCESS) {
       if (realtimeStats.value) {
         prevApiCallCount.value = realtimeStats.value.api_call_count;
-        prevSystemUptime.value = realtimeStats.value.system_uptime;
         prevCpuUsage.value = realtimeStats.value.cpu_usage;
         prevMemUsage.value = realtimeStats.value.mem_usage;
         prevGoRoutines.value = realtimeStats.value.go_routines;
-        prevTotalVolume.value = realtimeStats.value.total_volume;
 
         // Calculate QPS (approximate)
         // Interval is 500ms, so multiply diff by 2
@@ -505,32 +499,6 @@ const fetchStats = async () => {
   } catch (error) {
     console.error("Failed to fetch system stats", error);
   }
-};
-
-// Handlers
-const toggleUptimeUnit = () => {
-  const map: Record<string, string> = { 'auto': 's', 's': 'm', 'm': 'h', 'h': 'auto' };
-  uptimeUnit.value = map[uptimeUnit.value];
-};
-
-const getUptimeValue = (seconds: number) => {
-  if (uptimeUnit.value === 's') return seconds;
-  if (uptimeUnit.value === 'm') return Math.floor(seconds / 60);
-  if (uptimeUnit.value === 'h') return Math.floor(seconds / 3600);
-  return 0; 
-};
-
-const getUptimeSuffix = () => {
-  const map: Record<string, string> = { 's': '秒', 'm': '分钟', 'h': '小时' };
-  return map[uptimeUnit.value] || '';
-};
-
-const formatDuration = (seconds: number) => {
-  if (!seconds) return "0h";
-  const hours = Math.floor(seconds / 3600);
-  const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d ${hours % 24}h`;
-  return `${hours}h`;
 };
 
 const formatBytes = (bytes: number) => {
@@ -811,6 +779,7 @@ onUnmounted(() => {
       font-weight: 800;
       background: linear-gradient(135deg, #111827 0%, #4b5563 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       margin: 0;
       letter-spacing: -0.03em;
@@ -819,6 +788,7 @@ onUnmounted(() => {
       :global(.dark) & { 
         background: linear-gradient(135deg, #f9fafb 0%, #9ca3af 100%);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
       }
     }

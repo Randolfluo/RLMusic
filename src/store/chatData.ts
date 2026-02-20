@@ -83,6 +83,17 @@ export const useChatDataStore = defineStore("chatData", {
       this.currentRoomId = '';
     },
 
+    // 离开房间
+     leaveRoom(roomId: string) {
+         if (this.currentRoomId === roomId) {
+             socket.send(MsgType.LEAVE_ROOM, {
+                 roomId: roomId
+             });
+             this.currentRoomId = '';
+             this.joinedRooms = this.joinedRooms.filter(id => id !== roomId);
+         }
+     },
+
     handleMessage(msg: WSMessage) {
       const user = useUserDataStore();
       
@@ -95,13 +106,15 @@ export const useChatDataStore = defineStore("chatData", {
           if (msg.payload && msg.payload.targetRoomId) {
             const rid = msg.payload.targetRoomId;
             this.initRoomData(rid);
-            this.roomData[rid].messages.push({
-              sender: msg.payload.sender || 'Unknown',
-              content: msg.payload.content,
-              avatarUrl: msg.payload.avatarUrl,
-              isMine: msg.payload.sender === user.getUserData.nickname,
-              type: 'chat'
-            });
+            if (this.roomData[rid]) {
+              this.roomData[rid].messages.push({
+                sender: msg.payload.sender || 'Unknown',
+                content: msg.payload.content,
+                avatarUrl: msg.payload.avatarUrl,
+                isMine: user.getUserData.userId === msg.payload.senderId,
+                type: 'chat'
+              });
+            }
           }
           break;
 
@@ -109,7 +122,9 @@ export const useChatDataStore = defineStore("chatData", {
           if (msg.payload && msg.payload.roomId && Array.isArray(msg.payload.members)) {
             const rid = msg.payload.roomId;
             this.initRoomData(rid);
-            this.roomData[rid].users = msg.payload.members;
+            if (this.roomData[rid]) {
+              this.roomData[rid].users = msg.payload.members;
+            }
           }
           break;
 
@@ -117,7 +132,9 @@ export const useChatDataStore = defineStore("chatData", {
           if (msg.payload && msg.payload.roomId) {
             const rid = msg.payload.roomId;
             this.initRoomData(rid);
-            this.roomData[rid].ownerId = msg.payload.ownerId;
+            if (this.roomData[rid]) {
+              this.roomData[rid].ownerId = msg.payload.ownerId;
+            }
           }
           break;
 
@@ -125,12 +142,14 @@ export const useChatDataStore = defineStore("chatData", {
           if (msg.payload && msg.payload.roomId) {
             const rid = msg.payload.roomId;
             this.initRoomData(rid);
-            this.roomData[rid].messages.push({
-              type: 'system',
-              content: `${msg.payload.user?.nickname || 'Someone'} 加入了群聊`,
-              sender: 'System',
-              isMine: false
-            });
+            if (this.roomData[rid]) {
+              this.roomData[rid].messages.push({
+                type: 'system',
+                content: `${msg.payload.user?.nickname || 'Someone'} 加入了群聊`,
+                sender: 'System',
+                isMine: false
+              });
+            }
           }
           break;
 
@@ -151,12 +170,14 @@ export const useChatDataStore = defineStore("chatData", {
             } else {
                 // 别人离开
                 this.initRoomData(rid);
-                this.roomData[rid].messages.push({
-                  type: 'system',
-                  content: `${leavingUser?.nickname || 'Someone'} 离开了群聊`,
-                  sender: 'System',
-                  isMine: false
-                });
+                if (this.roomData[rid]) {
+                  this.roomData[rid].messages.push({
+                    type: 'system',
+                    content: `${leavingUser?.nickname || 'Someone'} 离开了群聊`,
+                    sender: 'System',
+                    isMine: false
+                  });
+                }
             }
           }
           break;
@@ -197,52 +218,18 @@ export const useChatDataStore = defineStore("chatData", {
         this.currentRoomId = roomId;
         return;
       }
-      
-      socket.sendJoinRoom(roomId, {
-        id: userStore.getUserData.userId,
-        nickname: userStore.getUserData.nickname,
-        avatarUrl: userStore.getUserData.avatarUrl
-      });
-      
-      // 单房间模式：清理其他房间数据
-      this.joinedRooms.forEach(r => {
-        if (r !== roomId) {
-          delete this.roomData[r];
-        }
-      });
-
-      this.joinedRooms = [roomId];
+      socket.sendJoinRoom(roomId, userStore.getUserData);
+      this.joinedRooms.push(roomId);
       this.currentRoomId = roomId;
       this.initRoomData(roomId);
-      if (window.$message) window.$message.success(`加入房间: ${roomId}`);
-      
-      setTimeout(() => socket.sendGetRoomList(), 500);
     },
 
-    leaveRoom(roomId: string) {
+    doLeave(roomId: string) {
       const user = useUserDataStore();
-      socket.sendLeaveRoom(roomId, {
-        id: user.getUserData.userId,
-        nickname: user.getUserData.nickname
-      });
-      
+      socket.sendLeaveRoom(roomId, user.getUserData);
       this.joinedRooms = this.joinedRooms.filter(id => id !== roomId);
       delete this.roomData[roomId];
-      
-      if (this.currentRoomId === roomId) {
-        this.currentRoomId = this.joinedRooms.length > 0 ? this.joinedRooms[0] : '';
-      }
-      
-      if (window.$message) window.$message.info(`已退出房间: ${roomId}`);
-      
-      if (this.joinedRooms.length === 0) {
-          // 不再强制断开，或者根据需求决定
-          // 用户需求：只有关闭页面或注销才断开。
-          // 所以这里我们不断开连接，只停止心跳? 不，心跳也应该保持以维持连接。
-          // 只有 logout 时才调用 stopListen
-      } else {
-          setTimeout(() => socket.sendGetRoomList(), 500);
-      }
+      this.currentRoomId = this.joinedRooms.length > 0 ? (this.joinedRooms[0] || '') : '';
     },
 
     sendMessage(content: string) {

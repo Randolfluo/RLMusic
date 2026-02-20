@@ -5,6 +5,8 @@
       music.getPlaylists[0] && music.showPlayBar ? 'player show' : 'player'
     "
     content-style="padding: 0"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
   >
     <div class="slider">
       <span>{{ music.getPlaySongTime.songTimePlayed }}</span>
@@ -144,6 +146,17 @@
           />
         </div>
 
+        <!-- 桌面歌词 -->
+        <div class="desktop-lyric">
+          <n-icon
+            size="22"
+            :component="ArticleRound"
+            :class="{ active: setting.desktopLyricShow }"
+            @click.stop="toggleDesktopLyric"
+            :title="setting.desktopLyricShow ? '关闭桌面歌词' : '开启桌面歌词'"
+          />
+        </div>
+
         <div class="pattern">
           <n-icon
             :component="
@@ -253,6 +266,7 @@ import {
   FavoriteRound,
   PlaylistAddRound,
   SlowMotionVideoRound,
+  ArticleRound,
 } from "@vicons/material";
 import { PlayCycle, PlayOnce, ShuffleOne, Fm } from "@icon-park/vue-next";
 import { storeToRefs } from "pinia";
@@ -517,6 +531,40 @@ const togglePodcastMode = () => {
   }
 };
 
+// 切换桌面歌词
+const toggleDesktopLyric = () => {
+  setting.setDesktopLyricShow(!setting.desktopLyricShow);
+  if (window.ipcRenderer) {
+    if (setting.desktopLyricShow) {
+      window.ipcRenderer.send("open-desktop-lyric");
+      // 发送当前歌词
+      const index = music.getPlaySongLyricIndex;
+      const lyrics = music.getPlaySongLyric;
+      if (lyrics && lyrics[index]) {
+        window.ipcRenderer.send("update-desktop-lyric", {
+          current: lyrics[index].lyric,
+          next: lyrics[index + 1]?.lyric || "",
+          currentTlyric: lyrics[index].tlyric || "",
+          nextTlyric: lyrics[index + 1]?.tlyric || "",
+          isPlaying: music.getPlayState,
+        });
+      }
+      // 发送当前设置
+      window.ipcRenderer.send("update-desktop-lyric-settings", {
+        fontSize: setting.desktopLyricFontSize,
+        followTheme: setting.desktopLyricFollowTheme,
+        themeColor: setting.themeColor,
+      });
+      $message.success("已开启桌面歌词");
+    } else {
+      window.ipcRenderer.send("close-desktop-lyric");
+      $message.info("已关闭桌面歌词");
+    }
+  } else {
+    $message.warning("桌面歌词仅支持 Electron 环境");
+  }
+};
+
 onMounted(() => {
   // 获取音乐数据
   if (music.getPlaylists[0] && music.getPlaySongData)
@@ -530,6 +578,39 @@ onMounted(() => {
   // 设置音量
   if ($player) $player.volume = persistData.value.playVolume;
 });
+
+// 触摸滑动逻辑
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const touchEndX = ref(0);
+const touchEndY = ref(0);
+
+const handleTouchStart = (e) => {
+  touchStartX.value = e.changedTouches[0].screenX;
+  touchStartY.value = e.changedTouches[0].screenY;
+};
+
+const handleTouchEnd = (e) => {
+  touchEndX.value = e.changedTouches[0].screenX;
+  touchEndY.value = e.changedTouches[0].screenY;
+  handleSwipe();
+};
+
+const handleSwipe = () => {
+  const threshold = 50; // 最小滑动距离
+  const yThreshold = 50; // 最大垂直偏差
+
+  if (Math.abs(touchEndY.value - touchStartY.value) > yThreshold) return;
+
+  if (touchEndX.value < touchStartX.value - threshold) {
+    // 左滑 -> 下一首
+    music.setPlaySongIndex("next");
+  }
+  if (touchEndX.value > touchStartX.value + threshold) {
+    // 右滑 -> 上一首
+    music.setPlaySongIndex("prev");
+  }
+};
 
 // 监听当前音乐数据变化
 watch(
@@ -587,6 +668,37 @@ watch(
 //     }
 //   }
 // );
+
+// 监听歌词索引变化，更新桌面歌词
+watch(
+  () => music.getPlaySongLyricIndex,
+  (val) => {
+    if (setting.desktopLyricShow && window.ipcRenderer) {
+      const lyrics = music.getPlaySongLyric;
+      if (lyrics && lyrics[val]) {
+        window.ipcRenderer.send("update-desktop-lyric", {
+          current: lyrics[val].lyric,
+          next: lyrics[val + 1]?.lyric || "",
+          currentTlyric: lyrics[val].tlyric || "",
+          nextTlyric: lyrics[val + 1]?.tlyric || "",
+          isPlaying: music.getPlayState,
+        });
+      }
+    }
+  }
+);
+
+// 监听音乐播放状态变化，同步到桌面歌词
+watch(
+  () => music.getPlayState,
+  (val) => {
+    if (setting.desktopLyricShow && window.ipcRenderer) {
+      window.ipcRenderer.send("update-desktop-lyric", {
+        isPlaying: val,
+      });
+    }
+  }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -646,12 +758,15 @@ watch(
       flex-direction: row;
       justify-content: space-between;
       .data {
+        flex: 1;
+        min-width: 0;
         .time {
           display: none;
         }
       }
       .control {
-        margin-left: auto;
+        margin: 0 10px;
+        flex-shrink: 0;
         .prev,
         .next {
           display: none;
@@ -780,7 +895,8 @@ watch(
         .like,
         .add-playlist,
         .pattern,
-        .podcast {
+        .speed,
+        .desktop-lyric {
           display: none !important;
         }
       }
@@ -813,6 +929,20 @@ watch(
         }
       }
       .podcast {
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .n-icon {
+          font-size: 22px;
+          padding: 8px;
+          &.active {
+            background-color: $mainColor;
+            color: var(--n-color-embedded);
+          }
+        }
+      }
+      .desktop-lyric {
         margin-left: 8px;
         display: flex;
         align-items: center;

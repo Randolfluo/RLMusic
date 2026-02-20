@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from "axios";
+import axios from "axios";
 import { aesDecrypt } from "@/utils/encrypt";
 
 // 对应 server/internal/global/result.go
@@ -70,8 +70,22 @@ declare module 'axios' {
 }
 
 // 创建 axios 实例
+const appMode = import.meta.env.VITE_APP_MODE;
+let baseURL = "/api";
+
+if (appMode === 'server') {
+    baseURL = "http://localhost:12345/api";
+} else if (appMode === 'client') {
+     const storedUrl = localStorage.getItem('server_url');
+     if (storedUrl) {
+         baseURL = storedUrl.endsWith('/') ? `${storedUrl}api` : `${storedUrl}/api`;
+     } else {
+         baseURL = "http://localhost:12345/api"; // Default fallback
+     }
+}
+
 const service = axios.create({
-  baseURL: "/api", // 基础路径，通过 vite 代理转发
+  baseURL: baseURL, // 基础路径，通过 vite 代理转发
   timeout: 30000, // 请求超时时间
   withCredentials: true, // 跨域请求时发送 cookies
 });
@@ -130,7 +144,7 @@ service.interceptors.response.use(
                    const password = aesDecrypt(savedPass);
                    // 使用默认 axios 实例发送请求，避免死循环
                    // 假设 api 代理为 /api
-                   return axios.post("/api/auth/login", { 
+                   return axios.post(`${baseURL}/auth/login`, { 
                        username: savedUser, 
                        password: password 
                    }).then(loginRes => {

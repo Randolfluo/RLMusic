@@ -10,10 +10,15 @@
     "dev": "vite",
     "dev:web": "vite --host",
     "build": "vue-tsc -b && vite build && electron-builder",
+    "build:go": "cd server && go mod tidy && go build -o ../resources/server.exe cmd/main.go",
+    "build:server": "npm run build:go && cross-env VITE_APP_MODE=server vue-tsc -b && cross-env VITE_APP_MODE=server vite build && electron-builder --config electron-builder.server.json",
+    "build:client": "cross-env VITE_APP_MODE=client vue-tsc -b && cross-env VITE_APP_MODE=client vite build && electron-builder --config electron-builder.client.json",
     "build:web": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "@icon-park/vue-next": "^1.4.2",
     "@ivanv/vue-collapse-transition": "^1.0.2",
     "@vicons/carbon": "^0.13.0",
@@ -32,6 +37,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.1.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^24.10.1",
@@ -39,6 +45,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.24",
+    "cross-env": "^10.1.0",
     "electron": "^40.0.0",
     "electron-builder": "^26.4.0",
     "naive-ui": "^2.43.2",

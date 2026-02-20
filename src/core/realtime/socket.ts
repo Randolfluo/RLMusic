@@ -1,25 +1,27 @@
 import { ref } from 'vue';
 
 // Message Types
-export enum MsgType {
-  HELLO = 'HELLO',
-  TIME_SYNC_REQ = 'TIME_SYNC_REQ',
-  TIME_SYNC_RES = 'TIME_SYNC_RES',
-  HEARTBEAT = 'HEARTBEAT',
-  CHAT = 'CHAT',
-  JOIN_ROOM = 'JOIN_ROOM',
-  LEAVE_ROOM = 'LEAVE_ROOM',
-  ROOM_MEMBERS = 'ROOM_MEMBERS',
-  ROOM_INFO = 'ROOM_INFO',
-  GET_ROOM_LIST = 'GET_ROOM_LIST',
-  ROOM_LIST_RES = 'ROOM_LIST_RES',
-  TIMELINE_INIT = 'TIMELINE_INIT',
-  PLAY = 'PLAY',
-  PAUSE = 'PAUSE',
-  SEEK = 'SEEK',
-  CHANGE_SONG = 'CHANGE_SONG',
-  SET_SPEED = 'SET_SPEED'
-}
+export const MsgType = {
+  HELLO: 'HELLO',
+  TIME_SYNC_REQ: 'TIME_SYNC_REQ',
+  TIME_SYNC_RES: 'TIME_SYNC_RES',
+  HEARTBEAT: 'HEARTBEAT',
+  CHAT: 'CHAT',
+  JOIN_ROOM: 'JOIN_ROOM',
+  LEAVE_ROOM: 'LEAVE_ROOM',
+  ROOM_MEMBERS: 'ROOM_MEMBERS',
+  ROOM_INFO: 'ROOM_INFO',
+  GET_ROOM_LIST: 'GET_ROOM_LIST',
+  ROOM_LIST_RES: 'ROOM_LIST_RES',
+  TIMELINE_INIT: 'TIMELINE_INIT',
+  PLAY: 'PLAY',
+  PAUSE: 'PAUSE',
+  SEEK: 'SEEK',
+  CHANGE_SONG: 'CHANGE_SONG',
+  SET_SPEED: 'SET_SPEED'
+} as const;
+
+export type MsgType = typeof MsgType[keyof typeof MsgType];
 
 export interface WSMessage {
   type: string;
@@ -146,7 +148,7 @@ class SocketClient {
         // msg.payload.server_now
         if (msg.payload && msg.payload.server_now) {
           const clientNow = Date.now();
-          const rtt = this.lastLatency.value * 2;
+          // const _rtt = this.lastLatency.value * 2;
           const serverNow = msg.payload.server_now;
           // Offset = server_time - local_time
           // Correct formula: server_now approx (client_now + rtt/2) + offset

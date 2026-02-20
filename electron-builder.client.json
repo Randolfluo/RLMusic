@@ -1,0 +1,35 @@
+{
+  "appId": "com.randolfluo.localmusicplayer.client",
+  "productName": "LocalMusicPlayer-Client",
+  "directories": {
+    "output": "release/client/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron"
+  ],
+  "win": {
+    "icon": "public/images/logo/favicon.png",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "mac": {
+    "target": "dmg",
+    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "artifactName": "${productName}-Linux-${version}.${ext}"
+  }
+}

@@ -97,3 +97,14 @@ export const updateListeningDuration = (duration: number) => {
         data: { duration }
     });
 };
+
+/**
+ * 修改密码
+ */
+export const changePassword = (data: any) => {
+    return axios({
+        method: "POST",
+        url: "/user/password",
+        data
+    });
+};

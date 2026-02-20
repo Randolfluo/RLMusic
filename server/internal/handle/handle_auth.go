@@ -232,6 +232,55 @@ func (*UserAuth) GetUserInfo(c *gin.Context) {
 	})
 }
 
+type ChangePasswordReq struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=4,max=20"`
+}
+
+// ChangePassword 修改密码
+func (*UserAuth) ChangePassword(c *gin.Context) {
+	var req ChangePasswordReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	user := GetCurrentUser(c)
+	if user == nil {
+		ReturnError(c, g.ErrUserNotExist, nil)
+		return
+	}
+
+	db := GetDB(c)
+	// 重新获取用户信息以确保密码是最新的
+	fullUser, err := model.GetUserAuthInfoById(db, user.ID)
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	// 验证旧密码
+	if !encrypt.BcryptCheck(req.OldPassword, fullUser.Password) {
+		ReturnError(c, g.ErrPassword, errors.New("旧密码错误"))
+		return
+	}
+
+	// 加密新密码
+	hashedPassword, err := encrypt.BcryptHash(req.NewPassword)
+	if err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 更新密码
+	if err := db.Model(&model.User{}).Where("id = ?", user.ID).Update("password", hashedPassword).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, nil)
+}
+
 // UploadAvatar 上传用户头像
 func (*UserAuth) UploadAvatar(c *gin.Context) {
 	currentUser := GetCurrentUser(c)

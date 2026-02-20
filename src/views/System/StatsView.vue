@@ -19,6 +19,10 @@ import SystemStats from "@/components/Home/SystemStats.vue";
   display: flex;
   justify-content: center;
 
+  @media (max-width: 768px) {
+    padding: 20px 16px;
+  }
+
   .container {
     width: 100%;
     max-width: 1200px;
@@ -28,6 +32,11 @@ import SystemStats from "@/components/Home/SystemStats.vue";
       font-weight: bold;
       margin-bottom: 30px;
       color: var(--n-text-color);
+
+      @media (max-width: 768px) {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
     }
   }
 }

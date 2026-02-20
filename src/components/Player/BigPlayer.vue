@@ -4,18 +4,21 @@
     <div
       v-show="music.showBigPlayer"
       class="bplayer"
-      :style="
-        bgCover
-          ? 'background-image: url(' +
-            bgCover +
-            ')'
-          : ''
-      "
+      @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd"
     >
       <div
-        class="gray"
-        :style="{ backdropFilter: setting.playerBgBlur ? 'blur(80px)' : 'none' }"
-      />
+        class="bg-img"
+        :style="
+          bgCover
+            ? {
+                backgroundImage: 'url(' + bgCover + ')',
+                filter: setting.playerBgBlur ? 'blur(80px)' : 'none',
+              }
+            : ''
+        "
+      ></div>
+      <div class="gray" />
       <canvas class="particle-canvas" ref="particleCanvas" />
       <n-icon
         class="close"
@@ -29,11 +32,90 @@
         :component="screenfullIcon"
         @click="screenfullChange"
       />
+      
+      <!-- 移动端界面 -->
+      <div class="mobile-interface">
+          <div class="mobile-content" @click="toggleMobileView">
+               <!-- 封面/唱片区域 -->
+               <div class="mobile-cover" v-show="!showMobileLyrics">
+                   <PlayerCover v-if="setting.playerStyle === 'cover'" :show-controls="false" />
+                   <PlayerRecord v-else />
+               </div>
+               
+               <!-- 歌词区域 -->
+               <div class="mobile-lyrics" v-show="showMobileLyrics">
+                  <!-- 复用歌词列表结构 -->
+                  <div
+                    class="lrc-all"
+                    v-if="music.getPlaySongLyric[0]"
+                    :style="
+                      setting.lyricsPosition === 'center'
+                        ? { textAlign: 'center', paddingRight: '0' }
+                        : null
+                    "
+                    @click.stop="toggleMobileView"
+                  >
+                    <div class="placeholder"></div>
+                    <div
+                      :class="
+                        music.getPlaySongLyricIndex == index ? 'lrc on' : 'lrc'
+                      "
+                      :style="{ marginBottom: setting.lyricsFontSize - 1.6 + 'vh' }"
+                      v-for="(item, index) in music.getPlaySongLyric"
+                      :key="item"
+                      :id="'lrc-m' + index"
+                    >
+                      <div
+                        :class="setting.lyricsBlur ? 'lrc-text blur' : 'lrc-text'"
+                        :style="{
+                          transformOrigin:
+                            setting.lyricsPosition === 'center' ? 'center' : null,
+                          filter: setting.lyricsBlur
+                            ? `blur(${getFilter(
+                                music.getPlaySongLyricIndex,
+                                index
+                              )}px)`
+                            : null,
+                        }"
+                      >
+                        <span
+                          class="lyric"
+                          :style="{ fontSize: setting.lyricsFontSize + 'vh' }"
+                        >
+                          {{ item.lyric }}
+                        </span>
+                        <span
+                          v-show="
+                            music.getPlaySongTransl &&
+                            setting.getShowTransl &&
+                            item.lyricFy
+                          "
+                          :style="{ fontSize: setting.lyricsFontSize - 0.4 + 'vh' }"
+                          class="lyric-fy"
+                        >
+                          {{ item.lyricFy }}</span
+                        >
+                      </div>
+                    </div>
+                    <div class="placeholder"></div>
+                  </div>
+                   <div v-else class="no-lrc-tip">
+                      暂无歌词
+                   </div>
+               </div>
+          </div>
+          
+          <div class="mobile-controls">
+              <PlayerControl :show-volume="false" />
+          </div>
+      </div>
+
+      <!-- PC端界面 -->
       <div
         :class="
           music.getPlaySongLyric[0]
-            ? 'all'
-            : 'all noLrc'
+            ? 'all pc-interface'
+            : 'all noLrc pc-interface'
         "
       >
         <!-- 提示文本 -->
@@ -238,12 +320,24 @@ import MusicFrequency from "@/utils/MusicFrequency";
 import ParticleEffect from "@/utils/ParticleEffect";
 import PlayerRecord from "./PlayerRecord.vue";
 import PlayerCover from "./PlayerCover.vue";
+import PlayerControl from "./PlayerControl.vue";
 import screenfull from "screenfull";
 import { getSongCover } from "@/api/song"; // 1. 导入 getSongCover
 
 const router = useRouter();
 const music = musicStore();
 const setting = settingStore();
+
+// 移动端视图切换
+const showMobileLyrics = ref(false);
+const toggleMobileView = () => {
+  showMobileLyrics.value = !showMobileLyrics.value;
+  if (showMobileLyrics.value) {
+    nextTick(() => {
+      lyricsScroll(music.getPlaySongLyricIndex);
+    });
+  }
+};
 
 // 计算背景图
 const bgCover = computed(() => {
@@ -328,19 +422,34 @@ const toComment = () => {
   });
 };
 
-// 歌词滚动
-const lyricsScroll = (index) => {
-  const type = setting.lyricsBlock;
-  const el = document.getElementById(
-    `lrc${type === "center" ? index : index - 2}`
-  );
-  if (el && !lrcMouseStatus.value) {
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: type,
-    });
-  }
-};
+  // 歌词滚动
+  const lyricsScroll = (index) => {
+    const type = setting.lyricsBlock;
+    
+    // PC 端滚动
+    const el = document.getElementById(
+      `lrc${type === "center" ? index : index - 2}`
+    );
+    if (el && !lrcMouseStatus.value) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: type,
+      });
+    }
+
+    // 移动端滚动
+    if (showMobileLyrics.value) {
+      const elMobile = document.getElementById(
+        `lrc-m${type === "center" ? index : index - 2}`
+      );
+      if (elMobile) {
+        elMobile.scrollIntoView({
+           behavior: "smooth",
+           block: "center",
+        });
+      }
+    }
+  };
 
 // 歌词偏移控制
 const offsetText = computed(() => {
@@ -428,6 +537,36 @@ watch(
   }
 );
 
+// 触摸滑动逻辑
+const touchStartY = ref(0);
+const touchStartX = ref(0);
+const handleTouchStart = (e) => {
+  touchStartY.value = e.changedTouches[0].clientY;
+  touchStartX.value = e.changedTouches[0].clientX;
+};
+
+const handleTouchEnd = (e) => {
+  const touchEndY = e.changedTouches[0].clientY;
+  const touchEndX = e.changedTouches[0].clientX;
+  
+  // 如果是水平滑动，不处理
+  if (Math.abs(touchEndX - touchStartX.value) > Math.abs(touchEndY - touchStartY.value)) {
+    return;
+  }
+  
+  // 如果触摸的是歌词区域，且歌词没有滚到顶部，或者是向上滑动，则不关闭
+  if (e.target.closest('.lrc-all')) {
+     const lrcEl = e.target.closest('.lrc-all');
+     if (lrcEl.scrollTop > 0) return; // 不是顶部
+     if (touchEndY < touchStartY.value) return; // 向上滑动
+  }
+
+  // 下滑超过 100px 关闭
+  if (touchEndY - touchStartY.value > 100) {
+    music.setBigPlayerState(false);
+  }
+};
+
 // 监听是否显示频谱
 watch(
   () => setting.musicFrequency,
@@ -500,6 +639,140 @@ watch(
 </script>
 
 <style lang="scss" scoped>
+.mobile-interface {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  padding: 60px 20px 20px;
+  box-sizing: border-box;
+  
+  .mobile-content {
+     flex: 1;
+     overflow: hidden;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     position: relative;
+     width: 100%;
+     
+     .mobile-cover {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        :deep(.player-cover) {
+           padding-bottom: 0;
+           .cover-wrapper {
+             width: 40vh;
+             height: 40vh;
+             max-width: 80vw;
+             max-height: 80vw;
+             margin-bottom: 0;
+           }
+        }
+        
+        :deep(.player-record) {
+           .record-wrapper {
+              width: 35vh;
+              height: 35vh;
+              max-width: 70vw;
+              max-height: 70vw;
+           }
+        }
+     }
+     
+     .mobile-lyrics {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        
+        .lrc-all {
+          height: 100%;
+          width: 100%;
+          overflow-y: auto;
+          scrollbar-width: none;
+          mask: linear-gradient(180deg, transparent 0, #fff 15%, #fff 85%, transparent 100%);
+          -webkit-mask: linear-gradient(180deg, transparent 0, #fff 15%, #fff 85%, transparent 100%);
+          
+          &::-webkit-scrollbar {
+             display: none;
+          }
+          
+          .placeholder {
+             height: 50%;
+             width: 100%;
+          }
+
+          .lrc {
+             padding: 1.5vh 0;
+             text-align: center;
+             cursor: pointer;
+             opacity: 0.6;
+             transition: all 0.3s;
+             
+             .lrc-text {
+                transform-origin: center;
+                transition: all 0.3s;
+                .lyric { font-size: 2.2vh; }
+                .lyric-fy { font-size: 1.8vh; opacity: 0.8; margin-top: 4px; display: block; }
+             }
+             
+             &.on {
+                opacity: 1;
+                .lrc-text {
+                   transform: scale(1.1);
+                   .lyric { color: $mainColor; font-weight: bold; }
+                }
+             }
+             
+             &:active { transform: scale(0.95); }
+          }
+        }
+        
+        .no-lrc-tip {
+           width: 100%;
+           height: 100%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: rgba(255,255,255,0.6);
+        }
+     }
+  }
+  
+  .mobile-controls {
+     height: auto;
+     width: 100%;
+     margin-top: 20px;
+     
+     :deep(.player-control) {
+        .info-section {
+           width: 100%;
+           max-width: 100%;
+           .song-info {
+              text-align: left;
+              padding: 0 10px;
+           }
+        }
+     }
+  }
+}
+
+@media (max-width: 768px) {
+  .pc-interface {
+     display: none !important;
+  }
+  .mobile-interface {
+     display: flex !important;
+  }
+  .screenfull {
+     display: none !important;
+  }
+}
+
 .up-enter-active,
 .up-leave-active {
   transform: translateY(0);
@@ -540,11 +813,22 @@ watch(
   z-index: 9999;
   overflow: hidden;
   color: #ffffff;
-  background-repeat: no-repeat;
-  background-size: 150% 150%;
-  background-position: center;
   display: flex;
   justify-content: center;
+  
+  .bg-img {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    z-index: -2;
+    transition: filter 0.3s;
+  }
+  
   &::after {
     // content: "";
     position: absolute;
@@ -560,10 +844,8 @@ watch(
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #00000060;
-    // backdrop-filter: blur(80px);
+    background-color: rgba(0, 0, 0, 0.6);
     z-index: -1;
-    transition: backdrop-filter 0.3s;
   }
   .particle-canvas {
     position: absolute;
@@ -617,11 +899,15 @@ watch(
         align-items: center;
       }
       @media (max-width: 768px) {
+        flex-direction: column;
+        justify-content: center;
         .left {
           width: 100%;
           display: flex !important;
           transform: none;
           align-items: center;
+          height: auto;
+          flex: 1;
         }
         .right {
           display: none !important;
@@ -629,21 +915,107 @@ watch(
       }
     }
     @media (max-width: 768px) {
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 60px;
       .left {
-        display: none !important;
+        display: flex !important;
+        width: 100%;
+        height: auto;
+        flex: 0 0 auto;
+        padding: 0;
+        margin-bottom: 20px;
+        align-items: center;
+        
+        :deep(.player-cover) {
+          padding-bottom: 0;
+          .cover-wrapper {
+            width: 35vh;
+            height: 35vh;
+            max-width: 60vw;
+            max-height: 60vw;
+            margin-bottom: 16px;
+          }
+          .info-section {
+            width: 90vw;
+            max-width: 90vw;
+            .song-info {
+              text-align: center;
+              .title { font-size: 20px; }
+              .artist { font-size: 14px; }
+            }
+            .volume-section { display: none; }
+            .controls-section {
+               justify-content: center;
+               gap: 20px;
+               .main-controls { gap: 20px; }
+            }
+          }
+        }
+        
+        :deep(.player-record) {
+           .record-wrapper {
+              width: 30vh;
+              height: 30vh;
+              max-width: 60vw;
+              max-height: 60vw;
+           }
+        }
       }
       .right {
-        padding: 0 2vw;
+        display: flex !important;
+        width: 100%;
+        padding: 0 4vw;
+        flex: 1;
+        overflow: hidden;
+        
         .lrcShow {
-          .lrc-all {
-            height: 70vh !important;
-            // padding-right: 16% !important;
-            margin-right: 0 !important;
+          justify-content: flex-start;
+          
+          .data {
+             text-align: center;
+             padding: 0;
+             margin-bottom: 12px;
+             .name { 
+               justify-content: center; 
+               padding-right: 0; 
+               font-size: 2.4vh;
+             }
+             .artists {
+               justify-content: center;
+               display: flex;
+             }
           }
-          .data,
+          
+          .lrc-all {
+            height: 100% !important;
+            width: 100%;
+            margin-right: 0 !important;
+            mask: linear-gradient(180deg, transparent 0, #fff 10%, #fff 90%, transparent 100%);
+            -webkit-mask: linear-gradient(180deg, transparent 0, #fff 10%, #fff 90%, transparent 100%);
+            
+            &.cover { height: 100% !important; }
+            &.record { height: 100% !important; }
+
+            .lrc {
+               padding: 1vh 0;
+               padding-left: 0;
+               text-align: center;
+               margin-bottom: 0.5vh;
+               
+               .curr-time { display: none; }
+               .lrc-text {
+                  align-items: center;
+                  transform-origin: center;
+                  .lyric { font-size: 2vh !important; }
+                  .lyric-fy { font-size: 1.6vh !important; }
+               }
+               &.on .lrc-text { transform: scale(1.2); }
+            }
+          }
+          
           .menu {
-            display: block !important;
-            opacity: 1 !important;
+             display: none !important;
           }
         }
       }

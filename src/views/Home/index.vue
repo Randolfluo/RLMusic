@@ -3,7 +3,7 @@
     <div class="page-header">
       <h1 class="welcome-text">
         <span class="greeting">Hello,</span> 
-        <span class="highlight">{{ userStore.userLogin ? (userStore.userInfo?.nickname || userStore.userInfo?.username) : 'Music Lover' }}</span>
+        <span class="highlight">{{ userStore.userLogin ? userStore.userData?.nickname : 'Music Lover' }}</span>
       </h1>
       <p class="subtitle">Enjoy your local music journey</p>
     </div>
@@ -136,11 +136,10 @@ import { ref, onMounted } from "vue";
 import { getPublicPlaylists, getUserPrivatePlaylists } from "@/api/playlist";
 import { getLocalIPs } from "@/api/system";
 import QrcodeVue from 'qrcode.vue';
-import SystemStats from "@/components/Home/SystemStats.vue";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import { ResultCode } from "@/utils/request";
-import { Right, MusicOne, Refresh, Copy } from "@icon-park/vue-next";
-import { useMessage, NIcon, NModal, NCard, NButton } from "naive-ui";
+import { Right, Refresh, Copy } from "@icon-park/vue-next";
+import { useMessage, NIcon, NModal, NButton } from "naive-ui";
 import { useRouter } from "vue-router";
 import { useUserDataStore } from "@/store/userData";
 import { useThemeVars } from "naive-ui";
@@ -166,7 +165,7 @@ const openQrModal = () => {
 
 const copyUrl = async () => {
   try {
-    await navigator.clipboard.writeText(currentUrl.value);
+    await navigator.clipboard.writeText(currentUrl.value || '');
     message.success("链接已复制");
   } catch (err) {
     message.error("复制失败");
@@ -256,12 +255,24 @@ const getPrivateList = async () => {
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 }
 
 /* Page Header */
 .page-header {
   margin-bottom: 40px;
   animation: fade-in-down 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  @media (max-width: 768px) {
+    margin-bottom: 24px;
+    
+    .welcome-text {
+      font-size: 32px;
+    }
+  }
   
   .welcome-text {
     font-size: 42px;
@@ -280,6 +291,7 @@ const getPrivateList = async () => {
     .highlight {
       background: linear-gradient(120deg, var(--n-color-primary) 0%, #a78bfa 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       display: inline-block;
     }
@@ -297,10 +309,16 @@ const getPrivateList = async () => {
 /* Banner Grid */
 .banner-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
   margin-bottom: 48px;
   animation: fade-in-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s backwards;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
 }
 
 .banner-card {
@@ -363,8 +381,24 @@ const getPrivateList = async () => {
     position: relative;
   }
 
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+    height: auto;
+    min-height: 120px;
+    
+    .text-info {
+      h3 {
+        font-size: 20px;
+      }
+      p {
+        font-size: 13px;
+      }
+    }
+  }
+
   .text-info {
     flex: 1;
+    min-width: 0;
     h3 {
       font-size: 24px;
       margin: 0 0 8px 0;
@@ -388,12 +422,21 @@ const getPrivateList = async () => {
       padding: 6px 12px;
       border-radius: 8px;
       width: fit-content;
+      max-width: 100%;
       font-weight: 500;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.1);
+      
+      @media (max-width: 768px) {
+        font-size: 12px;
+        padding: 4px 8px;
+      }
 
       .url-value {
         letter-spacing: 0.5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
     .refresh-icon {
@@ -433,7 +476,18 @@ const getPrivateList = async () => {
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     margin-left: 24px;
     cursor: zoom-in;
+    flex-shrink: 0;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    
+    @media (max-width: 768px) {
+      margin-left: 12px;
+      padding: 6px;
+      
+      .qrcode {
+        width: 60px !important;
+        height: 60px !important;
+      }
+    }
     
     &:hover {
       transform: scale(1.1) rotate(2deg);
@@ -563,6 +617,7 @@ const getPrivateList = async () => {
       margin: 0;
       background: linear-gradient(45deg, #333 0%, #666 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 

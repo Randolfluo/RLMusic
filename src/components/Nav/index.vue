@@ -61,6 +61,11 @@
           管理员入口
         </n-tooltip>
 
+        <!-- 移动端汉堡菜单按钮 -->
+        <div class="mobile-menu-trigger" @click="showMobileMenu = true">
+          <n-icon :component="HamburgerButton" size="24" />
+        </div>
+
         <!-- 下拉菜单 -->
         <n-dropdown
           class="user-dropdown"
@@ -92,6 +97,30 @@
         <AboutSite ref="aboutSiteRef" />
       </div>
     </div>
+
+    <!-- 移动端侧边菜单 -->
+    <n-drawer v-model:show="showMobileMenu" :width="280" placement="right">
+      <n-drawer-content title="菜单">
+        <n-list clickable>
+          <n-list-item @click="router.push('/'); showMobileMenu = false">
+            <template #prefix><n-icon :component="Left" /></template>
+            发现
+          </n-list-item>
+          <n-list-item @click="router.push('/search'); showMobileMenu = false">
+            <template #prefix><n-icon :component="Left" /></template>
+            搜索
+          </n-list-item>
+          <n-list-item @click="router.push('/system-stats'); showMobileMenu = false">
+            <template #prefix><n-icon :component="Left" /></template>
+            系统信息
+          </n-list-item>
+          <n-list-item @click="router.push('/user'); showMobileMenu = false">
+            <template #prefix><n-icon :component="Left" /></template>
+            我的
+          </n-list-item>
+        </n-list>
+      </n-drawer-content>
+    </n-drawer>
   </nav>
 </template>
 
@@ -108,17 +137,19 @@ import {
   SunOne,
   Moon,
   Permissions,
+  HamburgerButton,
 } from "@icon-park/vue-next";
 import { userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
 import AboutSite from "@/components/DataModel/AboutSite.vue";
-import { useMessage } from "naive-ui";
+import { useMessage, NDrawer, NDrawerContent, NList, NListItem } from "naive-ui";
 
 const router = useRouter();
 const user = userStore();
 const setting = settingStore();
 const aboutSiteRef = ref(null);
 const message = useMessage();
+const showMobileMenu = ref(false);
 
 // 下拉菜单显隐
 const showDropdown = ref(false);
@@ -438,10 +469,8 @@ const dropdownSelect = (key) => {
       }
 
       @media (max-width: 768px) {
-        background: transparent;
-        border: none;
-        gap: 4px;
-      }
+      display: none !important;
+    }
     }
 
     .link-item {
@@ -511,7 +540,8 @@ const dropdownSelect = (key) => {
     gap: 16px;
 
     .about-trigger,
-    .admin-trigger {
+    .admin-trigger,
+    .mobile-menu-trigger {
         width: 36px;
         height: 36px;
         display: flex;
@@ -527,6 +557,13 @@ const dropdownSelect = (key) => {
             color: var(--n-text-color);
             transform: scale(1.1);
         }
+    }
+    
+    .mobile-menu-trigger {
+      display: none;
+      @media (max-width: 768px) {
+        display: flex;
+      }
     }
 
     .user-trigger {

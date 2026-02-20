@@ -62,6 +62,7 @@ server/tmp/
 server/config.yml
 server/config.toml
 server/.env
+server/server
 
 # IDEs
 .trae/*
@@ -70,3 +71,16 @@ server/.env
 # Temporary
 tmp/
 temp/
+
+# Build Resources
+resources/
+
+# Generated Types
+auto-imports.d.ts
+components.d.ts
+
+# Environment Variables
+.env
+.env.*.local
+
+android/

@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMessage, NButton, NTag, NPopconfirm, NImage, NIcon, NDataTable } from 'naive-ui';
+import { useMessage, NPopconfirm, NImage, NIcon, NDataTable, type DataTableColumns } from 'naive-ui';
 import { Left, Delete, Music, PlayOne, User } from '@icon-park/vue-next';
 import { getPublicPlaylists, deletePublicPlaylist } from '@/api/playlist';
 // Force reload dependency
@@ -62,7 +62,7 @@ const pagination = reactive({
   itemCount: 0,
   showSizePicker: true,
   pageSizes: [10, 20, 50],
-  prefix: ({ itemCount }: { itemCount: number }) => `共 ${itemCount} 个歌单`,
+  prefix: ({ itemCount }: { itemCount?: number }) => `共 ${itemCount || 0} 个歌单`,
   onChange: (page: number) => {
     pagination.page = page;
     fetchPlaylists();
@@ -74,7 +74,7 @@ const pagination = reactive({
   }
 });
 
-const columns = [
+const columns: DataTableColumns = [
   {
     title: '封面',
     key: 'cover',
@@ -183,7 +183,7 @@ onMounted(() => {
 const fetchPlaylists = async () => {
   loading.value = true;
   try {
-    const res = await getPublicPlaylists({ page: pagination.page, limit: pagination.pageSize });
+    const res = await getPublicPlaylists(pagination.page, pagination.pageSize);
     if (res.code === ResultCode.SUCCESS) {
       playlistList.value = res.data.list;
       pagination.itemCount = res.data.total;

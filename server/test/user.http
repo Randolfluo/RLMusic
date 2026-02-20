@@ -52,3 +52,13 @@ Content-Type: {{contentType}}
 {
     "user_group": "admin"
 }
+
+### 17. 修改密码 (需要登录)
+POST {{baseUrl}}/user/password
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "old_password": "{{password}}",
+    "new_password": "newpassword123"
+}

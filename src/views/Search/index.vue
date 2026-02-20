@@ -215,11 +215,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useMessage, useDialog, NSkeleton } from "naive-ui";
+import { useDialog, NSkeleton } from "naive-ui";
 import SongList from "@/components/DataList/SongList.vue";
 import { 
-    Search, DeleteFour, History, Fire, PlayOne,
-    Voice, RecordDisc, Record,
+    Search, DeleteFour, History, Fire, PlayOne, Record,
 } from "@icon-park/vue-next";
 import { getSearchHot, getSearchSuggest } from "@/api/search";
 import { useMusicDataStore } from "@/store/musicData";

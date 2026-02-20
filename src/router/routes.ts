@@ -174,6 +174,16 @@ const routes: any = [
     },
     component: () => import("@/views/State/404.vue"),
   },
+  // 桌面歌词
+  {
+    path: "/desktop-lyric",
+    name: "desktop-lyric",
+    meta: {
+      title: "桌面歌词",
+      hideLayout: true,
+    },
+    component: () => import("@/views/DesktopLyric/index.vue"),
+  },
   // 管理员后台
   {
     path: "/admin",

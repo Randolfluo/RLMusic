@@ -5,7 +5,7 @@
         <n-icon :component="ChartGraph" class="title-icon" />
         系统概览
       </h2>
-      <n-button quaternary circle type="primary" @click="getStats" :loading="loading" class="refresh-btn">
+      <n-button secondary circle type="primary" @click="getStats" :loading="loading" class="refresh-btn">
         <template #icon>
           <n-icon :component="Refresh" />
         </template>

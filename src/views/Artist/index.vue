@@ -133,5 +133,34 @@ onMounted(() => {
   .artist-songs {
     margin-top: 32px;
   }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    
+    .artist-header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 24px;
+
+      .cover-wrapper {
+        width: 180px;
+        height: 180px;
+      }
+
+      .info-content {
+        min-height: auto;
+        align-items: center;
+
+        .name {
+          font-size: 24px;
+        }
+
+        .desc {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
 }
 </style>

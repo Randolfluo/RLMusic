@@ -208,7 +208,7 @@ const handlePlayAll = () => {
   }
 };
 
-const rowProps = (row: any, index: number) => {
+const rowProps = (_row: any, index: number) => {
   return {
     style: "cursor: pointer;",
     onClick: () => {
