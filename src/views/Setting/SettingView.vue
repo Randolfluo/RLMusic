@@ -13,6 +13,7 @@ const passwordForm = reactive({
   newPassword: "",
   confirmPassword: "",
 });
+const serverUrl = ref(localStorage.getItem("server_url") || "");
 
 const validateConfirmPassword = (rule, value) => {
   if (value !== passwordForm.newPassword) {
@@ -58,6 +59,19 @@ const handlePasswordSubmit = (e) => {
         });
     }
   });
+};
+const saveServerUrl = () => {
+  const value = serverUrl.value.trim();
+  if (!value) {
+    localStorage.removeItem("server_url");
+    message.success("已清除服务器地址");
+    location.reload();
+    return;
+  }
+  const normalized = value.endsWith("/") ? value.slice(0, -1) : value;
+  localStorage.setItem("server_url", normalized);
+  message.success("服务器地址已保存");
+  location.reload();
 };
 
 const setting = settingStore();
@@ -186,6 +200,25 @@ const playerStyleOptions = [
                 <div class="desc">保存并显示最近的搜索记录</div>
               </div>
               <n-switch v-model:value="searchHistory" :round="false" />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card full-width" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">服务器地址</div>
+                <div class="desc">客户端模式用于连接服务器获取歌曲与封面</div>
+              </div>
+              <div class="server-control">
+                <n-input
+                  v-model:value="serverUrl"
+                  placeholder="http://127.0.0.1:12345"
+                  size="small"
+                />
+                <n-button secondary type="primary" size="small" @click="saveServerUrl">
+                  保存
+                </n-button>
+              </div>
             </div>
           </n-card>
 
@@ -623,6 +656,13 @@ const playerStyleOptions = [
   
   .control {
     width: 140px;
+  }
+
+  .server-control {
+    width: 420px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
   
   .color-picker {

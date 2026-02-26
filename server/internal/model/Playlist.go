@@ -124,6 +124,7 @@ type SimpleSongResponse struct {
 	AlbumID  int    `json:"album_id"`
 	CoverUrl string `json:"cover_url"`
 	HasIntro bool   `json:"has_intro"` // 是否有开场白
+	Artists  []Artist `json:"artists"`
 }
 
 type PlaylistResponse struct {
@@ -215,6 +216,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		Where("playlist_songs.playlist_id = ?", playlist.ID).
 		Limit(limit).Offset(offset).
 		Preload("Artist").
+		Preload("Artists").
 		Preload("Album").
 		Preload("Cover").
 		Find(&songsRaw).Error
@@ -256,6 +258,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 			AlbumID:    albumId,
 			CoverUrl:   coverUrl,
 			HasIntro:   s.OpeningAudioFile != "",
+			Artists:    s.Artists,
 		})
 	}
 
@@ -302,6 +305,7 @@ func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*Play
 		Order("RANDOM()").
 		Limit(limit).
 		Preload("Artist").
+		Preload("Artists").
 		Preload("Album").
 		Preload("Cover").
 		Find(&songsRaw).Error
@@ -342,6 +346,7 @@ func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*Play
 			AlbumID:    albumId,
 			CoverUrl:   coverUrl,
 			HasIntro:   s.OpeningAudioFile != "",
+			Artists:    s.Artists,
 		})
 	}
 

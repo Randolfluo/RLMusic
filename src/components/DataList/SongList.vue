@@ -127,6 +127,7 @@ import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, PauseOne, Download, Folde
 import { musicStore, settingStore } from "@/store";
 import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
 import { removeSongsFromPlaylist } from "@/api/playlist";
+import { getSongCover, resolveCoverUrl } from "@/api/song";
 
 // Props 定义
 const props = defineProps({
@@ -194,6 +195,12 @@ onUnmounted(() => {
 // 添加到歌单模态框状态
 const showAddToPlaylistModal = ref(false);
 const songsToAdd = ref<number[]>([]);
+const getCoverSrc = (coverUrl?: string, id?: number | string, album?: any, picUrl?: string) => {
+  const candidate = coverUrl || album?.picUrl || picUrl;
+  if (candidate) return resolveCoverUrl(candidate);
+  if (id) return getSongCover(id);
+  return "/images/logo/logo.png";
+};
 
 const openAddToPlaylist = (ids: number[]) => {
   songsToAdd.value = ids;
@@ -349,7 +356,7 @@ const renderMenuHeader = (song: any) => {
     }
   }, [
     h(NImage, {
-      src: song.cover_url || (song.album ? song.album.picUrl : null) || song.picUrl || `/api/song/cover/${song.id}`,
+      src: getCoverSrc(song.cover_url, song.id, song.album, song.picUrl),
       width: 40,
       height: 40,
       previewDisabled: true,
@@ -727,7 +734,7 @@ const columns = computed(() => {
             }
         }, [
             h(NImage, {
-                src: row.cover_url || (row.album ? row.album.picUrl : null) || row.picUrl || `/api/song/cover/${row.id}`,
+                src: getCoverSrc(row.cover_url, row.id, row.album, row.picUrl),
                 fallbackSrc: '/images/logo/favicon.png',
                 width: 56, 
                 height: 56,
@@ -1010,9 +1017,9 @@ const mapSongsToPlayer = (list: any[]) => {
             album: song.album || { 
                 name: song.album_name || song.album_title || 'Unknown Album', // 优先使用 album_name
                 id: song.album_id || 0, 
-                picUrl: song.cover_url || (song.id ? `/api/song/cover/${song.id}` : '')
+                picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : song.id ? getSongCover(song.id) : ''
             },
-            picUrl: song.cover_url || (song.id ? `/api/song/cover/${song.id}` : '')
+            picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : song.id ? getSongCover(song.id) : ''
         };
     }).filter(item => item !== null && item.id);
 };

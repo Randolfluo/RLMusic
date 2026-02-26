@@ -1,9 +1,12 @@
-import { app, BrowserWindow, shell, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, screen, dialog } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import os from 'node:os'
 import { spawn } from 'child_process'
+import * as http from 'node:http'
+import * as net from 'node:net'
+import fs from 'node:fs'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -53,6 +56,131 @@ let win: BrowserWindow | null
 let splash: BrowserWindow | null
 let desktopLyricWindow: BrowserWindow | null = null
 let serverProcess: any = null // 保存后端进程实例
+let frontendServer: http.Server | null = null
+
+type AppConfig = {
+  init_done: boolean
+  backend_port: number
+  frontend_port: number
+  base_folder: string
+  access_ip: string
+}
+
+const getAppConfigPath = () => path.join(app.getPath('userData'), 'app-config.json')
+
+const readAppConfig = (): AppConfig => {
+  try {
+    const raw = fs.readFileSync(getAppConfigPath(), 'utf-8')
+    const parsed = JSON.parse(raw || '{}')
+    return {
+      init_done: !!parsed.init_done,
+      backend_port: Number(parsed.backend_port) || 12345,
+      frontend_port: Number(parsed.frontend_port) || 23456,
+      base_folder: String(parsed.base_folder || ''),
+      access_ip: String(parsed.access_ip || ''),
+    }
+  } catch {
+    return { init_done: false, backend_port: 12345, frontend_port: 23456, base_folder: '', access_ip: '' }
+  }
+}
+
+const writeAppConfig = (cfg: Partial<AppConfig>) => {
+  const next = { ...readAppConfig(), ...cfg }
+  fs.mkdirSync(path.dirname(getAppConfigPath()), { recursive: true })
+  fs.writeFileSync(getAppConfigPath(), JSON.stringify(next, null, 2), 'utf-8')
+  return next
+}
+
+const isPortAvailable = (port: number) =>
+  new Promise<boolean>((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => server.close(() => resolve(true)))
+    server.listen(port, '0.0.0.0')
+  })
+
+const getLocalIPs = () => {
+  const nets = os.networkInterfaces()
+  const ips: string[] = []
+  Object.values(nets).forEach((items) => {
+    (items || []).forEach((n) => {
+      if (n.family === 'IPv4' && !n.internal) ips.push(n.address)
+    })
+  })
+  return ips
+}
+
+const updateServerConfigYml = (backendPort: number, baseFolderPath: string) => {
+  const configPath = path.join(process.resourcesPath, 'config.yml')
+  if (!fs.existsSync(configPath)) return
+  const escapedPath = baseFolderPath.replace(/'/g, "''")
+  const raw = fs.readFileSync(configPath, 'utf-8')
+  const withPort = raw.replace(/(^\s*Port:\s*).*/m, `$1:${backendPort}`)
+  const withPath = withPort.replace(/(^\s*FilePath:\s*).*/m, `$1'${escapedPath}'`)
+  fs.writeFileSync(configPath, withPath, 'utf-8')
+}
+
+const guessMime = (p: string) => {
+  const ext = path.extname(p).toLowerCase()
+  if (ext === '.html') return 'text/html; charset=utf-8'
+  if (ext === '.js' || ext === '.mjs') return 'text/javascript; charset=utf-8'
+  if (ext === '.css') return 'text/css; charset=utf-8'
+  if (ext === '.json') return 'application/json; charset=utf-8'
+  if (ext === '.svg') return 'image/svg+xml'
+  if (ext === '.png') return 'image/png'
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
+  if (ext === '.ico') return 'image/x-icon'
+  if (ext === '.woff') return 'font/woff'
+  if (ext === '.woff2') return 'font/woff2'
+  if (ext === '.ttf') return 'font/ttf'
+  return 'application/octet-stream'
+}
+
+const stopFrontendServer = async () => {
+  if (!frontendServer) return
+  await new Promise<void>((resolve) => frontendServer?.close(() => resolve()))
+  frontendServer = null
+}
+
+const startFrontendServer = async (port: number) => {
+  await stopFrontendServer()
+  const root = RENDERER_DIST
+  const indexPath = path.join(root, 'index.html')
+  frontendServer = http.createServer((req, res) => {
+    const method = req.method || 'GET'
+    if (method !== 'GET' && method !== 'HEAD') {
+      res.statusCode = 405
+      res.end()
+      return
+    }
+    try {
+      const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+      const pathname = decodeURIComponent(url.pathname || '/')
+      const safePath = pathname.replace(/\\/g, '/')
+      const requested = safePath === '/' ? '/index.html' : safePath
+      const resolved = path.resolve(path.join(root, requested))
+      const rootResolved = path.resolve(root)
+      const targetPath = resolved.startsWith(rootResolved) ? resolved : indexPath
+      const exists = fs.existsSync(targetPath) && fs.statSync(targetPath).isFile()
+      const finalPath = exists ? targetPath : indexPath
+      const data = fs.readFileSync(finalPath)
+      res.setHeader('Content-Type', guessMime(finalPath))
+      res.statusCode = 200
+      if (method === 'HEAD') {
+        res.end()
+      } else {
+        res.end(data)
+      }
+    } catch {
+      res.statusCode = 500
+      res.end()
+    }
+  })
+  await new Promise<void>((resolve, reject) => {
+    frontendServer?.once('error', reject)
+    frontendServer?.listen(port, '0.0.0.0', () => resolve())
+  })
+}
 
 // 启动后端服务
 function startServer() {
@@ -64,10 +192,13 @@ function startServer() {
   const resourcesPath = process.resourcesPath;
   const serverPath = path.join(resourcesPath, serverName);
   
-  const fs = require('fs');
   if (fs.existsSync(serverPath)) {
     console.log(`Starting server from: ${serverPath}`);
     // 启动服务，不显示窗口
+    if (serverProcess) {
+      serverProcess.kill()
+      serverProcess = null
+    }
     serverProcess = spawn(serverPath, [], {
       cwd: resourcesPath, // 设置工作目录为 resources
       windowsHide: true,
@@ -91,11 +222,14 @@ function startServer() {
  * 创建主窗口
  */
 function createWindow() {
-  startServer(); // 尝试启动后端
+  const cfg = readAppConfig()
+  if (cfg.init_done) {
+    startServer()
+    startFrontendServer(cfg.frontend_port).catch(() => {})
+  }
 
   // 优先查找 .ico 文件 (Windows 最佳实践)，如果不存在则使用 .png
   let iconPath = path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.ico')
-  const fs = require('fs') // 引入 fs 模块用于检查文件是否存在
   if (!fs.existsSync(iconPath)) {
     iconPath = path.join(process.env.VITE_PUBLIC as string, 'images/logo/favicon.png')
   }
@@ -250,6 +384,60 @@ ipcMain.on('update-desktop-lyric-settings', (event, settings) => {
   }
 })
 
+ipcMain.handle('app-config-get', async () => {
+  return readAppConfig()
+})
+
+ipcMain.handle('select-directory', async () => {
+  const res = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  return res
+})
+
+ipcMain.handle('get-local-ips', async () => {
+  return { ips: getLocalIPs() }
+})
+
+ipcMain.handle('check-ports', async (_event, payload) => {
+  const backendPort = Number(payload?.backendPort) || 0
+  const frontendPort = Number(payload?.frontendPort) || 0
+  return {
+    backendAvailable: backendPort > 0 ? await isPortAvailable(backendPort) : false,
+    frontendAvailable: frontendPort > 0 ? await isPortAvailable(frontendPort) : false,
+  }
+})
+
+ipcMain.handle('apply-initial-config', async (_event, payload) => {
+  const mode = String(payload?.mode || '')
+  const backendPort = Number(payload?.backendPort) || 12345
+  const frontendPort = Number(payload?.frontendPort) || 23456
+  const baseFolderPath = String(payload?.baseFolderPath || '')
+  const accessIp = String(payload?.accessIp || '')
+
+  if (mode === 'server') {
+    const backendOk = await isPortAvailable(backendPort)
+    const frontendOk = await isPortAvailable(frontendPort)
+    if (!backendOk) throw new Error('backend port unavailable')
+    if (!frontendOk) throw new Error('frontend port unavailable')
+
+    writeAppConfig({
+      init_done: true,
+      backend_port: backendPort,
+      frontend_port: frontendPort,
+      base_folder: baseFolderPath,
+      access_ip: accessIp,
+    })
+    updateServerConfigYml(backendPort, baseFolderPath)
+    startServer()
+    await startFrontendServer(frontendPort)
+    return { ok: true }
+  }
+
+  writeAppConfig({ init_done: true })
+  return { ok: true }
+})
+
 // Electron 初始化完成并准备创建浏览器窗口时调用
 app.whenReady().then(createWindow)
 
@@ -261,6 +449,8 @@ app.on('window-all-closed', () => {
     serverProcess.kill();
     serverProcess = null;
   }
+
+  stopFrontendServer().catch(() => {})
 
   // 除了 macOS 外，所有窗口关闭时退出应用
   if (process.platform !== 'darwin') app.quit()

@@ -60,6 +60,14 @@
           </template>
           管理员入口
         </n-tooltip>
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <div class="connect-trigger" @click="handleServerConfigClick">
+              <n-icon :component="Connection" size="20" />
+            </div>
+          </template>
+          连接服务
+        </n-tooltip>
 
         <!-- 移动端汉堡菜单按钮 -->
         <div class="mobile-menu-trigger" @click="showMobileMenu = true">
@@ -81,11 +89,7 @@
               class="avatar"
               round
               :size="36"
-              :src="
-                user.getUserData.avatarUrl
-                  ? user.getUserData.avatarUrl
-                  : '/images/ico/user-filling.svg'
-              "
+              :src="resolveAvatarUrl(user.getUserData.avatarUrl) || '/images/ico/user-filling.svg'"
               fallback-src="/images/ico/user-filling.svg"
             />
           </div>
@@ -118,6 +122,10 @@
             <template #prefix><n-icon :component="Left" /></template>
             我的
           </n-list-item>
+          <n-list-item @click="handleServerConfigClick(); showMobileMenu = false">
+            <template #prefix><n-icon :component="Connection" /></template>
+            连接服务
+          </n-list-item>
         </n-list>
       </n-drawer-content>
     </n-drawer>
@@ -137,12 +145,14 @@ import {
   SunOne,
   Moon,
   Permissions,
+  Connection,
   HamburgerButton,
 } from "@icon-park/vue-next";
 import { userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
 import AboutSite from "@/components/DataModel/AboutSite.vue";
 import { useMessage, NDrawer, NDrawerContent, NList, NListItem } from "naive-ui";
+import { resolveAvatarUrl } from "@/api/user";
 
 const router = useRouter();
 const user = userStore();
@@ -184,6 +194,10 @@ const handleAdminClick = () => {
   }
 };
 
+const handleServerConfigClick = () => {
+  window.dispatchEvent(new CustomEvent("open-server-config"));
+};
+
 // 用户数据模块
 const userDataRender = () => {
   return h(
@@ -201,7 +215,7 @@ const userDataRender = () => {
         round: true,
         style: "margin-right: 12px",
         src: user.userLogin
-          ? user.getUserData.avatarUrl
+          ? resolveAvatarUrl(user.getUserData.avatarUrl)
           : "/images/ico/user-filling.svg",
         fallbackSrc: "/images/ico/user-filling.svg",
       }),
@@ -541,6 +555,7 @@ const dropdownSelect = (key) => {
 
     .about-trigger,
     .admin-trigger,
+    .connect-trigger,
     .mobile-menu-trigger {
         width: 36px;
         height: 36px;

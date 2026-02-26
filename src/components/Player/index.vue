@@ -23,17 +23,7 @@
     <div class="all">
       <div class="data">
         <div class="pic" @click.stop="music.setBigPlayerState(true)">
-          <img
-            :src="
-              music.getPlaySongData?.album?.picUrl
-                ? music.getPlaySongData.album.picUrl.replace(
-                    /^http:/,
-                    'https:'
-                  ) + '?param=50y50'
-                : '/images/pic/default.png'
-            "
-            alt="pic"
-          />
+          <img :src="coverUrl" alt="pic" />
           <n-icon class="open" size="30" :component="KeyboardArrowUpFilled" />
         </div>
         <div class="name">
@@ -245,7 +235,7 @@
 </template>
 
 <script setup>
-import { checkMusicCanUse, getMusicUrl, getMusicLyric } from "@/api/song";
+import { checkMusicCanUse, getMusicUrl, getMusicLyric, getSongCover, resolveCoverUrl } from "@/api/song";
 import { getSongOpeningAudioUrl } from "@/api/ai";
 import { updateListeningDuration } from "@/api/user";
 import { NIcon } from "naive-ui";
@@ -284,6 +274,14 @@ const { persistData } = storeToRefs(music);
 const listeningTimer = ref(0);
 const lastDurationTime = ref(0);
 const addPlayListRef = ref(null);
+const appendCoverParam = (url, size) => (url.includes("?") ? `${url}&param=${size}` : `${url}?param=${size}`);
+const coverUrl = computed(() => {
+  const pic = music.getPlaySongData?.album?.picUrl || music.getPlaySongData?.picUrl;
+  const resolved = resolveCoverUrl(pic);
+  if (resolved) return appendCoverParam(resolved, "50y50");
+  if (music.getPlaySongData?.id) return appendCoverParam(getSongCover(music.getPlaySongData.id), "50y50");
+  return "/images/pic/default.png";
+});
 
 // 音频标签
 const player = ref(null);
@@ -310,7 +308,7 @@ const getPlaySongData = (id, level = setting.songLevel) => {
             $message.warning("当前歌曲为 VIP 专享，仅可试听");
           }
           const songUrl = res.data[0].url;
-          music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
+          music.setPlaySongLink(songUrl || "");
         });
       }
 
@@ -343,7 +341,7 @@ const handleSongEnded = () => {
           $message.warning("当前歌曲为 VIP 专享，仅可试听");
         }
         const songUrl = res.data[0].url;
-        music.setPlaySongLink(songUrl ? songUrl.replace(/^http:/, "https:") : "");
+        music.setPlaySongLink(songUrl || "");
         music.setPlayState(true);
       });
     }, 1000);
@@ -402,23 +400,24 @@ const songPlay = () => {
   music.setPlayState(true);
   // 兼容 mediaSession
   if ("mediaSession" in navigator) {
-    const picUrl = music.getPlaySongData?.album?.picUrl;
-    const safePicUrl = picUrl ? picUrl.replace(/^http:/, "https:") : "/images/pic/default.png";
+    const picUrl = music.getPlaySongData?.album?.picUrl || music.getPlaySongData?.picUrl;
+    const resolvedPicUrl = resolveCoverUrl(picUrl);
+    const basePicUrl = resolvedPicUrl || (music.getPlaySongData?.id ? getSongCover(music.getPlaySongData.id) : "/images/pic/default.png");
     navigator.mediaSession.metadata = new MediaMetadata({
       title: music.getPlaySongData.name,
       artist: music.getPlaySongData.artist?.[0]?.name || "Unknown",
       album: music.getPlaySongData.album?.name || "Unknown",
       artwork: [
         {
-          src: safePicUrl + "?param=96y96",
+          src: appendCoverParam(basePicUrl, "96y96"),
           sizes: "96x96",
         },
         {
-          src: safePicUrl + "?param=128y128",
+          src: appendCoverParam(basePicUrl, "128y128"),
           sizes: "128x128",
         },
         {
-          src: safePicUrl + "?param=192y192",
+          src: appendCoverParam(basePicUrl, "192y192"),
           sizes: "192x192",
         },
       ],

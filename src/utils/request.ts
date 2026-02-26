@@ -69,20 +69,52 @@ declare module 'axios' {
   }
 }
 
-// 创建 axios 实例
 const appMode = import.meta.env.VITE_APP_MODE;
-let baseURL = "/api";
-
-if (appMode === 'server') {
-    baseURL = "http://localhost:12345/api";
-} else if (appMode === 'client') {
-     const storedUrl = localStorage.getItem('server_url');
-     if (storedUrl) {
-         baseURL = storedUrl.endsWith('/') ? `${storedUrl}api` : `${storedUrl}/api`;
-     } else {
-         baseURL = "http://localhost:12345/api"; // Default fallback
-     }
+const normalizeServerUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+};
+let storedUrl = localStorage.getItem("server_url") || "";
+const apiParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("api") : "";
+const normalizedApiParam = apiParam ? normalizeServerUrl(apiParam) : "";
+if (normalizedApiParam && normalizedApiParam !== storedUrl) {
+  localStorage.setItem("server_url", normalizedApiParam);
+  storedUrl = normalizedApiParam;
 }
+const backendPortRaw = typeof window !== "undefined" ? localStorage.getItem("backend_port") || "" : "";
+const backendPort = Number(backendPortRaw) > 0 ? Number(backendPortRaw) : 12345;
+const accessIp = typeof window !== "undefined" ? localStorage.getItem("access_ip") || "" : "";
+const hostFromLocation = typeof window !== "undefined" ? window.location.hostname : "";
+const resolvedHost =
+  hostFromLocation && hostFromLocation !== "localhost" && hostFromLocation !== "127.0.0.1"
+    ? hostFromLocation
+    : accessIp || "localhost";
+const normalizeBaseUrl = (url: string) => (url.endsWith("/") ? `${url}api` : `${url}/api`);
+let baseURL = "/api";
+let serverConnectionNotified = false;
+
+if (appMode === "server") {
+  baseURL = `http://${resolvedHost}:${backendPort}/api`;
+} else if (appMode === "client") {
+  baseURL = storedUrl ? normalizeBaseUrl(storedUrl) : `http://localhost:${backendPort}/api`;
+} else {
+  if (storedUrl) {
+    baseURL = normalizeBaseUrl(storedUrl);
+  } else if (typeof navigator !== "undefined" && navigator.userAgent.includes("Electron")) {
+    baseURL = `http://localhost:${backendPort}/api`;
+  }
+}
+
+export const apiBaseURL = baseURL;
+export const resolveServerUrl = (path: string) => {
+  if (!path) return path;
+  if (/^https?:\/\//.test(path)) return path;
+  if (!apiBaseURL.startsWith("http")) return path;
+  const origin = apiBaseURL.replace(/\/api$/, "");
+  if (!origin) return path;
+  return path.startsWith("/") ? `${origin}${path}` : `${origin}/${path}`;
+};
 
 const service = axios.create({
   baseURL: baseURL, // 基础路径，通过 vite 代理转发
@@ -180,9 +212,22 @@ service.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    const status = error?.response?.status;
+    const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+    const shouldNotify =
+      !serverConnectionNotified &&
+      (appMode === "client" || !!storedUrl || (!isElectron && appMode !== "server"));
+    const isWebWithoutStoredUrl = !isElectron && !storedUrl && appMode !== "server";
+    const isLikelyApiMiss = status === 404 && isWebWithoutStoredUrl && baseURL === "/api";
+    const isConnectionError = !error.response || status === 502 || status === 503 || status === 504 || isLikelyApiMiss;
+    if (shouldNotify && isConnectionError && typeof window !== "undefined") {
+        serverConnectionNotified = true;
+        window.dispatchEvent(new CustomEvent("server-connection-failed", { detail: { baseURL } }));
+    }
     if (window.$loadingBar) {
       window.$loadingBar.error();
     }
+    
     
     // 处理错误信息
     let message = "请求失败";

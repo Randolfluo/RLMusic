@@ -6,7 +6,7 @@
         <div class="cover-wrapper">
           <n-image
             class="cover-img"
-            :src="artistInfo.cover || '/images/logo/logo.png'"
+            :src="resolveCoverUrl(artistInfo.cover) || '/images/logo/logo.png'"
             fallback-src="/images/logo/logo.png"
             object-fit="cover"
           />
@@ -30,7 +30,16 @@
       <!-- 歌手歌曲列表 -->
       <div class="artist-songs" v-if="artistInfo">
         <n-divider title-placement="left">歌曲列表</n-divider>
-        <SongList :songs="artistInfo.songs || []" />
+        <SongList :songs="songs" />
+        <div class="pagination-container" v-if="total > 0">
+          <Pagination
+            :totalCount="total"
+            :pageNumber="page"
+            :showSizePicker="true"
+            @pageNumberChange="onPageChange"
+            @pageSizeChange="onPageSizeChange"
+          />
+        </div>
       </div>
     </n-spin>
   </div>
@@ -40,15 +49,20 @@
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useMessage, NImage, NEllipsis, NSpin, NDivider } from "naive-ui";
-import { getArtistDetail } from "@/api/song";
+import { getArtistDetail, resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
 import SongList from "@/components/DataList/SongList.vue";
+import Pagination from "@/components/Pagination/index.vue";
 
 const route = useRoute();
 const message = useMessage();
 
 const loading = ref(false);
 const artistInfo = ref<any>(null);
+const songs = ref<any[]>([]);
+const page = ref(1);
+const limit = ref(30);
+const total = ref(0);
 
 const initData = async () => {
   const id = route.query.id as string;
@@ -57,9 +71,18 @@ const initData = async () => {
   loading.value = true;
   try {
     // 1. 获取歌手详情
-    const res = await getArtistDetail(id);
+    const res = await getArtistDetail(id, page.value, limit.value);
     if (res.code === ResultCode.SUCCESS) {
-      artistInfo.value = res.data;
+      const data = res.data || {};
+      if (data.artist) {
+        artistInfo.value = data.artist;
+        songs.value = Array.isArray(data.list) ? data.list : data.songs || [];
+        total.value = data.total ?? 0;
+      } else {
+        artistInfo.value = data;
+        songs.value = data.songs || [];
+        total.value = Array.isArray(data.songs) ? data.songs.length : 0;
+      }
     } else {
       message.error(res.message || "获取歌手信息失败");
     }
@@ -71,8 +94,20 @@ const initData = async () => {
   }
 };
 
+const onPageChange = (val: number) => {
+  page.value = val;
+  initData();
+};
+
+const onPageSizeChange = (val: number) => {
+  limit.value = val;
+  page.value = 1;
+  initData();
+};
+
 watch(() => route.query.id, () => {
     if (route.name === 'artist') {
+        page.value = 1;
         initData();
     }
 });
@@ -132,6 +167,12 @@ onMounted(() => {
 
   .artist-songs {
     margin-top: 32px;
+
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
   }
 
   @media (max-width: 768px) {

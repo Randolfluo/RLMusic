@@ -48,6 +48,62 @@
       <Player />
       <BigPlayer v-if="music.getPlaylists[0]" />
     </template>
+    <n-modal v-model:show="showServerConfig" class="server-modal" :mask-closable="false">
+      <div class="server-card">
+        <div class="server-ambient"></div>
+        <div class="server-grid"></div>
+        <div class="server-glow"></div>
+        <div class="server-shell">
+          <div class="server-aside">
+            <div class="server-badge">连接诊断</div>
+            <div class="server-icon">
+              <n-icon :component="Connection" size="30" />
+            </div>
+            <div class="server-aside-title">服务器未连接</div>
+            <div class="server-aside-subtitle">请输入可访问的后端地址</div>
+            <div class="server-pulses">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+          <div class="server-main">
+            <div class="server-header">
+              <div class="server-title">
+                <span>连接服务器</span>
+              </div>
+              <n-tag type="warning" size="small" round>需要配置</n-tag>
+            </div>
+            <div class="server-status">
+              <span class="server-dot"></span>
+              <span>无法访问服务器，请更新地址</span>
+            </div>
+            <div class="server-desc">
+              保存后将立即重载并尝试重新连接。
+            </div>
+            <div class="server-input">
+              <div class="server-label">服务器地址</div>
+              <n-input
+                v-model:value="serverUrlInput"
+                placeholder="http://127.0.0.1:12345"
+                size="large"
+                clearable
+                autofocus
+                class="server-input-inner"
+                @keyup.enter="applyServerUrl"
+              />
+            </div>
+            <div class="server-actions">
+              <n-button secondary size="large" @click="applyServerUrl">保存并重连</n-button>
+              <n-button quaternary size="large" @click="dismissServerConfig">稍后设置</n-button>
+            </div>
+            <div class="server-hint">
+              需保证后端服务已启动且端口可达
+            </div>
+          </div>
+        </div>
+      </div>
+    </n-modal>
   </Provider>
 </template>
 
@@ -60,17 +116,39 @@ import Nav from "@/components/Nav/index.vue";
 import Player from "@/components/Player/index.vue";
 import BigPlayer from "@/components/Player/BigPlayer.vue";
 import packageJson from "@/../package.json";
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { ResultCode } from "@/utils/request";
 import { useRoute } from "vue-router"; // 引入 useRoute
-import { NIcon, NBackTop } from "naive-ui";
-import { ToTop } from "@icon-park/vue-next";
+import { NIcon, NBackTop, NModal, NInput, NButton, NTag } from "naive-ui";
+import { ToTop, Connection } from "@icon-park/vue-next";
 
 const route = useRoute(); // 获取当前路由信息
 const music = musicStore();
 const user = userStore();
 // const router = useRouter();
 // const setting = settingStore();
+const showServerConfig = ref(false);
+const serverUrlInput = ref(localStorage.getItem("server_url") || "");
+const normalizeServerUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+};
+
+const applyServerUrl = () => {
+  const normalized = normalizeServerUrl(serverUrlInput.value);
+  if (!normalized) {
+    localStorage.removeItem("server_url");
+    location.reload();
+    return;
+  }
+  localStorage.setItem("server_url", normalized);
+  location.reload();
+};
+
+const dismissServerConfig = () => {
+  showServerConfig.value = false;
+};
 
 // 自动登录逻辑
 onMounted(() => {
@@ -116,6 +194,37 @@ onMounted(() => {
       music.setPlayState(!music.getPlayState);
     }
   });
+});
+
+const handleServerConnectFail = (event: Event) => {
+  const detail = (event as CustomEvent).detail;
+  if (detail?.baseURL && !serverUrlInput.value) {
+    const base = String(detail.baseURL).replace(/\/api$/, "");
+    if (base && base.startsWith("http")) {
+      serverUrlInput.value = base;
+    }
+  }
+  showServerConfig.value = true;
+};
+
+onMounted(() => {
+  window.addEventListener("server-connection-failed", handleServerConnectFail);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("server-connection-failed", handleServerConnectFail);
+});
+
+const openServerConfig = () => {
+  showServerConfig.value = true;
+};
+
+onMounted(() => {
+  window.addEventListener("open-server-config", openServerConfig);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("open-server-config", openServerConfig);
 });
 
 const mainContent = ref<HTMLElement | null>(null);
@@ -300,5 +409,307 @@ onMounted(() => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.server-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.server-modal :deep(.n-modal-body) {
+  padding: 0;
+}
+
+.server-card {
+  width: min(720px, 94vw);
+  padding: 22px;
+  border-radius: 26px;
+  background: radial-gradient(120% 120% at 0% 0%, rgba(255, 244, 229, 0.95) 0%, rgba(255, 255, 255, 0.98) 55%, rgba(255, 255, 255, 0.94) 100%);
+  border: 1px solid rgba(255, 178, 102, 0.35);
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+}
+
+:global(.dark) .server-card {
+  background: radial-gradient(120% 120% at 0% 0%, rgba(42, 32, 20, 0.92) 0%, rgba(22, 22, 24, 0.96) 55%, rgba(18, 18, 20, 0.92) 100%);
+  border: 1px solid rgba(255, 178, 102, 0.18);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+}
+
+.server-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.server-aside {
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.4));
+  border: 1px solid rgba(255, 179, 102, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+:global(.dark) .server-aside {
+  background: linear-gradient(170deg, rgba(35, 30, 26, 0.9), rgba(20, 20, 22, 0.6));
+  border: 1px solid rgba(255, 179, 102, 0.18);
+}
+
+.server-badge {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 140, 60, 0.95);
+  font-weight: 700;
+}
+
+.server-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: rgba(255, 165, 90, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff914d;
+  box-shadow: inset 0 0 0 1px rgba(255, 165, 90, 0.2);
+}
+
+.server-aside-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.server-aside-subtitle {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.7;
+}
+
+.server-pulses {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.server-pulses span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 145, 77, 0.45);
+  animation: server-pulse 1.8s infinite;
+}
+
+.server-pulses span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.server-pulses span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.server-main {
+  padding: 8px 6px 6px 2px;
+}
+
+.server-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.server-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.server-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff914d;
+  box-shadow: 0 0 12px rgba(255, 145, 77, 0.7);
+}
+
+.server-desc {
+  font-size: 14px;
+  opacity: 0.7;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+.server-input {
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.server-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  opacity: 0.6;
+  margin-bottom: 8px;
+}
+
+.server-input-inner {
+  --n-border-radius: 16px;
+  --n-height: 48px;
+}
+
+.server-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.server-hint {
+  margin-top: 16px;
+  font-size: 12px;
+  opacity: 0.6;
+  position: relative;
+  z-index: 1;
+}
+
+.server-ambient {
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(255, 168, 76, 0.5), transparent 70%);
+  filter: blur(0px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.server-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255, 160, 90, 0.08), rgba(255, 160, 90, 0.08) 1px, transparent 1px, transparent 18px),
+    repeating-linear-gradient(0deg, rgba(20, 20, 20, 0.06), rgba(20, 20, 20, 0.06) 1px, transparent 1px, transparent 18px);
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.server-glow {
+  position: absolute;
+  inset: auto -20% -25% -20%;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 150, 72, 0.25), transparent 70%);
+  filter: blur(40px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.server-card :deep(.n-input) {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+:global(.dark) .server-card :deep(.n-input) {
+  background: rgba(20, 20, 22, 0.85);
+}
+
+.server-card :deep(.n-input--focus) {
+  box-shadow: 0 0 0 2px rgba(255, 145, 77, 0.25);
+}
+
+.server-card :deep(.n-button--secondary) {
+  background: rgba(255, 164, 88, 0.18);
+  border-color: rgba(255, 164, 88, 0.35);
+  color: #c25115;
+}
+
+:global(.dark) .server-card :deep(.n-button--secondary) {
+  color: #ffb27a;
+}
+
+.server-card :deep(.n-button--secondary:hover) {
+  transform: translateY(-1px);
+}
+
+.server-card :deep(.n-button--quaternary:hover) {
+  background: rgba(255, 164, 88, 0.12);
+}
+
+@keyframes server-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+}
+
+.server-card :deep(.n-input__input-el) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.server-card :deep(.n-input__textarea-el) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+@media (max-width: 720px) {
+  .server-card {
+    width: min(520px, 94vw);
+    padding: 18px;
+  }
+
+  .server-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .server-aside {
+    align-items: center;
+    text-align: center;
+  }
+
+  .server-main {
+    padding: 0;
+  }
 }
 </style>

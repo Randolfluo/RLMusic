@@ -19,7 +19,7 @@
                   <n-avatar
                     round
                     :size="140"
-                    :src="user.getUserData.avatarUrl || '/images/ico/user-filling.svg'"
+                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || '/images/ico/user-filling.svg'"
                     fallback-src="/images/ico/user-filling.svg"
                     class="user-avatar"
                     object-fit="cover"
@@ -111,7 +111,7 @@ import {
 } from "@icon-park/vue-next";
 import axios from "@/utils/request"; 
 import { onMounted, ref } from "vue";
-import { getUserInfo, uploadAvatar } from "@/api/user";
+import { getUserInfo, uploadAvatar, resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
 
 const user = userStore();

@@ -78,6 +78,12 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
@@ -98,6 +104,9 @@
         "deb"
       ],
       "artifactName": "${productName}-Linux-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Windows-Portable-${version}.${ext}"
     }
   },
   "pnpm": {

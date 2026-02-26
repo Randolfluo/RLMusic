@@ -29,7 +29,7 @@ func main() {
 
 	r.Use(gin.Logger(), gin.Recovery())
 
-	//r.Use(middleware.CORS())
+	r.Use(middleware.CORS())
 	r.Use(middleware.WithGormDB(db))
 	// r.Use(middleware.WithRedisDB(rdb))
 	//r.Use(middleware.WithCookieStore(conf.Session.Name, conf.Session.Salt))
@@ -45,9 +45,22 @@ func main() {
 	server.RegisterHandlers(r, nil)
 
 	//运行服务
-	serverAddr := conf.Server.Port
-	if serverAddr[0] == ':' || strings.HasPrefix(serverAddr, "0.0.0.0:") {
-		log.Printf("Serving HTTP on (http://localhost:%s/) ... \n", strings.Split(serverAddr, ":")[1])
+	serverAddr := strings.TrimSpace(conf.Server.Port)
+	if serverAddr == "" {
+		serverAddr = ":12345"
+	}
+	if !strings.Contains(serverAddr, ":") {
+		serverAddr = ":" + serverAddr
+	}
+	if strings.HasPrefix(serverAddr, "localhost:") {
+		serverAddr = "0.0.0.0:" + strings.TrimPrefix(serverAddr, "localhost:")
+	} else if strings.HasPrefix(serverAddr, "127.0.0.1:") {
+		serverAddr = "0.0.0.0:" + strings.TrimPrefix(serverAddr, "127.0.0.1:")
+	} else if strings.HasPrefix(serverAddr, ":") {
+		serverAddr = "0.0.0.0" + serverAddr
+	}
+	if strings.HasPrefix(serverAddr, "0.0.0.0:") {
+		log.Printf("Serving HTTP on (http://%s/) ... \n", serverAddr)
 	} else {
 		log.Printf("Serving HTTP on (http://%s/) ... \n", serverAddr)
 	}

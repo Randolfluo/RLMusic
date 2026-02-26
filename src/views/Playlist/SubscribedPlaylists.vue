@@ -23,7 +23,7 @@
             <n-avatar
               round
               size="small"
-              :src="user.userData.avatarUrl || '/images/logo/favicon.png'"
+              :src="resolveAvatarUrl(user.userData.avatarUrl) || '/images/logo/favicon.png'"
               fallback-src="/images/logo/favicon.png"
             />
             <span class="name">{{ user.userData.nickname || '用户' }}</span>
@@ -53,6 +53,7 @@ import { useMessage, NTag, NAvatar, NIcon } from "naive-ui";
 import { Star } from "@icon-park/vue-next";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import { useUserDataStore } from "@/store/userData";
+import { resolveAvatarUrl } from "@/api/user";
 
 const message = useMessage();
 const user = useUserDataStore();

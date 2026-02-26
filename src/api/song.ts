@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request, { apiBaseURL, resolveServerUrl } from "@/utils/request";
 import lyricFormat from "@/utils/lyricFormat.js";
 
 /**
@@ -21,7 +21,7 @@ export function getMusicUrl(id: number | string, _level?: string) {
     resolve({
       data: [
         {
-          url: `/api/song/stream/${id}`,
+          url: `${apiBaseURL}/song/stream/${id}`,
           fee: 0,
           freeTrialInfo: null,
           type: "flac",
@@ -133,7 +133,18 @@ export function getSongDetail(id: number | string) {
  * @param {Number|String} id - 歌曲 id
  */
 export function getSongCover(id: number | string) {
-  return `/api/song/cover/${id}`;
+  return `${apiBaseURL}/song/cover/${id}`;
+}
+
+export function resolveCoverUrl(url?: string) {
+  if (!url) return url;
+  if (url.startsWith("/covers/") || url.startsWith("covers/")) {
+    return resolveServerUrl(url.startsWith("/") ? url : `/${url}`);
+  }
+  if (url.startsWith("/api/") || url.startsWith("api/")) {
+    return resolveServerUrl(url.startsWith("/") ? url : `/${url}`);
+  }
+  return resolveServerUrl(url);
 }
 
 /**
@@ -150,11 +161,15 @@ export const scanMusic = () => {
  * 获取歌手详情
  * @param {Number|String} id
  */
-export const getArtistDetail = (id: number | string) => {
-    return request({
-        method: "GET",
-        url: `/song/artist/${id}`
-    });
+export const getArtistDetail = (id: number | string, page = 1, limit = 30) => {
+  return request({
+    method: "GET",
+    url: `/song/artist/${id}`,
+    params: {
+      page,
+      limit,
+    },
+  });
 };
 
 /**

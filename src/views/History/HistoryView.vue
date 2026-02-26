@@ -23,7 +23,7 @@
             <n-avatar
               round
               size="small"
-              :src="userStore.userData.avatarUrl || '/images/logo/favicon.png'"
+              :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'"
               fallback-src="/images/logo/favicon.png"
             />
             <span class="name">{{ userStore.userData.nickname || '用户' }}</span>
@@ -80,7 +80,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from "vue";
-import { getHistoryList, clearHistory } from "@/api/song";
+import { getHistoryList, clearHistory, getSongCover, resolveCoverUrl } from "@/api/song";
+import { resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NImage, NTime, NTag, NAvatar, NIcon } from "naive-ui";
 import { useMusicDataStore } from "@/store/musicData";
@@ -111,7 +112,7 @@ const columns = [
     width: 60,
     render: (row: any) => {
       return h(NImage, {
-        src: row.cover_url || '/images/logo/favicon.png',
+        src: row.cover_url ? resolveCoverUrl(row.cover_url) : row.song_id || row.id ? getSongCover(row.song_id || row.id) : '/images/logo/favicon.png',
         width: 40,
         height: 40,
         objectFit: 'cover',
@@ -199,7 +200,7 @@ const handlePlayAll = () => {
           ...item,
           name: item.title,
           artist: [{ name: item.artist, id: 0 }],
-          album: { name: item.album, id: 0, picUrl: item.cover_url }
+          album: { name: item.album, id: 0, picUrl: item.cover_url ? resolveCoverUrl(item.cover_url) : item.song_id || item.id ? getSongCover(item.song_id || item.id) : '' }
       }));
 
       music.setPlaylists(tracks);
@@ -216,7 +217,7 @@ const rowProps = (_row: any, index: number) => {
           ...item,
           name: item.title,
           artist: [{ name: item.artist, id: 0 }],
-          album: { name: item.album, id: 0, picUrl: item.cover_url }
+          album: { name: item.album, id: 0, picUrl: item.cover_url ? resolveCoverUrl(item.cover_url) : item.song_id || item.id ? getSongCover(item.song_id || item.id) : '' }
       }));
       music.setPlaylists(tracks);
       music.setPlaySongIndex(index);

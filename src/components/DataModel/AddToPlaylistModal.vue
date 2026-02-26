@@ -32,7 +32,7 @@
             <div class="cover-box">
                 <n-image
                     v-if="playlist.cover_url"
-                    :src="playlist.cover_url"
+                    :src="resolveCoverUrl(playlist.cover_url)"
                     fallback-src="/images/default_cover.png"
                     preview-disabled
                     object-fit="cover"
@@ -66,6 +66,7 @@ import { ref, watch } from 'vue';
 import { useMessage, NModal, NIcon, NDivider, NSpin, NImage } from 'naive-ui';
 import { Plus, Music } from '@icon-park/vue-next';
 import { getUserPrivatePlaylists, addSongsToPlaylist } from '@/api/playlist';
+import { resolveCoverUrl } from "@/api/song";
 import CreatePlaylistModal from './CreatePlaylistModal.vue';
 
 const props = defineProps({

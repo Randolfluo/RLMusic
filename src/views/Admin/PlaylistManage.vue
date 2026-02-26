@@ -47,6 +47,7 @@ import { useRouter } from 'vue-router';
 import { useMessage, NPopconfirm, NImage, NIcon, NDataTable, type DataTableColumns } from 'naive-ui';
 import { Left, Delete, Music, PlayOne, User } from '@icon-park/vue-next';
 import { getPublicPlaylists, deletePublicPlaylist } from '@/api/playlist';
+import { resolveCoverUrl } from "@/api/song";
 // Force reload dependency
 import { ResultCode } from "@/utils/request";
 
@@ -80,25 +81,7 @@ const columns: DataTableColumns = [
     key: 'cover',
     width: 80,
     render(row: any) {
-      let src = '';
-      if (row.cover_url) {
-        if (row.cover_url.startsWith('http')) {
-          src = row.cover_url;
-        } else {
-            // Ensure it starts with /covers/
-            // If it starts with /covers/ (e.g. /covers/foo.jpg), use as is
-            // If it starts with covers/ (e.g. covers/foo.jpg), prepend /
-            // If it starts with / (e.g. /foo.jpg), prepend /covers
-            // If it is just filename (e.g. foo.jpg), prepend /covers/
-            
-            let cleanUrl = row.cover_url.startsWith('/') ? row.cover_url : '/' + row.cover_url;
-            if (cleanUrl.startsWith('/covers/')) {
-                src = cleanUrl;
-            } else {
-                src = `/covers${cleanUrl}`;
-            }
-        }
-      }
+      const src = resolveCoverUrl(row.cover_url);
       return h('div', { class: 'cover-wrapper' }, [
         h(NImage, {
           width: 48,

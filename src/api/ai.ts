@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request, { resolveServerUrl } from "@/utils/request";
 
 /**
  * 语音合成 (TTS)
@@ -160,5 +160,5 @@ export const getSongOpeningText = (id: number | string) => {
  * @param {number|string} id - 歌曲ID
  */
 export const getSongOpeningAudioUrl = (id: number | string) => {
-    return `/api/song/opening/${id}`;
+    return resolveServerUrl(`/api/song/opening/${id}`);
 };

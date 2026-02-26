@@ -498,12 +498,18 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	db := GetDB(c)
 	var artist model.Artist
-	// 预加载歌曲及其关联信息
-	if err := db.Preload("Songs.Album").
-		Preload("Songs.Artists").
-		Preload("Songs.Cover").
-		Preload("Songs").
-		First(&artist, idStr).Error; err != nil {
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(limitStr)
+	if limit < 1 {
+		limit = 30
+	}
+
+	if err := db.First(&artist, idStr).Error; err != nil {
 		ReturnError(c, g.ErrDbOp, "歌手不存在")
 		return
 	}
@@ -512,7 +518,67 @@ func (*SongAuth) GetArtistDetail(c *gin.Context) {
 		artist.Cover = "/covers/" + artist.Cover
 	}
 
-	ReturnSuccess(c, artist)
+	var total int64
+	if err := db.Model(&model.Song{}).
+		Joins("JOIN song_artists ON song_artists.song_id = song.id").
+		Where("song_artists.artist_id = ?", artist.ID).
+		Count(&total).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	offset := (page - 1) * limit
+	if offset < 0 {
+		offset = 0
+	}
+
+	var songsRaw []model.Song
+	if err := db.Joins("JOIN song_artists ON song_artists.song_id = song.id").
+		Where("song_artists.artist_id = ?", artist.ID).
+		Order("song.id DESC").
+		Limit(limit).Offset(offset).
+		Preload("Cover").
+		Find(&songsRaw).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	var songs []model.SimpleSongResponse
+	for _, s := range songsRaw {
+		artistId := 0
+		albumId := 0
+		if s.ArtistID != nil {
+			artistId = *s.ArtistID
+		}
+		if s.AlbumID != nil {
+			albumId = *s.AlbumID
+		}
+
+		coverUrl := ""
+		if s.CoverID != nil && s.Cover.ID != 0 {
+			coverUrl = "/covers/" + s.Cover.Path
+		}
+
+		songs = append(songs, model.SimpleSongResponse{
+			ID:         s.ID,
+			Title:      s.Title,
+			ArtistName: s.ArtistName,
+			AlbumTitle: s.AlbumName,
+			AlbumName:  s.AlbumName,
+			Duration:   s.Duration,
+			Year:       s.Year,
+			ArtistID:   artistId,
+			AlbumID:    albumId,
+			CoverUrl:   coverUrl,
+			HasIntro:   s.OpeningAudioFile != "",
+		})
+	}
+
+	ReturnSuccess(c, gin.H{
+		"artist": artist,
+		"list":   songs,
+		"total":  total,
+	})
 }
 
 // GetAlbumDetail 获取专辑详情

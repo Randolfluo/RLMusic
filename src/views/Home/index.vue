@@ -22,7 +22,7 @@
             <p v-else class="ip-text">正在获取 IP...</p>
           </div>
           <div class="qr-code-wrapper" v-if="urls.length > 0" @click.stop="openQrModal">
-            <qrcode-vue :value="currentUrl" :size="80" level="H" class="qrcode" />
+            <qrcode-vue :value="currentShareUrl" :size="80" level="H" class="qrcode" />
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@
             :class="{ clickable: urls.length > 1 }"
             @click="nextIp"
           >
-            <qrcode-vue :value="currentUrl" :size="260" level="H" class="modal-qrcode" />
+            <qrcode-vue :value="currentShareUrl" :size="260" level="H" class="modal-qrcode" />
             <div class="switch-hint" v-if="urls.length > 1">
               <n-icon :component="Refresh" size="32" color="white" />
             </div>
@@ -50,7 +50,7 @@
 
           <div class="modal-footer">
             <div class="url-pill">
-              <span>{{ currentUrl }}</span>
+              <span>{{ currentShareUrl }}</span>
             </div>
             <n-button circle secondary type="primary" @click="copyUrl" class="copy-btn">
               <template #icon>
@@ -159,13 +159,53 @@ const currentUrl = computed(() => {
   return urls.value[currentIpIndex.value];
 });
 
+const normalizeServerUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+};
+
+const getBackendUrl = () => {
+  const stored = localStorage.getItem("server_url");
+  const normalizedStored = stored ? normalizeServerUrl(stored) : "";
+  const isLocalHost = normalizedStored.includes("localhost") || normalizedStored.includes("127.0.0.1");
+  if (normalizedStored && !isLocalHost) return normalizedStored;
+  const backendPortRaw = localStorage.getItem("backend_port") || "";
+  const backendPort = Number(backendPortRaw) > 0 ? Number(backendPortRaw) : 12345;
+  if (currentUrl.value) {
+    try {
+      const url = new URL(currentUrl.value);
+      return `${url.protocol}//${url.hostname}:${backendPort}`;
+    } catch {
+      return `${window.location.protocol}//${window.location.hostname}:${backendPort}`;
+    }
+  }
+  return `${window.location.protocol}//${window.location.hostname}:${backendPort}`;
+};
+
+const currentShareUrl = computed(() => {
+  if (!currentUrl.value) return "";
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) return currentUrl.value;
+  try {
+    const url = new URL(currentUrl.value);
+    url.searchParams.set("api", backendUrl);
+    return url.toString();
+  } catch {
+    const encoded = encodeURIComponent(backendUrl);
+    return currentUrl.value.includes("?")
+      ? `${currentUrl.value}&api=${encoded}`
+      : `${currentUrl.value}?api=${encoded}`;
+  }
+});
+
 const openQrModal = () => {
   showQrModal.value = true;
 };
 
 const copyUrl = async () => {
   try {
-    await navigator.clipboard.writeText(currentUrl.value || '');
+    await navigator.clipboard.writeText(currentShareUrl.value || '');
     message.success("链接已复制");
   } catch (err) {
     message.error("复制失败");
@@ -201,7 +241,14 @@ onMounted(() => {
 
 const fetchLocalIPs = async () => {
   try {
-    const port = window.location.port || '80';
+    const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+    const accessIp = localStorage.getItem("access_ip") || "";
+    const storedPort = localStorage.getItem("frontend_port") || "";
+    const port = window.location.port || (isElectron ? (storedPort || "23456") : "80");
+    if (isElectron && accessIp) {
+      urls.value = [`http://${accessIp}:${port}/`];
+      return;
+    }
     const res = await getLocalIPs(port);
     if (res.code === ResultCode.SUCCESS) {
       urls.value = res.data.urls || [];

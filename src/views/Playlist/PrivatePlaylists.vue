@@ -4,7 +4,7 @@
       <div class="cover">
         <n-image
           class="cover-img"
-          :src="userStore.userData.avatarUrl || '/images/logo/favicon.png'"
+          :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'"
           fallback-src="/images/logo/favicon.png"
           object-fit="cover"
           preview-disabled
@@ -17,7 +17,7 @@
           <n-avatar 
             round 
             size="small" 
-            :src="userStore.userData.avatarUrl || '/images/logo/favicon.png'" 
+            :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'" 
             style="margin-right: 8px; vertical-align: middle;"
           />
           <span style="vertical-align: middle;">{{ userStore.userData.nickname }}</span>
@@ -61,6 +61,7 @@ import { useMessage, NImage, NDivider, NAvatar, useDialog } from "naive-ui";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { useUserDataStore } from "@/store/userData";
+import { resolveAvatarUrl } from "@/api/user";
 
 const message = useMessage();
 const dialog = useDialog();

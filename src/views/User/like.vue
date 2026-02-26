@@ -23,7 +23,7 @@
             <n-avatar
               round
               size="small"
-              :src="user.userData.avatarUrl || '/images/logo/favicon.png'"
+              :src="resolveAvatarUrl(user.userData.avatarUrl) || '/images/logo/favicon.png'"
               fallback-src="/images/logo/favicon.png"
             />
             <span class="name">{{ user.userData.nickname || '用户' }}</span>
@@ -69,7 +69,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getLikedSongs } from "@/api/song";
+import { getLikedSongs, getSongCover, resolveCoverUrl } from "@/api/song";
+import { resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NPagination, NButton, NIcon, NTag, NAvatar } from "naive-ui";
 import { Play, Like } from "@icon-park/vue-next";
@@ -115,9 +116,9 @@ const handlePlayAll = () => {
         album: song.album || { 
             name: song.album_name || song.album_title, 
             id: song.album_id, 
-            picUrl: song.cover_url || `/api/song/cover/${song.id}` 
+            picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : getSongCover(song.id) 
         },
-        picUrl: song.cover_url || `/api/song/cover/${song.id}`
+        picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : getSongCover(song.id)
       }));
 
       music.setPlaylists(tracks);

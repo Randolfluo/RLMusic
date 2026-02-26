@@ -2,6 +2,12 @@
   <div class="login-container">
     <div class="login-background"></div>
     <div class="login-card glass-effect">
+      <div class="back-home">
+        <n-button quaternary @click="goHome" class="back-home-btn">
+          <span class="back-home-icon">←</span>
+          <span>返回首页</span>
+        </n-button>
+      </div>
       <div class="header">
         <div class="logo-wrapper">
           <img src="/images/logo/favicon.png" alt="logo" class="logo-img" />
@@ -281,6 +287,10 @@ const handleRegister = (e) => {
     }
   });
 };
+
+const goHome = () => {
+  router.push("/");
+};
 </script>
 
 <style lang="scss" scoped>
@@ -346,6 +356,46 @@ const handleRegister = (e) => {
     &.glass-effect {
       background: rgba(255, 255, 255, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .back-home {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+    }
+
+    .back-home-btn {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      backdrop-filter: blur(8px);
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      color: #475569;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .back-home-icon {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .back-home-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(100, 116, 139, 0.35);
+    }
+
+    .back-home-btn:active {
+      transform: translateY(0px);
     }
 
     .header {

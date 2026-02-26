@@ -17,6 +17,15 @@ const routes: any = [
     component: () => import("@/views/Login/LoginView.vue"),
   },
   {
+    path: "/init",
+    name: "init",
+    meta: {
+      title: "初始化配置",
+      hideLayout: true,
+    },
+    component: () => import("@/views/Init/index.vue"),
+  },
+  {
     path: "/user",
     name: "user",
     meta: {

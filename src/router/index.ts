@@ -11,6 +11,21 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const user = userStore();
   $loadingBar.start();    // 开始加载进度条
+
+  const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+  const initDone = typeof localStorage !== "undefined" && localStorage.getItem("init_done") === "true";
+  if (isElectron) {
+    const allowList = ["/init", "/desktop-lyric"];
+    if (!initDone && !allowList.includes(to.path)) {
+      next("/init");
+      return;
+    }
+    if (initDone && to.path === "/init") {
+      next("/");
+      return;
+    }
+  }
+
   // 判断是否需要登录
   if (to.meta.needLogin) {
     if (user.userLogin) {

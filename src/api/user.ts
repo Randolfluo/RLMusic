@@ -1,4 +1,4 @@
-import axios from "@/utils/request";
+import axios, { resolveServerUrl } from "@/utils/request";
 
 export interface UserInfo {
   id: number;
@@ -75,6 +75,11 @@ export const uploadAvatar = (formData: FormData) => {
             'Content-Type': 'multipart/form-data'
         }
     });
+};
+
+export const resolveAvatarUrl = (url?: string) => {
+    if (!url) return url;
+    return resolveServerUrl(url);
 };
 
 /**

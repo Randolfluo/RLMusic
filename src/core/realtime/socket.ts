@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { apiBaseURL } from '@/utils/request';
 
 // Message Types
 export const MsgType = {
@@ -39,8 +40,14 @@ class SocketClient {
   private onMessageCallbacks: ((msg: WSMessage) => void)[] = [];
 
   constructor() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    this.url = `${protocol}//${window.location.host}/api/ws/chat`;
+    const toWsOrigin = (origin: string) => {
+      if (origin.startsWith('https://')) return origin.replace(/^https:/, 'wss:');
+      if (origin.startsWith('http://')) return origin.replace(/^http:/, 'ws:');
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${window.location.host}`;
+    };
+    const origin = apiBaseURL.startsWith('http') ? apiBaseURL.replace(/\/api$/, '') : `${window.location.protocol}//${window.location.host}`;
+    this.url = `${toWsOrigin(origin)}/api/ws/chat`;
   }
 
   connect() {

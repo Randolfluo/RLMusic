@@ -234,7 +234,7 @@
                     </div>
                     <!-- 聊天消息 -->
                     <div v-else class="message-item" :class="{ 'my-message': msg.isMine }">
-                      <n-avatar round size="small" :src="msg.avatarUrl || '/images/ico/user-filling.svg'" class="avatar" />
+                      <n-avatar round size="small" :src="resolveAvatarUrl(msg.avatarUrl) || '/images/ico/user-filling.svg'" class="avatar" />
                       <div class="message-content-wrapper">
                         <span class="sender">{{ msg.sender }}</span>
                         <div class="message-bubble">
@@ -271,7 +271,7 @@
               </div>
               <div class="members-list">
                  <div v-for="u in currentRoomUsers" :key="u.id" class="member-item">
-                    <n-avatar round size="medium" :src="u.avatarUrl || '/images/ico/user-filling.svg'" />
+                    <n-avatar round size="medium" :src="resolveAvatarUrl(u.avatarUrl) || '/images/ico/user-filling.svg'" />
                     <div class="member-info">
                        <div class="nickname">
                          {{ u.nickname }}
@@ -328,6 +328,7 @@ import {
 import { chatStore, musicStore, settingStore } from '@/store';
 import { storeToRefs } from 'pinia';
 import { getSongCover } from "@/api/song";
+import { resolveAvatarUrl } from "@/api/user";
 import { timelineEngine } from "@/core/realtime/timeline";
 import PlayList from "@/components/DataList/PlayList.vue";
 

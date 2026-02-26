@@ -4,7 +4,7 @@
       <div class="cover">
         <n-image
           class="cover-img"
-          :src="playlist.cover_url || '/images/logo/favicon.png'"
+          :src="resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png'"
           fallback-src="/images/logo/favicon.png"
           object-fit="cover"
           preview-disabled
@@ -106,6 +106,7 @@ import { Play, Like, Voice } from "@icon-park/vue-next";
 import { musicStore, userStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
+import { resolveCoverUrl } from "@/api/song";
 
 const route = useRoute();
 const message = useMessage();
@@ -267,8 +268,14 @@ const playAll = () => {
         const tracks = playlist.value.songs.map((song: any) => ({
             ...song,
             name: song.title, // 适配 name
-            artist: [{ name: song.artist_name, id: song.artist_id }], // 适配 artist array
-            album: { name: song.album_title, id: song.album_id, picUrl: song.cover_url || playlist.value.cover_url } // 适配 album
+            artist: song.artists && song.artists.length > 0
+              ? song.artists
+              : [{ name: song.artist_name, id: song.artist_id }], // 适配 artist array
+            album: { 
+              name: song.album_title, 
+              id: song.album_id, 
+              picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : resolveCoverUrl(playlist.value.cover_url) 
+            } // 适配 album
         }));
 
         music.setPlaylists(tracks);

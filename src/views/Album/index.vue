@@ -5,10 +5,10 @@
         <n-image
           class="cover-img"
           :src="
-            album.cover ||
-            (album.cover_song_id ? `/api/song/cover/${album.cover_song_id}` : null) ||
-            album.picUrl ||
-            album.cover_url ||
+            resolveCoverUrl(album.cover) ||
+            (album.cover_song_id ? getSongCover(album.cover_song_id) : null) ||
+            resolveCoverUrl(album.picUrl) ||
+            resolveCoverUrl(album.cover_url) ||
             '/images/logo/favicon.png'
           "
           fallback-src="/images/logo/favicon.png"
@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { getAlbumDetail } from "@/api/song";
+import { getAlbumDetail, getSongCover, resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
 import { useMessage, NButton, NIcon, NImage, NDivider, NSpin } from "naive-ui";
 import { Play } from "@icon-park/vue-next";
@@ -116,9 +116,9 @@ const playAll = () => {
             album: { 
               name: album.value.title || album.value.name, 
               id: album.value.id, 
-              picUrl: album.value.picUrl || album.value.cover_url 
+              picUrl: resolveCoverUrl(album.value.picUrl) || resolveCoverUrl(album.value.cover_url) 
             },
-            picUrl: song.cover_url || album.value.picUrl || album.value.cover_url
+            picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : resolveCoverUrl(album.value.picUrl) || resolveCoverUrl(album.value.cover_url)
         }));
 
         music.setPlaylists(tracks);

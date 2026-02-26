@@ -19,7 +19,7 @@
               preview-disabled
               class="cover-img"
               object-fit="cover"
-              :src="item.cover_url || '/images/logo/favicon.png'"
+              :src="resolveCoverUrl(item.cover_url) || '/images/logo/favicon.png'"
               fallback-src="/images/logo/favicon.png"
             />
           </div>
@@ -59,7 +59,7 @@
                 preview-disabled
                 class="cover-img"
                 object-fit="cover"
-                :src="item.cover_url || '/images/logo/favicon.png'"
+                :src="resolveCoverUrl(item.cover_url) || '/images/logo/favicon.png'"
                 fallback-src="/images/logo/favicon.png"
               />
               <div class="play-overlay">
@@ -99,6 +99,7 @@ import { useRouter } from "vue-router";
 import { NDropdown, NIcon, NImage, useMessage, useDialog } from "naive-ui";
 import { useUserDataStore } from "@/store/userData";
 import { deletePrivatePlaylist, subscribePlaylist, unsubscribePlaylist, checkIsSubscribed } from "@/api/playlist";
+import { resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
 
 const router = useRouter();
@@ -219,7 +220,7 @@ const renderMenuHeader = (playlist: any) => {
     }
   }, [
     h(NImage, {
-      src: playlist.cover_url || '/images/logo/favicon.png',
+      src: resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png',
       fallbackSrc: '/images/logo/favicon.png',
       width: 40,
       height: 40,
