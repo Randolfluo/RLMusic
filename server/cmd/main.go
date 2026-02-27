@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"net"
+	"net/url"
 	"path/filepath"
 	server "server/internal"
 	g "server/internal/global"
@@ -45,11 +47,28 @@ func main() {
 	server.RegisterHandlers(r, nil)
 
 	//运行服务
+	defaultPort := "12345"
 	serverAddr := strings.TrimSpace(conf.Server.Port)
 	if serverAddr == "" {
-		serverAddr = ":12345"
+		serverAddr = ":" + defaultPort
 	}
-	if !strings.Contains(serverAddr, ":") {
+	if strings.Contains(serverAddr, "://") {
+		if parsed, err := url.Parse(serverAddr); err == nil && parsed.Host != "" {
+			serverAddr = parsed.Host
+		}
+	}
+	serverAddr = strings.TrimSpace(serverAddr)
+	if serverAddr == "localhost" || serverAddr == "127.0.0.1" || serverAddr == "0.0.0.0" {
+		serverAddr = serverAddr + ":" + defaultPort
+	}
+	isPortOnly := true
+	for _, r := range serverAddr {
+		if r < '0' || r > '9' {
+			isPortOnly = false
+			break
+		}
+	}
+	if isPortOnly {
 		serverAddr = ":" + serverAddr
 	}
 	if strings.HasPrefix(serverAddr, "localhost:") {
@@ -60,9 +79,35 @@ func main() {
 		serverAddr = "0.0.0.0" + serverAddr
 	}
 	if strings.HasPrefix(serverAddr, "0.0.0.0:") {
-		log.Printf("Serving HTTP on (http://%s/) ... \n", serverAddr)
+		// 获取本机局域网IP
+		ips := []string{}
+		if interfaces, err := net.Interfaces(); err == nil {
+			for _, i := range interfaces {
+				if addrs, err := i.Addrs(); err == nil {
+					for _, addr := range addrs {
+						var ip net.IP
+						switch v := addr.(type) {
+						case *net.IPNet:
+							ip = v.IP
+						case *net.IPAddr:
+							ip = v.IP
+						}
+						if ip != nil && !ip.IsLoopback() && ip.To4() != nil {
+							ips = append(ips, ip.String())
+						}
+					}
+				}
+			}
+		}
+
+		port := strings.TrimPrefix(serverAddr, "0.0.0.0:")
+		log.Printf("Serving HTTP on:\n")
+		log.Printf("  - Local:   http://localhost:%s/\n", port)
+		for _, ip := range ips {
+			log.Printf("  - Network: http://%s:%s/\n", ip, port)
+		}
 	} else {
-		log.Printf("Serving HTTP on (http://%s/) ... \n", serverAddr)
+		log.Printf("Serving HTTP on http://%s/ ... \n", serverAddr)
 	}
 	r.Run(serverAddr)
 }

@@ -665,8 +665,38 @@ const playerStyleOptions = [
     align-items: center;
   }
   
-  .color-picker {
-    width: auto;
+    .color-picker {
+    width: 220px;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .color-picker :deep(.n-color-picker-trigger) {
+    width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    
+  }
+
+  .color-picker :deep(.n-color-picker-trigger__fill) {
+    border-radius: 10px;
+    
+  }
+
+  .color-picker :deep(.n-color-picker-input) {
+    min-width: 140px;
+  }
+
+  .color-picker :deep(.n-input__input-el) {
+    text-align: right;
+  }
+
+  .color-picker :deep(.n-color-picker-preview) {
+    display: none;
   }
 }
 

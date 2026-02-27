@@ -56,26 +56,28 @@
             </template>
             {{ isMultiSelectMode ? '退出多选' : '批量操作' }}
           </n-tooltip>
-          <n-tooltip trigger="hover">
-            <template #trigger>
-              <n-button :type="viewMode === 'thumbnail' ? 'primary' : 'default'" @click="viewMode = 'thumbnail'">
-                <template #icon>
-                  <n-icon :component="Pic" />
-                </template>
-              </n-button>
-            </template>
-            缩略图模式
-          </n-tooltip>
-          <n-tooltip trigger="hover">
-            <template #trigger>
-              <n-button :type="viewMode === 'concise' ? 'primary' : 'default'" @click="viewMode = 'concise'">
-                <template #icon>
-                  <n-icon :component="HamburgerButton" />
-                </template>
-              </n-button>
-            </template>
-            简洁模式
-          </n-tooltip>
+          <template v-if="!isMobile">
+            <n-tooltip trigger="hover">
+              <template #trigger>
+                <n-button :type="viewMode === 'thumbnail' ? 'primary' : 'default'" @click="viewMode = 'thumbnail'">
+                  <template #icon>
+                    <n-icon :component="Pic" />
+                  </template>
+                </n-button>
+              </template>
+              缩略图模式
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+              <template #trigger>
+                <n-button :type="viewMode === 'concise' ? 'primary' : 'default'" @click="viewMode = 'concise'">
+                  <template #icon>
+                    <n-icon :component="HamburgerButton" />
+                  </template>
+                </n-button>
+              </template>
+              简洁模式
+            </n-tooltip>
+          </template>
         </n-button-group>
       </div>
     </div>
@@ -179,9 +181,15 @@ const currentSong = ref<any>(null);
 const isMultiSelectMode = ref(false);
 const selectedRowKeys = ref<Array<string | number>>([]);
 const isMobile = ref(window.innerWidth < 640);
+if (isMobile.value) {
+    viewMode.value = 'thumbnail';
+}
 
 const handleResize = () => {
   isMobile.value = window.innerWidth < 640;
+  if (isMobile.value) {
+    viewMode.value = 'thumbnail';
+  }
 };
 
 onMounted(() => {
@@ -289,9 +297,12 @@ const renderIcon = (icon: any, color?: string) => {
 // 渲染操作按钮组
 const renderActionButtons = (row: any) => {
     const isLiked = music.getSongIsLike(row.id);
-    const buttons = [
-        h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
-            trigger: () => h(NButton, {
+    const buttons = [];
+
+    if (isMobile.value) {
+        // 移动端显示喜欢和更多按钮
+        buttons.push(
+            h(NButton, {
                 quaternary: true,
                 circle: true,
                 size: 'small',
@@ -303,12 +314,38 @@ const renderActionButtons = (row: any) => {
             }, { 
                 icon: () => h(NIcon, { component: Like, color: isLiked ? '#d03050' : undefined }) 
             }),
-            default: () => isLiked ? '取消喜欢' : '喜欢'
-        })
-    ];
+            h(NButton, {
+                quaternary: true,
+                circle: true,
+                size: 'small',
+                onClick: (e: Event) => {
+                    e.stopPropagation();
+                    handleContextMenu(e as MouseEvent, row);
+                }
+            }, { 
+                icon: () => h(NIcon, { component: More }) 
+            })
+        );
+    } else {
+        // 桌面端显示喜欢和下载按钮
+        buttons.push(
+            h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
+                trigger: () => h(NButton, {
+                    quaternary: true,
+                    circle: true,
+                    size: 'small',
+                    type: isLiked ? 'error' : 'default',
+                    onClick: (e: Event) => {
+                        e.stopPropagation();
+                        music.changeLikeList(row.id, !isLiked);
+                    }
+                }, { 
+                    icon: () => h(NIcon, { component: Like, color: isLiked ? '#d03050' : undefined }) 
+                }),
+                default: () => isLiked ? '取消喜欢' : '喜欢'
+            })
+        );
 
-    // 桌面端显示下载按钮
-    if (!isMobile.value) {
         buttons.push(
             h(NTooltip, { trigger: 'hover', placement: 'top', showArrow: false }, {
                 trigger: () => h(NButton, {
@@ -328,7 +365,7 @@ const renderActionButtons = (row: any) => {
     }
 
     return h('div', { 
-        class: 'action-buttons',
+        class: ['action-buttons', { 'is-mobile': isMobile.value }],
         onClick: (e: Event) => e.stopPropagation() // 防止触发行动点击
     }, buttons);
 };
@@ -694,14 +731,24 @@ const columns = computed(() => {
     // 2. 插入一个新的合并列，显示封面+标题+歌手
 
     // 移除原有标题和歌手列
-    // 原顺序: [0:index, 1:title, 2:artist, 3:album, 4:duration]
-    // 倒序删除以避免索引错乱
-    baseColumns.splice(2, 1); // 移除歌手列
-    baseColumns.splice(1, 1); // 移除标题列
+    // 使用 filter 或 findIndex 移除，避免硬编码索引导致多选模式下错位
+    const keysToRemove = ['title', 'artist_name'];
+    for (const key of keysToRemove) {
+      const index = baseColumns.findIndex((col: any) => col.key === key);
+      if (index !== -1) {
+        baseColumns.splice(index, 1);
+      }
+    }
 
-    // 插入新列
-    const insertIndex = isMultiSelectMode.value ? 2 : 1;
-    baseColumns.splice(insertIndex, 0, {
+    // 插入新列，位置在 'index' 列之后
+    const indexColIdx = baseColumns.findIndex((col: any) => col.key === 'index');
+    // 如果找到了 index 列，插入到它后面；否则插入到开头（如果有 selection 列，则是在 selection 之后，但 selection 通常是 fixed left，这里简单处理）
+    // 如果有多选列，baseColumns[0] 是 selection，baseColumns[1] 是 index。
+    // 如果没有多选列，baseColumns[0] 是 index。
+    // 所以 indexColIdx + 1 通常是正确的位置。
+    const insertPos = indexColIdx !== -1 ? indexColIdx + 1 : (isMultiSelectMode.value ? 1 : 0);
+
+    baseColumns.splice(insertPos, 0, {
       title: "歌曲",
       key: "song_info",
       // width: 'auto', // 自适应宽度
@@ -929,12 +976,11 @@ const columns = computed(() => {
       }
     });
 
-    // 既然我们在主列里显示了专辑，是否还要保留单独的专辑列？
-    // 缩略图模式通常信息密度较高，可以隐藏单独的专辑列，或者保留。
-    // 为了美观，我们隐藏单独的专辑列
-    // 原专辑列现在是索引 2 (因为前面移除了2个，插入了1个)
-    // [index, song_info, album, duration]
-    baseColumns.splice(insertIndex + 1, 1); // 移除专辑列
+    // 移除专辑列 (使用 key 查找)
+    const albumIndex = baseColumns.findIndex((col: any) => col.key === 'album_title');
+    if (albumIndex !== -1) {
+        baseColumns.splice(albumIndex, 1);
+    }
   }
 
   return baseColumns;
@@ -1155,6 +1201,49 @@ const isPlaying = computed(() => music.getPlayState);
 :deep(.song-row:hover) .action-buttons {
     opacity: 1;
     transform: translateX(0);
+}
+
+.action-buttons.is-mobile {
+    opacity: 1 !important;
+    transform: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0;
+    margin-left: 0;
+}
+
+@media (max-width: 640px) {
+    .list-control {
+        position: relative;
+        top: 0;
+        margin-bottom: 12px;
+        padding: 0 4px;
+        
+        .right {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+    }
+
+    :deep(.n-data-table-td) {
+        padding: 8px 0 !important;
+    }
+    
+    :deep(.n-data-table-th) {
+        padding: 8px 0 !important;
+        font-size: 12px;
+    }
+    
+    /* 移动端隐藏不重要的列 */
+    :deep(.n-data-table-td[data-col-key="duration"]),
+    :deep(.n-data-table-th[data-col-key="duration"]),
+    :deep(.n-data-table-td[data-col-key="album_title"]),
+    :deep(.n-data-table-th[data-col-key="album_title"]),
+    :deep(.n-data-table-td[data-col-key="index"]),
+    :deep(.n-data-table-th[data-col-key="index"]) {
+        display: none;
+    }
 }
 
 :deep(.cover-overlay) {

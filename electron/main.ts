@@ -31,6 +31,7 @@ app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Au
 process.env.APP_ROOT = path.join(__dirname, '..')
 
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+const appMode = process.env.VITE_APP_MODE || (fs.existsSync(path.join(process.resourcesPath, process.platform === 'win32' ? 'server.exe' : 'server')) ? 'server' : 'client')
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
@@ -39,15 +40,14 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 // Win7 禁用 GPU 加速
 if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
 
-// Win10+ 通知设置应用ID
-if (process.platform === 'win32') app.setAppUserModelId('LocalMusicPlayer')
+if (process.platform === 'win32') app.setAppUserModelId(`LocalMusicPlayer-${appMode}`)
 
 // 屏蔽 Electron 常见的 Autofill 相关的终端报错
 // "Request Autofill.enable failed", "Request Autofill.setAddresses failed"
 app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Autofill,PasswordManager')
 
-// 单例模式锁，防止启动多个实例
-if (!app.requestSingleInstanceLock()) {
+app.setPath('userData', path.join(app.getPath('appData'), `LocalMusicPlayer-${appMode}`))
+if (!app.requestSingleInstanceLock(appMode)) {
   app.quit()
   process.exit(0)
 }

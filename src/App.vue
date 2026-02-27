@@ -49,18 +49,18 @@
       <BigPlayer v-if="music.getPlaylists[0]" />
     </template>
     <n-modal v-model:show="showServerConfig" class="server-modal" :mask-closable="false">
-      <div class="server-card">
+      <div class="server-card" :class="{ 'is-connected': serverConnectionState === 'connected', 'is-checking': serverConnectionState === 'checking' }">
         <div class="server-ambient"></div>
         <div class="server-grid"></div>
         <div class="server-glow"></div>
         <div class="server-shell">
           <div class="server-aside">
-            <div class="server-badge">连接诊断</div>
+            <div class="server-badge">{{ serverBadgeText }}</div>
             <div class="server-icon">
               <n-icon :component="Connection" size="30" />
             </div>
-            <div class="server-aside-title">服务器未连接</div>
-            <div class="server-aside-subtitle">请输入可访问的后端地址</div>
+            <div class="server-aside-title">{{ serverAsideTitle }}</div>
+            <div class="server-aside-subtitle">{{ serverAsideSubtitle }}</div>
             <div class="server-pulses">
               <span></span>
               <span></span>
@@ -70,16 +70,22 @@
           <div class="server-main">
             <div class="server-header">
               <div class="server-title">
-                <span>连接服务器</span>
+                <span>服务器状态</span>
               </div>
-              <n-tag type="warning" size="small" round>需要配置</n-tag>
+              <n-tag :type="serverConnectionState === 'connected' ? 'success' : serverConnectionState === 'checking' ? 'info' : 'warning'" size="small" round>
+                {{ serverConnectionState === 'connected' ? '已连接' : serverConnectionState === 'checking' ? '检测中' : '需要配置' }}
+              </n-tag>
             </div>
             <div class="server-status">
               <span class="server-dot"></span>
-              <span>无法访问服务器，请更新地址</span>
+              <span>{{ serverStatusText }}</span>
             </div>
             <div class="server-desc">
-              保存后将立即重载并尝试重新连接。
+              {{ serverStatusDesc }}
+            </div>
+            <div class="server-meta" v-if="resolvedServerOrigin">
+              <div class="server-meta-label">当前地址</div>
+              <div class="server-meta-value">{{ resolvedServerOrigin }}</div>
             </div>
             <div class="server-input">
               <div class="server-label">服务器地址</div>
@@ -116,8 +122,8 @@ import Nav from "@/components/Nav/index.vue";
 import Player from "@/components/Player/index.vue";
 import BigPlayer from "@/components/Player/BigPlayer.vue";
 import packageJson from "@/../package.json";
-import { ref, onMounted, onUnmounted } from 'vue';
-import { ResultCode } from "@/utils/request";
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ResultCode, apiBaseURL } from "@/utils/request";
 import { useRoute } from "vue-router"; // 引入 useRoute
 import { NIcon, NBackTop, NModal, NInput, NButton, NTag } from "naive-ui";
 import { ToTop, Connection } from "@icon-park/vue-next";
@@ -129,6 +135,8 @@ const user = userStore();
 // const setting = settingStore();
 const showServerConfig = ref(false);
 const serverUrlInput = ref(localStorage.getItem("server_url") || "");
+const serverConnectionState = ref<"checking" | "connected" | "disconnected">("checking");
+const lastCheckedOrigin = ref("");
 const normalizeServerUrl = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -148,6 +156,85 @@ const applyServerUrl = () => {
 
 const dismissServerConfig = () => {
   showServerConfig.value = false;
+};
+
+const normalizeOrigin = (value: string) => {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/api") ? trimmed.replace(/\/api$/, "") : trimmed;
+};
+
+const resolvedServerOrigin = computed(() => {
+  const fromInput = normalizeOrigin(serverUrlInput.value);
+  if (fromInput) return fromInput;
+  const fromApi = normalizeOrigin(apiBaseURL);
+  if (fromApi) return fromApi;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
+});
+
+const serverStatusText = computed(() => {
+  if (serverConnectionState.value === "checking") return "检测中";
+  if (serverConnectionState.value === "connected") return "服务器已连接";
+  return "无法访问服务器";
+});
+
+const serverStatusDesc = computed(() => {
+  if (serverConnectionState.value === "connected") return "连接正常，可继续使用";
+  if (serverConnectionState.value === "checking") return "正在校验后端连通性";
+  return "请更新后端地址或检查服务状态";
+});
+
+const serverAsideTitle = computed(() => {
+  if (serverConnectionState.value === "connected") return "服务器已连接";
+  if (serverConnectionState.value === "checking") return "正在检测";
+  return "服务器未连接";
+});
+
+const serverAsideSubtitle = computed(() => {
+  if (serverConnectionState.value === "connected") return "当前连接稳定，可继续使用";
+  if (serverConnectionState.value === "checking") return "正在尝试与后端建立连接";
+  return "请输入可访问的后端地址";
+});
+
+const serverBadgeText = computed(() => {
+  if (serverConnectionState.value === "connected") return "连接正常";
+  if (serverConnectionState.value === "checking") return "连接检测";
+  return "连接诊断";
+});
+
+const checkServerConnection = async () => {
+  if (typeof window === "undefined") return;
+  const origin = resolvedServerOrigin.value;
+  lastCheckedOrigin.value = origin;
+  if (!origin || !origin.startsWith("http")) {
+    serverConnectionState.value = "disconnected";
+    return;
+  }
+  serverConnectionState.value = "checking";
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await fetch(`${origin}/api/system/stats`, {
+      credentials: "include",
+      signal: controller.signal,
+    });
+    serverConnectionState.value = res.ok ? "connected" : "disconnected";
+  } catch {
+    serverConnectionState.value = "disconnected";
+  } finally {
+    window.clearTimeout(timer);
+  }
+};
+
+let serverCheckTimer: number | undefined;
+const scheduleServerCheck = () => {
+  if (!showServerConfig.value) return;
+  if (serverCheckTimer) window.clearTimeout(serverCheckTimer);
+  serverCheckTimer = window.setTimeout(() => {
+    checkServerConnection();
+  }, 400);
 };
 
 // 自动登录逻辑
@@ -204,6 +291,7 @@ const handleServerConnectFail = (event: Event) => {
       serverUrlInput.value = base;
     }
   }
+  serverConnectionState.value = "disconnected";
   showServerConfig.value = true;
 };
 
@@ -225,6 +313,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("open-server-config", openServerConfig);
+});
+
+watch(showServerConfig, (value) => {
+  if (value) {
+    checkServerConnection();
+  }
+});
+
+watch(serverUrlInput, () => {
+  scheduleServerCheck();
 });
 
 const mainContent = ref<HTMLElement | null>(null);
@@ -439,6 +537,16 @@ onMounted(() => {
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
 }
 
+.server-card.is-connected {
+  border: 1px solid rgba(80, 200, 140, 0.4);
+  background: radial-gradient(120% 120% at 0% 0%, rgba(226, 255, 238, 0.95) 0%, rgba(255, 255, 255, 0.98) 55%, rgba(248, 255, 252, 0.92) 100%);
+}
+
+:global(.dark) .server-card.is-connected {
+  border: 1px solid rgba(80, 200, 140, 0.25);
+  background: radial-gradient(120% 120% at 0% 0%, rgba(28, 40, 32, 0.92) 0%, rgba(18, 20, 20, 0.96) 55%, rgba(18, 22, 20, 0.92) 100%);
+}
+
 .server-shell {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -471,6 +579,10 @@ onMounted(() => {
   font-weight: 700;
 }
 
+.server-card.is-connected .server-badge {
+  color: rgba(24, 168, 96, 0.95);
+}
+
 .server-icon {
   width: 50px;
   height: 50px;
@@ -481,6 +593,12 @@ onMounted(() => {
   justify-content: center;
   color: #ff914d;
   box-shadow: inset 0 0 0 1px rgba(255, 165, 90, 0.2);
+}
+
+.server-card.is-connected .server-icon {
+  background: rgba(72, 201, 132, 0.18);
+  color: #1f9d63;
+  box-shadow: inset 0 0 0 1px rgba(72, 201, 132, 0.3);
 }
 
 .server-aside-title {
@@ -506,6 +624,10 @@ onMounted(() => {
   border-radius: 50%;
   background: rgba(255, 145, 77, 0.45);
   animation: server-pulse 1.8s infinite;
+}
+
+.server-card.is-connected .server-pulses span {
+  background: rgba(72, 201, 132, 0.55);
 }
 
 .server-pulses span:nth-child(2) {
@@ -560,12 +682,56 @@ onMounted(() => {
   box-shadow: 0 0 12px rgba(255, 145, 77, 0.7);
 }
 
+.server-card.is-connected .server-dot {
+  background: #22c55e;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.6);
+}
+
+.server-card.is-checking .server-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+}
+
 .server-desc {
   font-size: 14px;
   opacity: 0.7;
   line-height: 1.6;
   position: relative;
   z-index: 1;
+}
+
+.server-meta {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 168, 76, 0.2);
+  display: grid;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.server-card.is-connected .server-meta {
+  border: 1px solid rgba(72, 201, 132, 0.28);
+}
+
+:global(.dark) .server-meta {
+  background: rgba(18, 18, 20, 0.75);
+  border: 1px solid rgba(255, 168, 76, 0.16);
+}
+
+.server-meta-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  opacity: 0.6;
+}
+
+.server-meta-value {
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
 }
 
 .server-input {
