@@ -84,3 +84,6 @@ components.d.ts
 .env.*.local
 
 android/
+
+.VSCodeCounter/
+.vscode/
