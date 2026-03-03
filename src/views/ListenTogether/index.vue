@@ -271,7 +271,7 @@
               </div>
               <div class="members-list">
                  <div v-for="u in currentRoomUsers" :key="u.id" class="member-item">
-                    <n-avatar round size="medium" :src="resolveAvatarUrl(u.avatarUrl) || '/images/ico/user-filling.svg'" />
+                    <n-avatar round size="medium" :src="resolveAvatarUrl(u.avatarUrl) || 'images/ico/user-filling.svg'" />
                     <div class="member-info">
                        <div class="nickname">
                          {{ u.nickname }}

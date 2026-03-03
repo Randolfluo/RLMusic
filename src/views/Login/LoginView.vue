@@ -10,7 +10,7 @@
       </div>
       <div class="header">
         <div class="logo-wrapper">
-          <img src="/images/logo/favicon.png" alt="logo" class="logo-img" />
+          <img src="images/logo/favicon.png" alt="logo" class="logo-img" />
         </div>
         <h2 class="app-title">云音乐</h2>
         <p class="app-subtitle">聆听生活每一刻</p>

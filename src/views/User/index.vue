@@ -19,8 +19,8 @@
                   <n-avatar
                     round
                     :size="140"
-                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || '/images/ico/user-filling.svg'"
-                    fallback-src="/images/ico/user-filling.svg"
+                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || 'images/ico/user-filling.svg'"
+                    fallback-src="images/ico/user-filling.svg"
                     class="user-avatar"
                     object-fit="cover"
                   />

@@ -216,8 +216,8 @@ const userDataRender = () => {
         style: "margin-right: 12px",
         src: user.userLogin
           ? resolveAvatarUrl(user.getUserData.avatarUrl)
-          : "/images/ico/user-filling.svg",
-        fallbackSrc: "/images/ico/user-filling.svg",
+          : "images/ico/user-filling.svg",
+        fallbackSrc: "images/ico/user-filling.svg",
       }),
       h("div", null, [
         h("div", null, [
