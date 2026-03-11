@@ -13,8 +13,10 @@ router.beforeEach((to, _from, next) => {
   $loadingBar.start();    // 开始加载进度条
 
   const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+  const isCapacitor = typeof (window as any).Capacitor !== "undefined";
   const initDone = typeof localStorage !== "undefined" && localStorage.getItem("init_done") === "true";
-  if (isElectron) {
+  
+  if (isElectron || isCapacitor) {
     const allowList = ["/init", "/desktop-lyric"];
     if (!initDone && !allowList.includes(to.path)) {
       next("/init");

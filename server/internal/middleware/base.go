@@ -31,13 +31,23 @@ func WithGormDB(db *gorm.DB) gin.HandlerFunc {
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
+		requestHeaders := c.Request.Header.Get("Access-Control-Request-Headers")
+		requestMethod := c.Request.Header.Get("Access-Control-Request-Method")
 		if origin != "" {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Vary", "Origin")
 		}
 		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token, X-Requested-With")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
+		if requestHeaders != "" {
+			c.Header("Access-Control-Allow-Headers", requestHeaders)
+		} else {
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token, X-Requested-With")
+		}
+		if requestMethod != "" {
+			c.Header("Access-Control-Allow-Methods", requestMethod)
+		} else {
+			c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
+		}
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return

@@ -10,7 +10,7 @@
       </div>
       <div class="header">
         <div class="logo-wrapper">
-          <img src="images/logo/favicon.png" alt="logo" class="logo-img" />
+          <img :src="logoSrc" alt="logo" class="logo-img" />
         </div>
         <h2 class="app-title">云音乐</h2>
         <p class="app-subtitle">聆听生活每一刻</p>
@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { userStore } from "@/store";
 import { login, register } from "@/api/login";
@@ -167,6 +167,8 @@ const message = useMessage();
 const loading = ref(false);
 const rememberMe = ref(false); // 记住密码
 const autoLogin = ref(false);  // 自动登录
+
+const logoSrc = computed(() => `${import.meta.env.BASE_URL}images/logo/favicon.png`);
 
 const loginFormRef = ref(null);
 const registerFormRef = ref(null);

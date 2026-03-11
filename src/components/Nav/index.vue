@@ -199,6 +199,7 @@ const handleServerConfigClick = () => {
 };
 
 // 用户数据模块
+const baseUrl = import.meta.env.BASE_URL;
 const userDataRender = () => {
   return h(
     "div",
@@ -216,8 +217,8 @@ const userDataRender = () => {
         style: "margin-right: 12px",
         src: user.userLogin
           ? resolveAvatarUrl(user.getUserData.avatarUrl)
-          : "images/ico/user-filling.svg",
-        fallbackSrc: "images/ico/user-filling.svg",
+          : `${baseUrl}images/ico/user-filling.svg`,
+        fallbackSrc: `${baseUrl}images/ico/user-filling.svg`,
       }),
       h("div", null, [
         h("div", null, [

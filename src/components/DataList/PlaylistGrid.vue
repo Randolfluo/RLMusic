@@ -27,7 +27,7 @@
             <div class="item-title">{{ item.title }}</div>
             <div class="item-meta">
               <span class="tag" v-if="item.play_count > 10000">HOT</span>
-              <span class="text">{{ formatCount(item.play_count) }} 播放 · {{ item.track_count || 0 }} 首</span>
+              <span class="text">{{ formatCount(item.play_count) }} 播放 · {{ item.total_songs || item.total || item.track_count || 0 }} 首</span>
             </div>
           </div>
           <div class="item-action" @click.stop="handleLike(item)">
@@ -394,6 +394,16 @@ const formatCount = (count: number) => {
   if (!count) return 0;
   if (count > 10000) return (count / 10000).toFixed(1) + "万";
   return count;
+};
+
+const getPlaylistSongCount = (item: any) => {
+  const totalSongs = Number(item?.total_songs);
+  if (Number.isFinite(totalSongs) && totalSongs > 0) return totalSongs;
+  const total = Number(item?.total);
+  if (Number.isFinite(total) && total > 0) return total;
+  if (Array.isArray(item?.songs)) return item.songs.length;
+  if (Number.isFinite(Number(item?.track_count))) return Number(item.track_count);
+  return 0;
 };
 
 // 右键菜单相关逻辑...

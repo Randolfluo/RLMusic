@@ -70,6 +70,8 @@ declare module 'axios' {
 }
 
 const appMode = import.meta.env.VITE_APP_MODE;
+const isCapacitor = typeof (window as any).Capacitor !== "undefined";
+
 const normalizeServerUrl = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -97,7 +99,9 @@ let serverConnectionNotified = false;
 if (appMode === "server") {
   baseURL = `http://${resolvedHost}:${backendPort}/api`;
 } else if (appMode === "client") {
-  baseURL = storedUrl ? normalizeBaseUrl(storedUrl) : `http://localhost:${backendPort}/api`;
+  baseURL = storedUrl ? normalizeBaseUrl(storedUrl) : "/api";
+} else if (isCapacitor) {
+  baseURL = storedUrl ? normalizeBaseUrl(storedUrl) : "/api";
 } else {
   if (storedUrl) {
     baseURL = normalizeBaseUrl(storedUrl);

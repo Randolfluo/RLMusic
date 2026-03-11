@@ -22,7 +22,7 @@
           {{ playlist.description }}
         </div>
         <div class="count-info">
-            歌曲数：{{ playlist.total_songs || playlist.total || 0 }}
+            歌曲数：{{ playlistSongCount }}
         </div>
         <div class="actions">
           <n-button type="primary" round size="large" @click="playAll">
@@ -120,6 +120,15 @@ const isSubscribed = ref(false); // 是否已收藏
 const playlist = ref<any>({});
 const page = ref(1);
 const limit = ref(30);
+
+const playlistSongCount = computed(() => {
+    const totalSongs = Number(playlist.value.total_songs);
+    if (Number.isFinite(totalSongs) && totalSongs > 0) return totalSongs;
+    const total = Number(playlist.value.total);
+    if (Number.isFinite(total) && total > 0) return total;
+    if (Array.isArray(playlist.value.songs)) return playlist.value.songs.length;
+    return 0;
+});
 
 const isOwner = computed(() => {
     if (!user.userLogin || !playlist.value.owner_id) return false;

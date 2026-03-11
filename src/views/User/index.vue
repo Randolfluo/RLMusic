@@ -19,8 +19,8 @@
                   <n-avatar
                     round
                     :size="140"
-                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || 'images/ico/user-filling.svg'"
-                    fallback-src="images/ico/user-filling.svg"
+                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || defaultAvatar"
+                    :fallback-src="defaultAvatar"
                     class="user-avatar"
                     object-fit="cover"
                   />
@@ -110,7 +110,7 @@ import {
     Power
 } from "@icon-park/vue-next";
 import axios from "@/utils/request"; 
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { getUserInfo, uploadAvatar, resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
 
@@ -118,6 +118,7 @@ const user = userStore();
 const router = useRouter();
 const message = useMessage();
 const userInfoDetails = ref<any>({});
+const defaultAvatar = computed(() => `${import.meta.env.BASE_URL}images/ico/user-filling.svg`);
 
 const formatDuration = (seconds: number) => {
     if (!seconds) return "0分钟";

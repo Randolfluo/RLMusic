@@ -790,17 +790,16 @@ func (*SongAuth) GetLikedSongs(c *gin.Context) {
 
 	// 1. Find "我喜欢的音乐" playlist
 	var playlist model.Playlist
-	err := db.Where("owner_id = ? AND title = ?", user.ID, "我喜欢的音乐").First(&playlist).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// No liked songs yet
-			ReturnSuccess(c, gin.H{
-				"list":  []model.Song{},
-				"total": 0,
-			})
-			return
-		}
-		ReturnError(c, g.ErrDbOp, err)
+	tx := db.Where("owner_id = ? AND title = ?", user.ID, "我喜欢的音乐").Limit(1).Find(&playlist)
+	if tx.Error != nil {
+		ReturnError(c, g.ErrDbOp, tx.Error)
+		return
+	}
+	if tx.RowsAffected == 0 {
+		ReturnSuccess(c, gin.H{
+			"list":  []model.Song{},
+			"total": 0,
+		})
 		return
 	}
 
