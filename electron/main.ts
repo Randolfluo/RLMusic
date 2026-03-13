@@ -354,6 +354,30 @@ ipcMain.on('desktop-lyric-control', (event, action) => {
   }
 })
 
+ipcMain.on('desktop-lyric-move', (event, direction) => {
+  if (desktopLyricWindow) {
+    const [x, y] = desktopLyricWindow.getPosition()
+    const { width } = screen.getPrimaryDisplay().workAreaSize
+    const winWidth = desktopLyricWindow.getBounds().width
+    
+    // 每次移动 50px
+    const step = 50
+    let newX = x
+
+    if (direction === 'left') {
+      newX = x - step
+    } else if (direction === 'right') {
+      newX = x + step
+    }
+
+    // 边界检查（可选）
+    // if (newX < 0) newX = 0
+    // if (newX + winWidth > width) newX = width - winWidth
+
+    desktopLyricWindow.setPosition(newX, y)
+  }
+})
+
 ipcMain.on('lock-desktop-lyric', (event, locked) => {
   if (desktopLyricWindow) {
     desktopLyricWindow.setIgnoreMouseEvents(locked, { forward: true })

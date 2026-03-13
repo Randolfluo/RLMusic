@@ -19,6 +19,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^8.0.1",
     "@capacitor/android": "^8.1.0",
     "@capacitor/core": "^8.1.0",
     "@icon-park/vue-next": "^1.4.2",

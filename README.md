@@ -27,8 +27,6 @@
 - **AI 服务**：
     - LLM: Qwen (通义千问) / SiliconFlow
     - TTS: CosyVoice / EdgeTTS
-- **实时通信**：WebSocket (Gorilla WebSocket)
-- **数据存储**：Redis (缓存/消息队列) + MongoDB (日志/非结构化数据)
 
 ## 目录结构
 ```
@@ -43,50 +41,52 @@
 
 ## 快速开始
 
-### 前端开发
+### 开发模式
 ```bash
 pnpm install
 pnpm dev
+
+cd server
+go mod tidy
+air
 ```
 
-### Web 构建
+### Web构建
 ```bash
 pnpm build:web
 ```
 
-构建产物在 dist/，可使用 Nginx / Caddy / 任意静态服务器部署。
+构建产物在 dist/，可使用 Nginx 在任意静态服务器部署。
 
-### Electron 构建
+### Electron安装包构建
 ```bash
 pnpm build:client
 pnpm build:server
 ```
 
 ### Android 构建
+
+执行以下命令构建
 ```bash
 pnpm build:web
 pnpm exec cap sync android
 pnpm exec cap open android
 ```
 
-命令行方式（适合 CI）：
+### 安卓命令行构建
+
+
+
+## Docker部署
 ```bash
-cd android
-./gradlew assembleDebug
+
 ```
 
-## Docker（基础设施）
-当前 docker-compose 提供 Redis 与 MongoDB：
-```bash
-docker compose up -d
-```
 
 ## 计划
 - Web 前端 Nginx Docker 镜像与部署模式
 - 前后端拆分容器部署方案
 - 修复桌面歌词的显示问题，置顶透明窗口
-- 更新操作文档
-- 向量数据库（如 Milvus）可以将歌曲与用户兴趣表示为高维向量，并通过高效的相似度检索（如 HNSW / IVF）快速返回 Top-K 相似歌曲，从而实现可扩展、实时的个性化音乐推荐系统。
 - 移动端添加扫描二维码功能。
 ## License
 MIT

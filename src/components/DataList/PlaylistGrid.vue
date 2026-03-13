@@ -396,16 +396,6 @@ const formatCount = (count: number) => {
   return count;
 };
 
-const getPlaylistSongCount = (item: any) => {
-  const totalSongs = Number(item?.total_songs);
-  if (Number.isFinite(totalSongs) && totalSongs > 0) return totalSongs;
-  const total = Number(item?.total);
-  if (Number.isFinite(total) && total > 0) return total;
-  if (Array.isArray(item?.songs)) return item.songs.length;
-  if (Number.isFinite(Number(item?.track_count))) return Number(item.track_count);
-  return 0;
-};
-
 // 右键菜单相关逻辑...
 </script>
 
