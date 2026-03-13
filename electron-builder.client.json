@@ -1,6 +1,6 @@
 {
-  "appId": "com.randolfluo.localmusicplayer.client",
-  "productName": "LocalMusicPlayer-Client",
+  "appId": "com.randolfluo.rlmusic.client",
+  "productName": "RLMusic-Client",
   "directories": {
     "output": "release/client/${version}"
   },

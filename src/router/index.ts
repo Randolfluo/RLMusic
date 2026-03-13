@@ -10,7 +10,9 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, _from, next) => {
   const user = userStore();
-  $loadingBar.start();    // 开始加载进度条
+  if (typeof window.$loadingBar !== "undefined") {
+    window.$loadingBar.start();    // 开始加载进度条
+  }
 
   const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
   const isCapacitor = typeof (window as any).Capacitor !== "undefined";
@@ -70,7 +72,9 @@ router.beforeEach((to, _from, next) => {
 });
 
 router.afterEach(() => {
-  $loadingBar.finish();   // 结束加载进度条
+  if (typeof window.$loadingBar !== "undefined") {
+    window.$loadingBar.finish();   // 结束加载进度条
+  }
 });
 
 export default router;

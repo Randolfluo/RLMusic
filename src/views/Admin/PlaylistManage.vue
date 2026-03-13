@@ -34,6 +34,7 @@
           :pagination="pagination"
           :row-key="row => row.id"
           :row-class-name="'playlist-row'"
+          :scroll-x="800"
           remote
         />
       </div>
@@ -84,11 +85,11 @@ const columns: DataTableColumns = [
       const src = resolveCoverUrl(row.cover_url);
       return h('div', { class: 'cover-wrapper' }, [
         h(NImage, {
-          width: 48,
-          height: 48,
-          src: src,
-          fallbackSrc: "https://via.placeholder.com/48",
-          objectFit: 'cover',
+            width: 48,
+            height: 48,
+            src: src,
+            fallbackSrc: "/images/pic/default.png",
+            objectFit: 'cover',
           showToolbar: false,
           intersectionObserverOptions: { rootMargin: '100px' }
         })
@@ -138,6 +139,7 @@ const columns: DataTableColumns = [
     key: 'actions',
     width: 100,
     align: 'center',
+    fixed: 'right',
     render(row: any) {
       return h(
         NPopconfirm,
@@ -323,28 +325,34 @@ const handleDelete = async (row: any) => {
     }
   }
 
-  .stat-badge {
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 100px;
+  .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(4px);
+    gap: 16px;
 
-    .label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #94a3b8;
-      font-weight: 700;
-    }
+    .stat-badge {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(4px);
 
-    .value {
-      font-size: 16px;
-      font-weight: 700;
-      color: #3b82f6;
+      .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 700;
+      }
+
+      .value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #3b82f6;
+      }
     }
   }
 }
@@ -473,6 +481,23 @@ const handleDelete = async (row: any) => {
     background: #fee2e2;
     color: #ef4444;
     transform: scale(1.1);
+  }
+}
+
+@media (max-width: 768px) {
+  .playlist-manage-container {
+    padding: 20px 16px;
+  }
+
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    
+    .header-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
   }
 }
 </style>

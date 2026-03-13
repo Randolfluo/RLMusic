@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.randolfluo.localmusicplayer',
-  appName: 'LocalMusicPlayer',
+  appId: 'com.randolfluo.rlmusic',
+  appName: 'RLMusic',
   webDir: 'dist',
   server: {
     cleartext: true,

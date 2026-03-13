@@ -68,17 +68,13 @@ pnpm build:server
 
 执行以下命令构建
 ```bash
-pnpm build:web
-pnpm exec cap sync android
-pnpm exec cap open android
+pnpm build:android
 ```
 
-### 安卓命令行构建
 
 
 
 ## Docker部署
-```bash
 
 ```
 
@@ -86,7 +82,15 @@ pnpm exec cap open android
 ## 计划
 - Web 前端 Nginx Docker 镜像与部署模式
 - 前后端拆分容器部署方案
-- 修复桌面歌词的显示问题，置顶透明窗口
 - 移动端添加扫描二维码功能。
 ## License
 MIT
+
+
+### 问题
+是如何调用扫描二维码功能的？
+
+
+
+优化管理员界面，适配移动端显示。
+调用frontend-design，优化管理员界面，包括（用户管理页和歌单管理页），适配移动端显示

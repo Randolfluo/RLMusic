@@ -1,6 +1,6 @@
 {
-  "appId": "com.randolfluo.localmusicplayer.server",
-  "productName": "LocalMusicPlayer-Server",
+  "appId": "com.randolfluo.rlmusic.server",
+  "productName": "RLMusic-Server",
   "directories": {
     "output": "release/server/${version}"
   },

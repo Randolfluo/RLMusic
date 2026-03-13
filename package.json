@@ -1,5 +1,5 @@
 {
-  "name": "localmusicplayer",
+  "name": "rlmusic",
   "private": true,
   "version": "1.0.0",
   "author": "Randolfluo",
@@ -15,11 +15,11 @@
     "build:client": "cross-env VITE_APP_MODE=client vue-tsc -b && cross-env VITE_APP_MODE=client vite build && electron-builder --config electron-builder.client.json",
     "build:web": "vue-tsc -b && vite build",
     "build:android": "vue-tsc -b && vite build && pnpm exec cap sync android && pnpm exec cap open android",
-    "build:all": "npm run build:server && npm run build:client && pnpm build:web && pnpm exec cap sync android && pnpm exec cap open android",
+    "build:all": "npm run build:server && npm run build:client && pnpm build:web && pnpm build:android",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor-mlkit/barcode-scanning": "^8.0.1",
+    "@capacitor-community/barcode-scanner": "^4.0.1",
     "@capacitor/android": "^8.1.0",
     "@capacitor/core": "^8.1.0",
     "@icon-park/vue-next": "^1.4.2",
@@ -64,8 +64,8 @@
     "vue-tsc": "^3.1.4"
   },
   "build": {
-    "appId": "com.randolfluo.localmusicplayer",
-    "productName": "LocalMusicPlayer",
+    "appId": "com.randolfluo.rlmusic",
+    "productName": "RLMusic",
     "directories": {
       "output": "release/${version}"
     },

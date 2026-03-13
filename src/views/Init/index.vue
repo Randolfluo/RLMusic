@@ -7,7 +7,7 @@
           <img src="/images/logo/favicon.png" alt="Logo" class="logo" />
         </div>
         <div class="title-group">
-          <h1 class="app-title">Local Music</h1>
+          <h1 class="app-title">RLMusic</h1>
           <p class="subtitle">您的私有云音乐库</p>
         </div>
       </div>
@@ -128,7 +128,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useMessage, NAlert, NButton, NForm, NFormItem, NInput, NInputNumber, NIcon, NInputGroup } from "naive-ui";
 import { useRouter } from "vue-router";
 import { Capacitor } from "@capacitor/core";
-import { BarcodeScanner } from "@capacitor-mlkit/barcode-scanning";
+import { BarcodeScanner, SupportedFormat } from "@capacitor-community/barcode-scanner";
 import { 
   SettingsOutlined, 
   FolderOpenOutlined, 
@@ -139,7 +139,6 @@ import {
   CheckCircleOutlined,
   ConnectWithoutContactOutlined
 } from "@vicons/material";
-// import { Server } from "@vicons/carbon";
 
 const router = useRouter();
 const message = useMessage();
@@ -163,7 +162,6 @@ const serverForm = reactive({
   backendPort: 12345,
   frontendPort: 23456,
   baseFolderPath: "",
-  accessIp: "",
 });
 
 const clientForm = reactive({
@@ -173,12 +171,6 @@ const clientForm = reactive({
 
 const qrApiParam = ref("");
 const ips = ref<string[]>([]);
-/*
-const currentIp = computed(() => {
-  if (ips.value.length === 0) return "localhost";
-  return ips.value[0];
-});
-*/
 
 const normalizeServerUrl = (value: string) => {
   const trimmed = value.trim();
@@ -229,6 +221,37 @@ const parseApiFromQr = (raw: string) => {
   return normalizeServerUrl(value);
 };
 
+const buildScanErrorMessage = (error: any) => {
+  const raw = String(error?.message || error || "未知错误");
+  if (/User cancelled|canceled|cancelled/i.test(raw)) {
+    return "你已取消扫码。";
+  }
+  if (/permission|denied/i.test(raw)) {
+    return "相机权限被拒绝，请在系统设置中开启相机权限后重试。";
+  }
+  if (/timeout|超时/i.test(raw)) {
+    return "扫码超时，请将二维码放入取景框中央后重试。";
+  }
+  return `扫码失败：${raw}`;
+};
+
+const startScannerOverlay = async () => {
+  await BarcodeScanner.hideBackground();
+  document.body.classList.add("scanner-active");
+  document.documentElement.classList.add("scanner-active");
+};
+
+const stopScannerOverlay = async () => {
+  try {
+    await BarcodeScanner.showBackground();
+  } catch {}
+  try {
+    await BarcodeScanner.stopScan();
+  } catch {}
+  document.body.classList.remove("scanner-active");
+  document.documentElement.classList.remove("scanner-active");
+};
+
 const scanQrCode = async () => {
   if (!isCapacitor) {
     message.warning("仅移动端 App 支持扫码");
@@ -237,27 +260,29 @@ const scanQrCode = async () => {
   scanning.value = true;
   scanHint.value = "";
   try {
-    const supported = await BarcodeScanner.isSupported();
-    if (!supported.supported) {
-      message.error("当前设备不支持扫码");
+    const permission = await BarcodeScanner.checkPermission({ force: true });
+    if (permission.denied) {
+      await BarcodeScanner.openAppSettings();
+      message.error("相机权限已被永久拒绝，请在系统设置中手动开启");
       return;
     }
-    const permissions = await BarcodeScanner.requestPermissions();
-    if (permissions.camera !== "granted" && permissions.camera !== "limited") {
+    if (!permission.granted) {
       message.error("未获得相机权限");
       return;
     }
-    
-    // 安装 Google Barcode Scanner 模块（针对未内置的设备）
-    try {
-        await BarcodeScanner.installGoogleBarcodeScannerModule();
-    } catch (e) {
-        console.warn("Google Barcode Scanner module installation failed or already installed", e);
-    }
 
-    const res = await BarcodeScanner.scan();
-    const firstBarcode = Array.isArray(res.barcodes) ? res.barcodes[0] : undefined;
-    const content = String(firstBarcode?.rawValue || "");
+    await BarcodeScanner.prepare({
+      targetedFormats: [SupportedFormat.QR_CODE],
+    });
+    await startScannerOverlay();
+    const result = await BarcodeScanner.startScan({
+      targetedFormats: [SupportedFormat.QR_CODE],
+    });
+    const content = result.hasContent ? String(result.content || "") : "";
+    if (!content) {
+      message.warning("未识别到二维码内容");
+      return;
+    }
     const apiValue = parseApiFromQr(content);
     if (!apiValue) {
       message.error("二维码中未识别到 api 地址");
@@ -268,23 +293,14 @@ const scanQrCode = async () => {
     scanHint.value = `已识别并填充：${apiValue}`;
     message.success("二维码识别成功，请确认后保存");
   } catch (err: any) {
-    message.error("扫码失败，请重试: " + (err.message || err));
+    const prettyMessage = buildScanErrorMessage(err);
+    scanHint.value = prettyMessage;
+    message.error(prettyMessage);
   } finally {
+    await stopScannerOverlay();
     scanning.value = false;
   }
 };
-
-/*
-const frontendUrlPreview = computed(() => {
-  if (!currentIp.value) return "";
-  return `http://${currentIp.value}:${serverForm.frontendPort}/`;
-});
-
-const backendUrlPreview = computed(() => {
-  if (!currentIp.value) return "";
-  return `http://${currentIp.value}:${serverForm.backendPort}`;
-});
-*/
 
 const clientPreviewUrl = computed(() => {
   const ip = clientForm.backendIp.trim();
@@ -317,9 +333,6 @@ const loadIps = async () => {
     const res = await invoke("get-local-ips");
     if (Array.isArray(res?.ips)) {
       ips.value = res.ips;
-      // if (!serverForm.accessIp && ips.value.length > 0) {
-      //   serverForm.accessIp = ips.value[0] || "";
-      // }
     }
   } catch {
     ips.value = [];
@@ -333,7 +346,6 @@ const loadConfig = async () => {
     if (cfg?.backend_port) serverForm.backendPort = Number(cfg.backend_port) || serverForm.backendPort;
     if (cfg?.frontend_port) serverForm.frontendPort = Number(cfg.frontend_port) || serverForm.frontendPort;
     if (cfg?.base_folder) serverForm.baseFolderPath = String(cfg.base_folder || "");
-    // if (cfg?.access_ip) serverForm.accessIp = String(cfg.access_ip || "");
   } catch {}
 };
 
@@ -385,16 +397,13 @@ const applyServerConfig = async () => {
       backendPort: serverForm.backendPort,
       frontendPort: serverForm.frontendPort,
       baseFolderPath: baseFolder,
-      accessIp: "", // serverForm.accessIp,
+      accessIp: "",
     });
 
     localStorage.setItem("init_done", "true");
     localStorage.setItem("backend_port", String(serverForm.backendPort));
     localStorage.setItem("frontend_port", String(serverForm.frontendPort));
     localStorage.setItem("server_url", `http://localhost:${serverForm.backendPort}`);
-    // if (serverForm.accessIp) {
-    //   localStorage.setItem("access_ip", serverForm.accessIp);
-    // }
 
     const backendOrigin = `http://localhost:${serverForm.backendPort}`;
     const ok = await waitForBackend(backendOrigin);
@@ -753,6 +762,15 @@ onMounted(async () => {
 @keyframes bg-drift {
   0% { transform: translate(0, 0); }
   100% { transform: translate(20px, 20px); }
+}
+
+:global(html.scanner-active),
+:global(body.scanner-active) {
+  background: transparent !important;
+}
+
+:global(body.scanner-active .init-page) {
+  opacity: 0;
 }
 
 @media (max-width: 768px) {
