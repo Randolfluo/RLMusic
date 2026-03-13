@@ -1,10 +1,14 @@
 <script setup>
 import { storeToRefs } from "pinia";
 import { settingStore, userStore } from "@/store";
-import { Config, MusicOne, Effects } from "@icon-park/vue-next";
+import { Config, MusicOne, Effects, Clear } from "@icon-park/vue-next";
 import { changePassword } from "@/api/user";
+import { Capacitor } from "@capacitor/core";
 
 const message = useMessage();
+const dialog = useDialog();
+const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+const isCapacitor = typeof window !== "undefined" && Capacitor.isNativePlatform();
 const showPasswordModal = ref(false);
 const passwordLoading = ref(false);
 const passwordFormRef = ref(null);
@@ -72,6 +76,39 @@ const saveServerUrl = () => {
   localStorage.setItem("server_url", normalized);
   message.success("服务器地址已保存");
   location.reload();
+};
+
+const handleClearData = () => {
+  dialog.warning({
+    title: "清除所有数据",
+    content: "此操作将清除应用在本地的所有配置、缓存和数据库，并重置应用。确定要继续吗？",
+    positiveText: "确定清除",
+    negativeText: "取消",
+    onPositiveClick: async () => {
+      // 1. 清除 LocalStorage
+      localStorage.clear();
+      
+      // 2. 如果是 Electron，调用 IPC 清除 UserData
+      if (isElectron && window.ipcRenderer) {
+        try {
+          const res = await window.ipcRenderer.invoke('app-clear-data');
+          if (!res.success) {
+            message.error("清除数据失败: " + res.error);
+            return;
+          }
+          // Electron 主进程会处理重启，这里不需要做额外操作
+        } catch (e) {
+          message.error("清除数据请求失败: " + (e.message || e));
+        }
+      } else {
+        // Web 或 Capacitor 环境，直接刷新重置
+        message.success("数据已清除，正在重启...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    }
+  });
 };
 
 const setting = settingStore();
@@ -203,22 +240,32 @@ const playerStyleOptions = [
             </div>
           </n-card>
 
-          <n-card class="setting-card full-width" :bordered="false">
+          <n-card class="setting-card" :bordered="false">
             <div class="card-inner">
               <div class="info">
                 <div class="name">服务器地址</div>
-                <div class="desc">客户端模式用于连接服务器获取歌曲与封面</div>
+                <div class="desc">配置后端服务接口地址</div>
               </div>
-              <div class="server-control">
-                <n-input
-                  v-model:value="serverUrl"
-                  placeholder="http://127.0.0.1:12345"
-                  size="small"
-                />
-                <n-button secondary type="primary" size="small" @click="saveServerUrl">
-                  保存
-                </n-button>
+              <n-input
+                class="control input-control"
+                v-model:value="serverUrl"
+                placeholder="http://127.0.0.1:12345"
+                @blur="saveServerUrl"
+                @keyup.enter="saveServerUrl"
+                size="small"
+              />
+            </div>
+          </n-card>
+
+          <n-card class="setting-card" :bordered="false">
+            <div class="card-inner">
+              <div class="info">
+                <div class="name">清除数据</div>
+                <div class="desc warning-text">重置应用并清除所有本地数据</div>
               </div>
+              <n-button type="error" secondary size="small" @click="handleClearData">
+                清除所有数据
+              </n-button>
             </div>
           </n-card>
 

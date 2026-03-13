@@ -51,6 +51,16 @@
       </div>
 
       <div class="right">
+        <!-- Electron Server 初始化入口 -->
+        <n-tooltip trigger="hover" v-if="isServerMode">
+          <template #trigger>
+            <div class="init-trigger" @click="router.push('/init')">
+              <n-icon :component="SettingTwo" size="20" />
+            </div>
+          </template>
+          初始化设置
+        </n-tooltip>
+
         <!-- 管理员入口 -->
         <n-tooltip trigger="hover">
           <template #trigger>
@@ -160,6 +170,10 @@ const setting = settingStore();
 const aboutSiteRef = ref(null);
 const message = useMessage();
 const showMobileMenu = ref(false);
+
+const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+const appMode = import.meta.env.VITE_APP_MODE;
+const isServerMode = computed(() => appMode === "server" && isElectron);
 
 // 下拉菜单显隐
 const showDropdown = ref(false);
@@ -557,6 +571,7 @@ const dropdownSelect = (key) => {
     .about-trigger,
     .admin-trigger,
     .connect-trigger,
+    .init-trigger,
     .mobile-menu-trigger {
         width: 36px;
         height: 36px;

@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "dev:web": "vite --host",
+    "dev:server": "cd server && air",
     "build": "vue-tsc -b && vite build && electron-builder",
     "build:go": "cd server && go mod tidy && go build -o ../resources/server.exe cmd/main.go",
     "build:server": "npm run build:go && cross-env VITE_APP_MODE=server vue-tsc -b && cross-env VITE_APP_MODE=server vite build && electron-builder --config electron-builder.server.json",
@@ -48,6 +49,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.24",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "electron": "^40.0.0",
     "electron-builder": "^26.4.0",

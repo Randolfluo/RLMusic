@@ -30,6 +30,10 @@ app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Au
 //
 process.env.APP_ROOT = path.join(__dirname, '..')
 
+// 定义应用模式和名称常量
+const APP_NAME_BASE = 'RLMusic'
+const getAppId = (mode: string) => `${APP_NAME_BASE}-${mode}`
+
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 const appMode = process.env.VITE_APP_MODE || (fs.existsSync(path.join(process.resourcesPath, process.platform === 'win32' ? 'server.exe' : 'server')) ? 'server' : 'client')
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
@@ -40,13 +44,14 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 // Win7 禁用 GPU 加速
 if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
 
-if (process.platform === 'win32') app.setAppUserModelId(`LocalMusicPlayer-${appMode}`)
+if (process.platform === 'win32') app.setAppUserModelId(getAppId(appMode))
 
 // 屏蔽 Electron 常见的 Autofill 相关的终端报错
 // "Request Autofill.enable failed", "Request Autofill.setAddresses failed"
 app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Autofill,PasswordManager')
 
-app.setPath('userData', path.join(app.getPath('appData'), `LocalMusicPlayer-${appMode}`))
+// 设置用户数据目录，使用统一的应用名称
+app.setPath('userData', path.join(app.getPath('appData'), getAppId(appMode)))
 if (!app.requestSingleInstanceLock(appMode)) {
   app.quit()
   process.exit(0)
@@ -405,6 +410,49 @@ ipcMain.on('unlock-desktop-lyric', () => {
 ipcMain.on('update-desktop-lyric-settings', (event, settings) => {
   if (desktopLyricWindow) {
     desktopLyricWindow.webContents.send('update-settings', settings)
+  }
+})
+
+// 清除应用所有数据
+ipcMain.handle('app-clear-data', async () => {
+  try {
+    // 1. 清除 Session 数据（缓存、Cookie、LocalStorage 等）
+    if (win) {
+      await win.webContents.session.clearStorageData()
+    }
+
+    // 2. 清除 Electron UserData 目录下的文件（跳过锁文件）
+    const userDataPath = app.getPath('userData')
+    if (fs.existsSync(userDataPath)) {
+      const files = fs.readdirSync(userDataPath)
+      for (const file of files) {
+        // 跳过锁文件和 Singleton 文件，防止 EPERM 错误
+        if (file === 'Lockfile' || file.startsWith('Singleton') || file === 'TransportSecurity') continue
+        
+        try {
+          const curPath = path.join(userDataPath, file)
+          fs.rmSync(curPath, { recursive: true, force: true })
+        } catch (e: any) {
+          console.warn(`Failed to delete ${file}:`, e.message)
+          // 忽略无法删除的文件（通常是运行时锁定的，不影响重置效果）
+        }
+      }
+    }
+
+    // 3. 停止所有服务
+    if (serverProcess) {
+      serverProcess.kill()
+      serverProcess = null
+    }
+    await stopFrontendServer()
+
+    // 4. 重启应用
+    app.relaunch()
+    app.exit(0)
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to clear app data:', error)
+    return { success: false, error: error.message }
   }
 })
 

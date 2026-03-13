@@ -1,6 +1,18 @@
 <template>
   <div class="init-page">
     <div class="glass-bg"></div>
+
+    <n-button 
+      quaternary 
+      circle 
+      class="back-btn" 
+      @click="router.push('/')"
+    >
+      <template #icon>
+        <n-icon :component="ArrowBackOutlined" size="24" />
+      </template>
+    </n-button>
+
     <div class="init-container">
       <div class="header">
         <div class="logo-wrapper">
@@ -17,6 +29,19 @@
           <n-icon size="18" :component="SettingsOutlined" />
         </template>
         当前模式：{{ modeLabel }}
+        <n-button
+          v-if="isElectron"
+          text
+          type="error"
+          size="tiny"
+          style="margin-left: 12px; vertical-align: middle;"
+          @click="handleClearData"
+        >
+          <template #icon>
+            <n-icon :component="DeleteOutlined" />
+          </template>
+          清除数据
+        </n-button>
       </n-alert>
 
       <div class="config-card glass-panel" v-if="isServerMode">
@@ -125,7 +150,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
-import { useMessage, NAlert, NButton, NForm, NFormItem, NInput, NInputNumber, NIcon, NInputGroup } from "naive-ui";
+import { useMessage, NAlert, NButton, NForm, NFormItem, NInput, NInputNumber, NIcon, NInputGroup, useDialog } from "naive-ui";
 import { useRouter } from "vue-router";
 import { Capacitor } from "@capacitor/core";
 import { BarcodeScanner, SupportedFormat } from "@capacitor-community/barcode-scanner";
@@ -137,11 +162,14 @@ import {
   QrCodeScannerOutlined, 
   ArrowForwardOutlined,
   CheckCircleOutlined,
-  ConnectWithoutContactOutlined
+  ConnectWithoutContactOutlined,
+  DeleteOutlined,
+  ArrowBackOutlined
 } from "@vicons/material";
 
 const router = useRouter();
 const message = useMessage();
+const dialog = useDialog();
 
 const appMode = import.meta.env.VITE_APP_MODE as string | undefined;
 const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
@@ -300,6 +328,39 @@ const scanQrCode = async () => {
     await stopScannerOverlay();
     scanning.value = false;
   }
+};
+
+const handleClearData = () => {
+  dialog.warning({
+    title: "清除所有数据",
+    content: "此操作将清除应用在本地的所有配置、缓存和数据库，并重置应用。确定要继续吗？",
+    positiveText: "确定清除",
+    negativeText: "取消",
+    onPositiveClick: async () => {
+      // 1. 清除 LocalStorage
+      localStorage.clear();
+      
+      // 2. 如果是 Electron，调用 IPC 清除 UserData
+      if (isElectron && window.ipcRenderer) {
+        try {
+          const res = await window.ipcRenderer.invoke('app-clear-data');
+          if (!res.success) {
+            message.error("清除数据失败: " + res.error);
+            return;
+          }
+          // Electron 主进程会处理重启，这里不需要做额外操作
+        } catch (e: any) {
+          message.error("清除数据请求失败: " + (e.message || e));
+        }
+      } else {
+        // Web 或 Capacitor 环境，直接刷新重置
+        message.success("数据已清除，正在重启...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    }
+  });
 };
 
 const clientPreviewUrl = computed(() => {
@@ -477,7 +538,8 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .init-page {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -485,6 +547,23 @@ onMounted(async () => {
   position: relative;
   background-color: #f0f2f5;
   overflow: hidden;
+}
+
+.back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .glass-bg {
@@ -502,11 +581,20 @@ onMounted(async () => {
 .init-container {
   width: 480px;
   max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  padding: 4px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .header {

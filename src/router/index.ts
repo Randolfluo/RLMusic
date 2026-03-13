@@ -24,7 +24,9 @@ router.beforeEach((to, _from, next) => {
       next("/init");
       return;
     }
-    if (initDone && to.path === "/init") {
+    // 允许已初始化的 Electron Server 用户手动访问 /init
+    const isServerMode = import.meta.env.VITE_APP_MODE === "server" && isElectron;
+    if (initDone && to.path === "/init" && !isServerMode) {
       next("/");
       return;
     }

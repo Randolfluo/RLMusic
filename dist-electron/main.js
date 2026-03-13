@@ -1,390 +1,251 @@
-import { app, ipcMain, dialog, BrowserWindow, screen, shell } from "electron";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import os from "node:os";
-import { spawn } from "child_process";
-import * as http from "node:http";
-import * as net from "node:net";
-import fs from "node:fs";
-createRequire(import.meta.url);
-const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
+import { app as a, ipcMain as d, dialog as U, BrowserWindow as P, screen as R, shell as $ } from "electron";
+import { createRequire as V } from "node:module";
+import { fileURLToPath as B } from "node:url";
+import s from "node:path";
+import T from "node:os";
+import { spawn as H } from "child_process";
+import * as z from "node:http";
+import * as q from "node:net";
+import l from "node:fs";
+V(import.meta.url);
+const _ = s.dirname(B(import.meta.url));
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
-app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill");
-process.env.APP_ROOT = path.join(__dirname$1, "..");
-const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const appMode = process.env.VITE_APP_MODE || (fs.existsSync(path.join(process.resourcesPath, process.platform === "win32" ? "server.exe" : "server")) ? "server" : "client");
-const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
-if (os.release().startsWith("6.1")) app.disableHardwareAcceleration();
-if (process.platform === "win32") app.setAppUserModelId(`LocalMusicPlayer-${appMode}`);
-app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill,PasswordManager");
-app.setPath("userData", path.join(app.getPath("appData"), `LocalMusicPlayer-${appMode}`));
-if (!app.requestSingleInstanceLock(appMode)) {
-  app.quit();
-  process.exit(0);
-}
-let win;
-let splash;
-let desktopLyricWindow = null;
-let serverProcess = null;
-let frontendServer = null;
-const getAppConfigPath = () => path.join(app.getPath("userData"), "app-config.json");
-const readAppConfig = () => {
+a.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill");
+process.env.APP_ROOT = s.join(_, "..");
+const G = "RLMusic", D = (t) => `${G}-${t}`, h = process.env.VITE_DEV_SERVER_URL, k = process.env.VITE_APP_MODE || (l.existsSync(s.join(process.resourcesPath, process.platform === "win32" ? "server.exe" : "server")) ? "server" : "client"), ie = s.join(process.env.APP_ROOT, "dist-electron"), y = s.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = h ? s.join(process.env.APP_ROOT, "public") : y;
+T.release().startsWith("6.1") && a.disableHardwareAcceleration();
+process.platform === "win32" && a.setAppUserModelId(D(k));
+a.commandLine.appendSwitch("disable-features", "AutofillServerCommunication,Autofill,PasswordManager");
+a.setPath("userData", s.join(a.getPath("appData"), D(k)));
+a.requestSingleInstanceLock(k) || (a.quit(), process.exit(0));
+let i, g, r = null, f = null, m = null;
+const S = () => s.join(a.getPath("userData"), "app-config.json"), E = () => {
   try {
-    const raw = fs.readFileSync(getAppConfigPath(), "utf-8");
-    const parsed = JSON.parse(raw || "{}");
+    const t = l.readFileSync(S(), "utf-8"), e = JSON.parse(t || "{}");
     return {
-      init_done: !!parsed.init_done,
-      backend_port: Number(parsed.backend_port) || 12345,
-      frontend_port: Number(parsed.frontend_port) || 23456,
-      base_folder: String(parsed.base_folder || ""),
-      access_ip: String(parsed.access_ip || "")
+      init_done: !!e.init_done,
+      backend_port: Number(e.backend_port) || 12345,
+      frontend_port: Number(e.frontend_port) || 23456,
+      base_folder: String(e.base_folder || ""),
+      access_ip: String(e.access_ip || "")
     };
   } catch {
-    return { init_done: false, backend_port: 12345, frontend_port: 23456, base_folder: "", access_ip: "" };
+    return { init_done: !1, backend_port: 12345, frontend_port: 23456, base_folder: "", access_ip: "" };
   }
-};
-const writeAppConfig = (cfg) => {
-  const next = { ...readAppConfig(), ...cfg };
-  fs.mkdirSync(path.dirname(getAppConfigPath()), { recursive: true });
-  fs.writeFileSync(getAppConfigPath(), JSON.stringify(next, null, 2), "utf-8");
-  return next;
-};
-const isPortAvailable = (port) => new Promise((resolve) => {
-  const server = net.createServer();
-  server.once("error", () => resolve(false));
-  server.once("listening", () => server.close(() => resolve(true)));
-  server.listen(port, "0.0.0.0");
-});
-const getLocalIPs = () => {
-  const nets = os.networkInterfaces();
-  const ips = [];
-  Object.values(nets).forEach((items) => {
-    (items || []).forEach((n) => {
-      if (n.family === "IPv4" && !n.internal) ips.push(n.address);
+}, A = (t) => {
+  const e = { ...E(), ...t };
+  return l.mkdirSync(s.dirname(S()), { recursive: !0 }), l.writeFileSync(S(), JSON.stringify(e, null, 2), "utf-8"), e;
+}, v = (t) => new Promise((e) => {
+  const n = q.createServer();
+  n.once("error", () => e(!1)), n.once("listening", () => n.close(() => e(!0))), n.listen(t, "0.0.0.0");
+}), J = () => {
+  const t = T.networkInterfaces(), e = [];
+  return Object.values(t).forEach((n) => {
+    (n || []).forEach((o) => {
+      o.family === "IPv4" && !o.internal && e.push(o.address);
     });
-  });
-  return ips;
-};
-const updateServerConfigYml = (backendPort, baseFolderPath) => {
-  const configPath = path.join(process.resourcesPath, "config.yml");
-  if (!fs.existsSync(configPath)) return;
-  const escapedPath = baseFolderPath.replace(/'/g, "''");
-  const raw = fs.readFileSync(configPath, "utf-8");
-  const withPort = raw.replace(/(^\s*Port:\s*).*/m, `$1:${backendPort}`);
-  const withPath = withPort.replace(/(^\s*FilePath:\s*).*/m, `$1'${escapedPath}'`);
-  fs.writeFileSync(configPath, withPath, "utf-8");
-};
-const guessMime = (p) => {
-  const ext = path.extname(p).toLowerCase();
-  if (ext === ".html") return "text/html; charset=utf-8";
-  if (ext === ".js" || ext === ".mjs") return "text/javascript; charset=utf-8";
-  if (ext === ".css") return "text/css; charset=utf-8";
-  if (ext === ".json") return "application/json; charset=utf-8";
-  if (ext === ".svg") return "image/svg+xml";
-  if (ext === ".png") return "image/png";
-  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
-  if (ext === ".ico") return "image/x-icon";
-  if (ext === ".woff") return "font/woff";
-  if (ext === ".woff2") return "font/woff2";
-  if (ext === ".ttf") return "font/ttf";
-  return "application/octet-stream";
-};
-const stopFrontendServer = async () => {
-  if (!frontendServer) return;
-  await new Promise((resolve) => frontendServer?.close(() => resolve()));
-  frontendServer = null;
-};
-const startFrontendServer = async (port) => {
-  await stopFrontendServer();
-  const root = RENDERER_DIST;
-  const indexPath = path.join(root, "index.html");
-  frontendServer = http.createServer((req, res) => {
-    const method = req.method || "GET";
-    if (method !== "GET" && method !== "HEAD") {
-      res.statusCode = 405;
-      res.end();
+  }), e;
+}, Y = (t, e) => {
+  const n = s.join(process.resourcesPath, "config.yml");
+  if (!l.existsSync(n)) return;
+  const o = e.replace(/'/g, "''"), u = l.readFileSync(n, "utf-8").replace(/(^\s*Port:\s*).*/m, `$1:${t}`).replace(/(^\s*FilePath:\s*).*/m, `$1'${o}'`);
+  l.writeFileSync(n, u, "utf-8");
+}, X = (t) => {
+  const e = s.extname(t).toLowerCase();
+  return e === ".html" ? "text/html; charset=utf-8" : e === ".js" || e === ".mjs" ? "text/javascript; charset=utf-8" : e === ".css" ? "text/css; charset=utf-8" : e === ".json" ? "application/json; charset=utf-8" : e === ".svg" ? "image/svg+xml" : e === ".png" ? "image/png" : e === ".jpg" || e === ".jpeg" ? "image/jpeg" : e === ".ico" ? "image/x-icon" : e === ".woff" ? "font/woff" : e === ".woff2" ? "font/woff2" : e === ".ttf" ? "font/ttf" : "application/octet-stream";
+}, x = async () => {
+  m && (await new Promise((t) => m?.close(() => t())), m = null);
+}, L = async (t) => {
+  await x();
+  const e = y, n = s.join(e, "index.html");
+  m = z.createServer((o, c) => {
+    const p = o.method || "GET";
+    if (p !== "GET" && p !== "HEAD") {
+      c.statusCode = 405, c.end();
       return;
     }
     try {
-      const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-      const pathname = decodeURIComponent(url.pathname || "/");
-      const safePath = pathname.replace(/\\/g, "/");
-      const requested = safePath === "/" ? "/index.html" : safePath;
-      const resolved = path.resolve(path.join(root, requested));
-      const rootResolved = path.resolve(root);
-      const targetPath = resolved.startsWith(rootResolved) ? resolved : indexPath;
-      const exists = fs.existsSync(targetPath) && fs.statSync(targetPath).isFile();
-      const finalPath = exists ? targetPath : indexPath;
-      const data = fs.readFileSync(finalPath);
-      res.setHeader("Content-Type", guessMime(finalPath));
-      res.statusCode = 200;
-      if (method === "HEAD") {
-        res.end();
-      } else {
-        res.end(data);
-      }
+      const u = new URL(o.url || "/", `http://${o.headers.host || "localhost"}`), w = decodeURIComponent(u.pathname || "/").replace(/\\/g, "/"), N = w === "/" ? "/index.html" : w, j = s.resolve(s.join(e, N)), M = s.resolve(e), b = j.startsWith(M) ? j : n, C = l.existsSync(b) && l.statSync(b).isFile() ? b : n, W = l.readFileSync(C);
+      c.setHeader("Content-Type", X(C)), c.statusCode = 200, p === "HEAD" ? c.end() : c.end(W);
     } catch {
-      res.statusCode = 500;
-      res.end();
+      c.statusCode = 500, c.end();
     }
-  });
-  await new Promise((resolve, reject) => {
-    frontendServer?.once("error", reject);
-    frontendServer?.listen(port, "0.0.0.0", () => resolve());
+  }), await new Promise((o, c) => {
+    m?.once("error", c), m?.listen(t, "0.0.0.0", () => o());
   });
 };
-function startServer() {
-  if (VITE_DEV_SERVER_URL) return;
-  const serverName = process.platform === "win32" ? "server.exe" : "server";
-  const resourcesPath = process.resourcesPath;
-  const serverPath = path.join(resourcesPath, serverName);
-  if (fs.existsSync(serverPath)) {
-    console.log(`Starting server from: ${serverPath}`);
-    if (serverProcess) {
-      serverProcess.kill();
-      serverProcess = null;
-    }
-    serverProcess = spawn(serverPath, [], {
-      cwd: resourcesPath,
-      // 设置工作目录为 resources
-      windowsHide: true,
-      stdio: "ignore"
-      // 忽略输出，避免缓冲区填满挂起
-    });
-    serverProcess.on("error", (err) => {
-      console.error("Failed to start server:", err);
-    });
-    serverProcess.on("close", (code) => {
-      console.log(`Server process exited with code ${code}`);
-      serverProcess = null;
-    });
-  } else {
-    console.log("Server binary not found, running in client-only mode.");
-  }
+function F() {
+  if (h) return;
+  const t = process.platform === "win32" ? "server.exe" : "server", e = process.resourcesPath, n = s.join(e, t);
+  l.existsSync(n) ? (console.log(`Starting server from: ${n}`), f && (f.kill(), f = null), f = H(n, [], {
+    cwd: e,
+    // 设置工作目录为 resources
+    windowsHide: !0,
+    stdio: "ignore"
+    // 忽略输出，避免缓冲区填满挂起
+  }), f.on("error", (o) => {
+    console.error("Failed to start server:", o);
+  }), f.on("close", (o) => {
+    console.log(`Server process exited with code ${o}`), f = null;
+  })) : console.log("Server binary not found, running in client-only mode.");
 }
-function createWindow() {
-  const cfg = readAppConfig();
-  if (cfg.init_done) {
-    startServer();
-    startFrontendServer(cfg.frontend_port).catch(() => {
-    });
-  }
-  let iconPath = path.join(process.env.VITE_PUBLIC, "images/logo/favicon.ico");
-  if (!fs.existsSync(iconPath)) {
-    iconPath = path.join(process.env.VITE_PUBLIC, "images/logo/favicon.png");
-  }
-  splash = new BrowserWindow({
+function O() {
+  const t = E();
+  t.init_done && (F(), L(t.frontend_port).catch(() => {
+  }));
+  let e = s.join(process.env.VITE_PUBLIC, "images/logo/favicon.ico");
+  l.existsSync(e) || (e = s.join(process.env.VITE_PUBLIC, "images/logo/favicon.png")), g = new P({
     width: 500,
     height: 300,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    icon: iconPath
-  });
-  splash.loadFile(path.join(process.env.VITE_PUBLIC, "loading.html"));
-  win = new BrowserWindow({
+    transparent: !0,
+    frame: !1,
+    alwaysOnTop: !0,
+    icon: e
+  }), g.loadFile(s.join(process.env.VITE_PUBLIC, "loading.html")), i = new P({
     title: "Local Music Player",
-    show: false,
+    show: !1,
     // 先隐藏主窗口
-    icon: iconPath,
+    icon: e,
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname$1, "../dist-electron/preload.mjs"),
-      nodeIntegration: true,
-      contextIsolation: true
+      preload: s.join(_, "../dist-electron/preload.mjs"),
+      nodeIntegration: !0,
+      contextIsolation: !0
     }
-  });
-  win.setMenu(null);
-  win.webContents.on("did-finish-load", () => {
-    win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  });
-  win.once("ready-to-show", () => {
+  }), i.setMenu(null), i.webContents.on("did-finish-load", () => {
+    i?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  }), i.once("ready-to-show", () => {
     setTimeout(() => {
-      splash?.destroy();
-      splash = null;
-      win?.show();
-      win?.focus();
+      g?.destroy(), g = null, i?.show(), i?.focus();
     }, 2e3);
-  });
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools();
-  } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
-  }
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("https:")) shell.openExternal(url);
-    return { action: "deny" };
-  });
+  }), h ? (i.loadURL(h), i.webContents.openDevTools()) : i.loadFile(s.join(y, "index.html")), i.webContents.setWindowOpenHandler(({ url: n }) => (n.startsWith("https:") && $.openExternal(n), { action: "deny" }));
 }
-function createDesktopLyricWindow() {
-  if (desktopLyricWindow) return;
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  desktopLyricWindow = new BrowserWindow({
+function K() {
+  if (r) return;
+  const { width: t, height: e } = R.getPrimaryDisplay().workAreaSize;
+  if (r = new P({
     width: 800,
     height: 120,
-    x: (width - 800) / 2,
-    y: height - 150,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: true,
+    x: (t - 800) / 2,
+    y: e - 150,
+    frame: !1,
+    transparent: !0,
+    alwaysOnTop: !0,
+    skipTaskbar: !0,
+    resizable: !0,
     // 允许调整大小
     webPreferences: {
-      preload: path.join(__dirname$1, "../dist-electron/preload.mjs"),
-      nodeIntegration: true,
-      contextIsolation: true
+      preload: s.join(_, "../dist-electron/preload.mjs"),
+      nodeIntegration: !0,
+      contextIsolation: !0
     },
     backgroundColor: "#00000000"
     // Ensure transparency
-  });
-  if (VITE_DEV_SERVER_URL) {
-    const url = VITE_DEV_SERVER_URL.endsWith("/") ? VITE_DEV_SERVER_URL : `${VITE_DEV_SERVER_URL}/`;
-    desktopLyricWindow.loadURL(`${url}#/desktop-lyric`);
-  } else {
-    desktopLyricWindow.loadFile(path.join(RENDERER_DIST, "index.html"), { hash: "desktop-lyric" });
-  }
-  desktopLyricWindow.on("closed", () => {
-    desktopLyricWindow = null;
+  }), h) {
+    const n = h.endsWith("/") ? h : `${h}/`;
+    r.loadURL(`${n}#/desktop-lyric`);
+  } else
+    r.loadFile(s.join(y, "index.html"), { hash: "desktop-lyric" });
+  r.on("closed", () => {
+    r = null;
   });
 }
-ipcMain.on("open-desktop-lyric", () => {
-  createDesktopLyricWindow();
+d.on("open-desktop-lyric", () => {
+  K();
 });
-ipcMain.on("close-desktop-lyric", () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.close();
+d.on("close-desktop-lyric", () => {
+  r && r.close();
+});
+d.on("update-desktop-lyric", (t, e) => {
+  r && r.webContents.send("update-lyric", e);
+});
+d.on("desktop-lyric-control", (t, e) => {
+  i && i.webContents.send("player-control", e);
+});
+d.on("desktop-lyric-move", (t, e) => {
+  if (r) {
+    const [n, o] = r.getPosition(), { width: c } = R.getPrimaryDisplay().workAreaSize;
+    r.getBounds().width;
+    const p = 50;
+    let u = n;
+    e === "left" ? u = n - p : e === "right" && (u = n + p), r.setPosition(u, o);
   }
 });
-ipcMain.on("update-desktop-lyric", (event, data) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send("update-lyric", data);
-  }
+d.on("lock-desktop-lyric", (t, e) => {
+  r && (r.setIgnoreMouseEvents(e, { forward: !0 }), e ? (r.setFocusable(!1), r.webContents.send("desktop-lyric-locked", !0)) : (r.setFocusable(!0), r.webContents.send("desktop-lyric-locked", !1)));
 });
-ipcMain.on("desktop-lyric-control", (event, action) => {
-  if (win) {
-    win.webContents.send("player-control", action);
-  }
+d.on("unlock-desktop-lyric", () => {
+  r && (r.setIgnoreMouseEvents(!1, { forward: !0 }), r.setFocusable(!0), r.webContents.send("desktop-lyric-locked", !1));
 });
-ipcMain.on("desktop-lyric-move", (event, direction) => {
-  if (desktopLyricWindow) {
-    const [x, y] = desktopLyricWindow.getPosition();
-    const { width } = screen.getPrimaryDisplay().workAreaSize;
-    desktopLyricWindow.getBounds().width;
-    const step = 50;
-    let newX = x;
-    if (direction === "left") {
-      newX = x - step;
-    } else if (direction === "right") {
-      newX = x + step;
+d.on("update-desktop-lyric-settings", (t, e) => {
+  r && r.webContents.send("update-settings", e);
+});
+d.handle("app-clear-data", async () => {
+  try {
+    i && await i.webContents.session.clearStorageData();
+    const t = a.getPath("userData");
+    if (l.existsSync(t)) {
+      const e = l.readdirSync(t);
+      for (const n of e)
+        if (!(n === "Lockfile" || n.startsWith("Singleton") || n === "TransportSecurity"))
+          try {
+            const o = s.join(t, n);
+            l.rmSync(o, { recursive: !0, force: !0 });
+          } catch (o) {
+            console.warn(`Failed to delete ${n}:`, o.message);
+          }
     }
-    desktopLyricWindow.setPosition(newX, y);
+    return f && (f.kill(), f = null), await x(), a.relaunch(), a.exit(0), { success: !0 };
+  } catch (t) {
+    return console.error("Failed to clear app data:", t), { success: !1, error: t.message };
   }
 });
-ipcMain.on("lock-desktop-lyric", (event, locked) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(locked, { forward: true });
-    if (locked) {
-      desktopLyricWindow.setFocusable(false);
-      desktopLyricWindow.webContents.send("desktop-lyric-locked", true);
-    } else {
-      desktopLyricWindow.setFocusable(true);
-      desktopLyricWindow.webContents.send("desktop-lyric-locked", false);
-    }
-  }
-});
-ipcMain.on("unlock-desktop-lyric", () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(false, { forward: true });
-    desktopLyricWindow.setFocusable(true);
-    desktopLyricWindow.webContents.send("desktop-lyric-locked", false);
-  }
-});
-ipcMain.on("update-desktop-lyric-settings", (event, settings) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send("update-settings", settings);
-  }
-});
-ipcMain.handle("app-config-get", async () => {
-  return readAppConfig();
-});
-ipcMain.handle("select-directory", async () => {
-  const res = await dialog.showOpenDialog({
-    properties: ["openDirectory", "createDirectory"]
-  });
-  return res;
-});
-ipcMain.handle("get-local-ips", async () => {
-  return { ips: getLocalIPs() };
-});
-ipcMain.handle("check-ports", async (_event, payload) => {
-  const backendPort = Number(payload?.backendPort) || 0;
-  const frontendPort = Number(payload?.frontendPort) || 0;
+d.handle("app-config-get", async () => E());
+d.handle("select-directory", async () => await U.showOpenDialog({
+  properties: ["openDirectory", "createDirectory"]
+}));
+d.handle("get-local-ips", async () => ({ ips: J() }));
+d.handle("check-ports", async (t, e) => {
+  const n = Number(e?.backendPort) || 0, o = Number(e?.frontendPort) || 0;
   return {
-    backendAvailable: backendPort > 0 ? await isPortAvailable(backendPort) : false,
-    frontendAvailable: frontendPort > 0 ? await isPortAvailable(frontendPort) : false
+    backendAvailable: n > 0 ? await v(n) : !1,
+    frontendAvailable: o > 0 ? await v(o) : !1
   };
 });
-ipcMain.handle("apply-initial-config", async (_event, payload) => {
-  const mode = String(payload?.mode || "");
-  const backendPort = Number(payload?.backendPort) || 12345;
-  const frontendPort = Number(payload?.frontendPort) || 23456;
-  const baseFolderPath = String(payload?.baseFolderPath || "");
-  const accessIp = String(payload?.accessIp || "");
-  if (mode === "server") {
-    const backendOk = await isPortAvailable(backendPort);
-    const frontendOk = await isPortAvailable(frontendPort);
-    if (!backendOk) throw new Error("backend port unavailable");
-    if (!frontendOk) throw new Error("frontend port unavailable");
-    writeAppConfig({
-      init_done: true,
-      backend_port: backendPort,
-      frontend_port: frontendPort,
-      base_folder: baseFolderPath,
-      access_ip: accessIp
-    });
-    updateServerConfigYml(backendPort, baseFolderPath);
-    startServer();
-    await startFrontendServer(frontendPort);
-    return { ok: true };
+d.handle("apply-initial-config", async (t, e) => {
+  const n = String(e?.mode || ""), o = Number(e?.backendPort) || 12345, c = Number(e?.frontendPort) || 23456, p = String(e?.baseFolderPath || ""), u = String(e?.accessIp || "");
+  if (n === "server") {
+    const I = await v(o), w = await v(c);
+    if (!I) throw new Error("backend port unavailable");
+    if (!w) throw new Error("frontend port unavailable");
+    return A({
+      init_done: !0,
+      backend_port: o,
+      frontend_port: c,
+      base_folder: p,
+      access_ip: u
+    }), Y(o, p), F(), await L(c), { ok: !0 };
   }
-  writeAppConfig({ init_done: true });
-  return { ok: true };
+  return A({ init_done: !0 }), { ok: !0 };
 });
-app.whenReady().then(createWindow);
-app.on("window-all-closed", () => {
-  win = null;
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
-  stopFrontendServer().catch(() => {
-  });
-  if (process.platform !== "darwin") app.quit();
+a.whenReady().then(O);
+a.on("window-all-closed", () => {
+  i = null, f && (f.kill(), f = null), x().catch(() => {
+  }), process.platform !== "darwin" && a.quit();
 });
-app.on("second-instance", () => {
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
+a.on("second-instance", () => {
+  i && (i.isMinimized() && i.restore(), i.focus());
 });
-app.on("activate", () => {
-  const allWindows = BrowserWindow.getAllWindows();
-  if (allWindows.length) {
-    allWindows[0].focus();
-  } else {
-    createWindow();
-  }
+a.on("activate", () => {
+  const t = P.getAllWindows();
+  t.length ? t[0].focus() : O();
 });
 export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
+  ie as MAIN_DIST,
+  y as RENDERER_DIST,
+  h as VITE_DEV_SERVER_URL
 };

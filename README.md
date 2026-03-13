@@ -71,7 +71,10 @@ pnpm build:server
 pnpm build:android
 ```
 
-
+### 构建所有平台
+```bash
+pnpm build:all
+```
 
 
 ## Docker部署
