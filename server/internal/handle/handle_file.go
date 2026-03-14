@@ -16,7 +16,7 @@ type FileAuth struct{}
 // InitFolder 在 basicPath 下创建文件夹
 func (*FileAuth) InitFolder(c *gin.Context) {
 	conf := g.GetConfig().BasicPath
-	if conf.FilePath == "" || conf.FileName == "" {
+	if conf.FilePath == "" {
 		slog.Error("BasicPath not configured")
 		ReturnError(c, g.Err, "服务器配置错误: BasicPath 未配置")
 		return
@@ -45,7 +45,7 @@ func (*FileAuth) InitFolder(c *gin.Context) {
 // CreateUserFolder 内部调用：创建用户目录
 func CreateUserFolder(db *gorm.DB, username string) error {
 	conf := g.GetConfig().BasicPath
-	if conf.FilePath == "" || conf.FileName == "" {
+	if conf.FilePath == "" {
 		return errors.New("服务器配置错误: BasicPath 未配置")
 	}
 

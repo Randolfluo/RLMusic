@@ -126,16 +126,18 @@ import BigPlayer from "@/components/Player/BigPlayer.vue";
 import packageJson from "@/../package.json";
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { ResultCode, apiBaseURL } from "@/utils/request";
-import { useRoute } from "vue-router"; // 引入 useRoute
+import { useRoute, useRouter } from "vue-router"; // 引入 useRoute
 import { NIcon, NBackTop, NModal, NInput, NButton, NTag, NInputGroup, NLayout, NLayoutHeader, NLayoutContent } from "naive-ui";
 import { BarcodeScanner, SupportedFormat } from "@capacitor-community/barcode-scanner";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { QrCodeScannerOutlined } from "@vicons/material";
 import { ToTop, Connection } from "@icon-park/vue-next";
 import { useMessage } from "naive-ui";
 
 const message = useMessage();
 const route = useRoute(); // 获取当前路由信息
+const router = useRouter();
 const music = musicStore();
 const user = userStore();
 // const router = useRouter();
@@ -206,6 +208,44 @@ const stopScannerOverlay = async () => {
   document.documentElement.classList.remove("scanner-active");
 };
 
+onMounted(() => {
+  if (isCapacitor) {
+    CapacitorApp.addListener('backButton', async () => {
+      // 1. QR Scanner
+      if (scanning.value) {
+        await stopScannerOverlay();
+        scanning.value = false;
+        return;
+      }
+      
+      // 2. Server Config Modal
+      if (showServerConfig.value) {
+        showServerConfig.value = false;
+        return;
+      }
+      
+      // 3. Big Player
+      if (music.showBigPlayer) {
+        music.setBigPlayerState(false);
+        return;
+      }
+      
+      // 4. Router Back or Exit
+      if (router.currentRoute.value.path !== '/' && router.currentRoute.value.path !== '/login') {
+        router.back();
+      } else {
+        CapacitorApp.exitApp();
+      }
+    });
+  }
+});
+
+onUnmounted(() => {
+  if (isCapacitor) {
+    CapacitorApp.removeAllListeners();
+  }
+});
+
 const scanQrCode = async () => {
   if (!isCapacitor) {
     message.warning("仅移动端 App 支持扫码");
@@ -232,6 +272,9 @@ const scanQrCode = async () => {
     const originalShowConfig = showServerConfig.value;
     showServerConfig.value = false;
     
+    // 确保之前任何正在进行的扫描都停止
+    await stopScannerOverlay();
+
     await startScannerOverlay();
     const result = await BarcodeScanner.startScan({
       targetedFormats: [SupportedFormat.QR_CODE],

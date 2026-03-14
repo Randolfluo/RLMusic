@@ -4,7 +4,7 @@
     <div class="nav-content">
       <div class="left">
         <div class="logo-wrapper" @click="router.push('/')">
-          <img src="/images/logo/favicon.png" alt="logo" class="logo-img" />
+          <img :src="`${baseUrl}images/logo/favicon.png`" alt="logo" class="logo-img" />
           <span class="app-name">Music</span>
         </div>
         <div class="controls">
@@ -99,8 +99,8 @@
               class="avatar"
               round
               :size="36"
-              :src="resolveAvatarUrl(user.getUserData.avatarUrl) || '/images/ico/user-filling.svg'"
-              fallback-src="/images/ico/user-filling.svg"
+              :src="resolveAvatarUrl(user.getUserData.avatarUrl) || `${baseUrl}images/ico/user-filling.svg`"
+              :fallback-src="`${baseUrl}images/ico/user-filling.svg`"
             />
           </div>
         </n-dropdown>
@@ -209,7 +209,7 @@ const handleAdminClick = () => {
 };
 
 const handleServerConfigClick = () => {
-  window.dispatchEvent(new CustomEvent("open-server-config"));
+  window.dispatchEvent(new Event("open-server-config"));
 };
 
 // 用户数据模块

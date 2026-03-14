@@ -335,30 +335,8 @@
         </div>
       </div>
 
-      <!-- Danger Zone (Red) -->
-      <div class="dashboard-section danger-section">
-        <div class="section-label danger">危险区域</div>
-        <div class="ops-grid-compact">
-          <!-- Reset System -->
-          <div class="op-card-compact glass-panel danger-zone">
-            <div class="compact-icon red">
-              <n-icon :component="Delete" />
-            </div>
-            <div class="compact-info">
-              <h3>恢复出厂设置</h3>
-              <p>清除所有数据（不可逆）</p>
-            </div>
-            <n-popconfirm @positive-click="handleResetSystem" negative-text="取消" positive-text="确认重置">
-              <template #trigger>
-                <n-button class="action-circle-btn" circle secondary type="error" :loading="loading.reset">
-                  <template #icon><n-icon :component="Power" /></template>
-                </n-button>
-              </template>
-              确定要重置整个系统吗？
-            </n-popconfirm>
-          </div>
-        </div>
-      </div>
+      <!-- Danger Zone (Red) - Removed -->
+
     </div>
   </div>
 </template>
@@ -369,11 +347,11 @@ import { ref, onMounted, onUnmounted, reactive, computed, provide } from "vue";
 import { useRouter } from "vue-router";
 import { 
   Permissions, MusicList, People, RecordDisc, 
-  Scan, FileExcel, Delete, Music, User, CheckOne,
-  TrendingUp, Lightning, Play, Download, Power,
+  Scan, FileExcel, Music, User, CheckOne,
+  TrendingUp, Lightning, Play, Download,
   DocDetail, Link, Cpu, Api, HardDisk, CloudStorage, Connection, Voice
 } from "@icon-park/vue-next";
-import { useMessage, NIcon, NButton, NPopconfirm, NNumberAnimation, NProgress } from "naive-ui";
+import { useMessage, NIcon, NButton, NNumberAnimation, NProgress } from "naive-ui";
 import { 
   scanMusic 
 } from "@/api/song";
@@ -383,7 +361,7 @@ import {
   generateAlbumDescriptions,
   generateAllPublicPlaylistIntros
 } from "@/api/ai";
-import { resetSystem, getSystemStats, getSystemStatus, type SystemStats, type SystemStatus } from "@/api/system";
+import { getSystemStats, getSystemStatus, type SystemStats, type SystemStatus } from "@/api/system";
 import { ResultCode } from "@/utils/request";
 
 // ECharts
@@ -420,8 +398,7 @@ const loading = reactive({
   artist: false,
   album: false,
   scan: false,
-  intro: false,
-  reset: false
+  intro: false
 });
 
 // Chart Options
@@ -590,8 +567,76 @@ const handleScanMusic = async () => {
   }
 };
 
-const handleExportExcel = () => {
-  window.open("/api/system/export/excel", "_blank");
+import axios from "axios";
+
+const handleExportExcel = async () => {
+  try {
+    const isElectron = typeof window.ipcRenderer !== 'undefined';
+    
+    if (isElectron) {
+      // 1. Electron: Open Save Dialog
+      const { filePath, canceled } = await window.ipcRenderer.invoke('show-save-dialog', {
+        defaultPath: `database_export_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`,
+        title: '导出数据库'
+      });
+      
+      if (canceled || !filePath) return;
+
+      // 2. Fetch Data as ArrayBuffer
+      // Use raw axios to avoid interceptor parsing JSON
+      const token = sessionStorage.getItem("token");
+      const response = await axios.get('/api/system/export/excel', {
+        responseType: 'arraybuffer',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // 3. Save File via IPC
+      const saveRes = await window.ipcRenderer.invoke('save-file', {
+        path: filePath,
+        data: response.data
+      });
+
+      if (saveRes.success) {
+        message.success("导出成功");
+      } else {
+        message.error("保存失败: " + saveRes.error);
+      }
+    } else {
+      // Web: Standard Browser Download
+      const token = sessionStorage.getItem("token");
+      const response = await axios.get('/api/system/export/excel', {
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      // Get filename from header if possible, or generate one
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `database_export_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.success("导出已开始");
+    }
+  } catch (e) {
+    console.error(e);
+    message.error("导出失败");
+  }
 };
 
 const handleApiDoc = () => {
@@ -604,25 +649,6 @@ const handleUserManage = () => {
 
 const handlePlaylistManage = () => {
   router.push("/admin/playlists");
-};
-
-const handleResetSystem = async () => {
-  loading.reset = true;
-  try {
-    const res = await resetSystem();
-    if (res.code === ResultCode.SUCCESS) {
-      message.success("系统重置成功");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } else {
-      message.error(res.message || "重置失败");
-    }
-  } catch (error) {
-    message.error("发生错误");
-  } finally {
-    loading.reset = false;
-  }
 };
 
 // Lifecycle

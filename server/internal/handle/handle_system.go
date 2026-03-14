@@ -196,30 +196,82 @@ func (*SystemAuth) ExportDatabaseToExcel(c *gin.Context) {
 		}
 	}
 
+	// 7. Export Histories
+	var histories []model.History
+	if err := db.Find(&histories).Error; err == nil {
+		sheetName := "Histories"
+		f.NewSheet(sheetName)
+		headers := []string{"ID", "UserID", "SongID", "CreatedAt"}
+		for i, h := range headers {
+			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+			f.SetCellValue(sheetName, cell, h)
+		}
+		for i, h := range histories {
+			row := i + 2
+			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), h.ID)
+			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), h.UserID)
+			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), h.SongID)
+			f.SetCellValue(sheetName, "D"+strconv.Itoa(row), h.CreatedAt.Format(time.DateTime))
+		}
+	}
+
+	// 8. Export PlaylistSongs (Join Table)
+	type PlaylistSong struct {
+		PlaylistID int
+		SongID     int
+	}
+	var playlistSongs []PlaylistSong
+	if err := db.Table("playlist_songs").Find(&playlistSongs).Error; err == nil {
+		sheetName := "PlaylistSongs"
+		f.NewSheet(sheetName)
+		headers := []string{"PlaylistID", "SongID"}
+		for i, h := range headers {
+			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+			f.SetCellValue(sheetName, cell, h)
+		}
+		for i, ps := range playlistSongs {
+			row := i + 2
+			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), ps.PlaylistID)
+			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), ps.SongID)
+		}
+	}
+
+	// 9. Export SongArtists (Join Table)
+	type SongArtist struct {
+		SongID   int
+		ArtistID int
+	}
+	var songArtists []SongArtist
+	if err := db.Table("song_artists").Find(&songArtists).Error; err == nil {
+		sheetName := "SongArtists"
+		f.NewSheet(sheetName)
+		headers := []string{"SongID", "ArtistID"}
+		for i, h := range headers {
+			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+			f.SetCellValue(sheetName, cell, h)
+		}
+		for i, sa := range songArtists {
+			row := i + 2
+			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), sa.SongID)
+			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), sa.ArtistID)
+		}
+	}
+
 	// Delete default Sheet1 if unused
 	f.DeleteSheet("Sheet1")
 
-	// Save to disk (same directory as data.db)
-	// data.db path: g.Conf.SQLite.Dsn (relative to server/data/)
-	// But let's check config to be sure where data.db is
-
-	// Assuming data.db is in filepath.Join(g.GetConfig().BasicPath.FilePath, g.GetConfig().BasicPath.FileName, "data")
-	// Or simply use the configured SQLite DSN path if it's absolute, but usually it's relative.
-	// Let's use the standard data directory:
-	saveDir := filepath.Join(g.GetConfig().BasicPath.FilePath, g.GetConfig().BasicPath.FileName, "data")
+	// Set Headers for Download
 	fileName := fmt.Sprintf("database_export_%s.xlsx", time.Now().Format("20060102150405"))
-	savePath := filepath.Join(saveDir, fileName)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+	c.Header("File-Name", fileName)
+	c.Header("Access-Control-Expose-Headers", "File-Name")
 
-	if err := f.SaveAs(savePath); err != nil {
-		ReturnError(c, g.Err, "保存Excel文件失败: "+err.Error())
-		return
+	// Write to Response
+	if _, err := f.WriteTo(c.Writer); err != nil {
+		// Log error (can't return JSON error here as headers already sent)
+		fmt.Printf("Export failed: %v\n", err)
 	}
-
-	ReturnSuccess(c, gin.H{
-		"message":   "导出成功",
-		"file_path": savePath,
-		"file_name": fileName,
-	})
 }
 
 type SystemAuth struct{}

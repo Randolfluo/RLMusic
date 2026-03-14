@@ -66,8 +66,8 @@ export default ({ mode }: ConfigEnv) => {
         },
 
         manifest: {  // Web App Manifest
-          name: "localmusicplayer",           // 应用名称
-          short_name: "localmusicplayer",     // 短名称
+          name: "RLMusic",           // 应用名称
+          short_name: "RLMusic",     // 短名称
           description: "基于VUE的音乐播放器设计与实现",  // 描述
           display: "standalone",     // 显示模式：独立应用
           start_url: "/",           // 启动URL

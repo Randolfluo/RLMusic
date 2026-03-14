@@ -120,9 +120,10 @@ const updateServerConfigYml = (backendPort: number, baseFolderPath: string) => {
   if (!fs.existsSync(configPath)) return
   const escapedPath = baseFolderPath.replace(/'/g, "''")
   const raw = fs.readFileSync(configPath, 'utf-8')
-  const withPort = raw.replace(/(^\s*Port:\s*).*/m, `$1:${backendPort}`)
+  const withPort = raw.replace(/(^\s*Port:\s*).*/m, `$1${backendPort}`)
   const withPath = withPort.replace(/(^\s*FilePath:\s*).*/m, `$1'${escapedPath}'`)
-  fs.writeFileSync(configPath, withPath, 'utf-8')
+  const withName = withPath.replace(/(^\s*FileName:\s*).*/m, `$1''`)
+  fs.writeFileSync(configPath, withName, 'utf-8')
 }
 
 const guessMime = (p: string) => {
@@ -458,6 +459,27 @@ ipcMain.handle('app-clear-data', async () => {
 
 ipcMain.handle('app-config-get', async () => {
   return readAppConfig()
+})
+
+ipcMain.handle('show-save-dialog', async (event, options) => {
+  const { filePath, canceled } = await dialog.showSaveDialog({
+    ...options,
+    filters: [
+      { name: 'Excel Files', extensions: ['xlsx'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  })
+  return { filePath, canceled }
+})
+
+ipcMain.handle('save-file', async (event, { path: filePath, data }) => {
+  try {
+    // data comes as Uint8Array from renderer
+    fs.writeFileSync(filePath, Buffer.from(data))
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message }
+  }
 })
 
 ipcMain.handle('select-directory', async () => {
