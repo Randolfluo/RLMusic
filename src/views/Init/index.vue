@@ -302,6 +302,10 @@ const scanQrCode = async () => {
     await BarcodeScanner.prepare({
       targetedFormats: [SupportedFormat.QR_CODE],
     });
+
+    // 确保之前任何正在进行的扫描都停止
+    await stopScannerOverlay();
+
     await startScannerOverlay();
     const result = await BarcodeScanner.startScan({
       targetedFormats: [SupportedFormat.QR_CODE],
