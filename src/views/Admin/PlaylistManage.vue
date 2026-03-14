@@ -26,6 +26,21 @@
         </div>
       </div>
 
+      <div class="quick-stats">
+        <div class="quick-stat-card">
+          <span class="quick-label">当前页</span>
+          <span class="quick-value">{{ pagination.page }}</span>
+        </div>
+        <div class="quick-stat-card">
+          <span class="quick-label">每页</span>
+          <span class="quick-value">{{ pagination.pageSize }}</span>
+        </div>
+        <div class="quick-stat-card">
+          <span class="quick-label">本页条目</span>
+          <span class="quick-value">{{ playlistList.length }}</span>
+        </div>
+      </div>
+
       <div class="table-container glass-panel">
         <n-data-table
           :columns="columns"
@@ -37,6 +52,26 @@
           :scroll-x="800"
           remote
         />
+      </div>
+
+      <div class="mobile-list">
+        <div v-for="row in playlistList" :key="row.id" class="mobile-card">
+          <div class="mobile-cover">
+            <img :src="resolveCoverUrl(row.cover_url) || '/images/pic/default.png'" alt="cover" />
+          </div>
+          <div class="mobile-main">
+            <div class="mobile-title-row">
+              <span class="mobile-title">{{ row.title }}</span>
+              <span class="mobile-id">ID {{ row.id }}</span>
+            </div>
+            <div class="mobile-meta">
+              <span>歌曲 {{ row.total_songs || 0 }}</span>
+              <span>播放 {{ (row.play_count || 0).toLocaleString() }}</span>
+              <span>创建者 UID {{ row.owner_id }}</span>
+            </div>
+            <button class="mobile-delete-btn" @click="confirmDelete(row)">删除歌单</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -199,6 +234,12 @@ const handleDelete = async (row: any) => {
     message.error('删除歌单失败');
   }
 };
+
+const confirmDelete = (row: any) => {
+  if (window.confirm('确定要删除该公共歌单吗？此操作不可逆！')) {
+    handleDelete(row);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -267,16 +308,16 @@ const handleDelete = async (row: any) => {
 .content-wrapper {
   position: relative;
   z-index: 2;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
-/* Header */
 .header-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
+  gap: 20px;
 
   .title-group {
     display: flex;
@@ -287,8 +328,8 @@ const handleDelete = async (row: any) => {
       width: 48px;
       height: 48px;
       border-radius: 14px;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(255, 255, 255, 0.78);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -296,19 +337,19 @@ const handleDelete = async (row: any) => {
       color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(14px);
 
       &:hover {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.95);
         transform: translateX(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        color: #1e293b;
+        box-shadow: 0 10px 20px rgba(30, 41, 59, 0.12);
+        color: #334155;
       }
     }
 
     .text-content {
       .page-title {
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 800;
         color: #1e293b;
         margin: 0;
@@ -317,10 +358,11 @@ const handleDelete = async (row: any) => {
       }
 
       .page-subtitle {
-        font-size: 14px;
+        font-size: 13px;
         color: #64748b;
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         font-weight: 500;
+        letter-spacing: 0.02em;
       }
     }
   }
@@ -331,14 +373,14 @@ const handleDelete = async (row: any) => {
     gap: 16px;
 
     .stat-badge {
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      padding: 10px 18px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.46));
+      border: 1px solid rgba(59, 130, 246, 0.16);
       border-radius: 100px;
       display: flex;
       align-items: center;
       gap: 8px;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(12px);
 
       .label {
         font-size: 12px;
@@ -351,41 +393,70 @@ const handleDelete = async (row: any) => {
       .value {
         font-size: 16px;
         font-weight: 700;
-        color: #3b82f6;
+        color: #2563eb;
       }
     }
   }
 }
 
-/* Glass Panel Table */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.quick-stat-card {
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.56));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(12px);
+}
+
+.quick-label {
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.quick-value {
+  font-size: 20px;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 24px;
-  padding: 8px; /* Padding for the table container */
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
+  backdrop-filter: blur(22px);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: 0 24px 36px -18px rgba(30, 41, 59, 0.22);
   overflow: hidden;
 }
 
-/* Custom Table Styles */
 :deep(.n-data-table) {
   --n-th-font-weight: 700 !important;
-  --n-th-text-color: #64748b !important;
+  --n-th-text-color: #475569 !important;
   
   .n-data-table-th {
     background: transparent !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-    padding: 16px 24px !important;
-    font-size: 13px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+    padding: 15px 18px !important;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.06em;
   }
 
   .n-data-table-td {
     background: transparent !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
-    padding: 16px 24px !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+    padding: 13px 18px !important;
     transition: background 0.2s;
   }
 
@@ -394,11 +465,10 @@ const handleDelete = async (row: any) => {
   }
 
   .n-data-table-tr:hover .n-data-table-td {
-    background: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(241, 245, 249, 0.72) !important;
   }
 }
 
-/* Cell Renderers */
 .cover-wrapper {
   border-radius: 12px;
   overflow: hidden;
@@ -413,6 +483,7 @@ const handleDelete = async (row: any) => {
 .info-cell {
   display: flex;
   flex-direction: column;
+  gap: 6px;
   
   .playlist-title {
     font-size: 15px;
@@ -434,15 +505,19 @@ const handleDelete = async (row: any) => {
 
 .stats-cell {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   
   .stat-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #64748b;
-    font-size: 13px;
-    font-weight: 500;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(226, 232, 240, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 999px;
+    padding: 4px 10px;
     
     .n-icon {
       color: #94a3b8;
@@ -457,7 +532,7 @@ const handleDelete = async (row: any) => {
   color: #475569;
   font-weight: 600;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.68);
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.03);
@@ -484,20 +559,148 @@ const handleDelete = async (row: any) => {
   }
 }
 
+.mobile-list {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .playlist-manage-container {
-    padding: 20px 16px;
+    padding: 18px 14px 28px;
+  }
+
+  .content-wrapper {
+    max-width: 100%;
   }
 
   .header-section {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 14px;
     
     .header-actions {
       width: 100%;
       justify-content: space-between;
     }
+  }
+
+  .header-section .title-group .text-content .page-title {
+    font-size: 28px;
+  }
+
+  .quick-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .quick-stat-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .quick-label {
+    font-size: 11px;
+  }
+
+  .quick-value {
+    font-size: 16px;
+  }
+
+  .table-container {
+    display: none;
+  }
+
+  .mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobile-card {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 12px;
+    align-items: start;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 14px 24px -18px rgba(15, 23, 42, 0.45);
+  }
+
+  .mobile-cover {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 14px -8px rgba(30, 41, 59, 0.5);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .mobile-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mobile-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-id {
+    font-size: 11px;
+    color: #64748b;
+    background: rgba(226, 232, 240, 0.8);
+    border-radius: 999px;
+    padding: 3px 8px;
+    flex-shrink: 0;
+  }
+
+  .mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      background: rgba(241, 245, 249, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      padding: 3px 8px;
+    }
+  }
+
+  .mobile-delete-btn {
+    margin-top: 2px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(254, 226, 226, 0.74);
+    color: #dc2626;
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    width: 100%;
   }
 }
 </style>

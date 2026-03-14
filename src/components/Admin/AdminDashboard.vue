@@ -362,7 +362,7 @@ import {
   generateAllPublicPlaylistIntros
 } from "@/api/ai";
 import { getSystemStats, getSystemStatus, type SystemStats, type SystemStatus } from "@/api/system";
-import { ResultCode } from "@/utils/request";
+import { ResultCode, apiBaseURL } from "@/utils/request";
 
 // ECharts
 import VChart, { THEME_KEY } from "vue-echarts";
@@ -569,9 +569,50 @@ const handleScanMusic = async () => {
 
 import axios from "axios";
 
+const isExcelContentType = (value?: string) => {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  return lower.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+};
+
+const hasExcelZipSignature = (data: ArrayBuffer | Uint8Array) => {
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+  if (bytes.length < 2) return false;
+  return bytes[0] === 0x50 && bytes[1] === 0x4b;
+};
+
+const runExportSelfCheck = async (payload: ArrayBuffer | Blob, contentType?: string) => {
+  const ct = contentType || "";
+  if (!isExcelContentType(ct)) {
+    throw new Error("导出自检失败：返回类型不是 Excel 文件，请检查登录状态或接口地址。");
+  }
+
+  if (payload instanceof Blob) {
+    if (payload.size < 4) {
+      throw new Error("导出自检失败：返回文件为空或过小。");
+    }
+    const head = await payload.slice(0, 4).arrayBuffer();
+    if (!hasExcelZipSignature(head)) {
+      throw new Error("导出自检失败：文件头异常，可能返回了错误页面而非 Excel。");
+    }
+    return;
+  }
+
+  const bytes = new Uint8Array(payload);
+  if (bytes.length < 4) {
+    throw new Error("导出自检失败：返回文件为空或过小。");
+  }
+  if (!hasExcelZipSignature(bytes)) {
+    throw new Error("导出自检失败：文件头异常，可能返回了错误页面而非 Excel。");
+  }
+};
+
 const handleExportExcel = async () => {
   try {
     const isElectron = typeof window.ipcRenderer !== 'undefined';
+    const exportUrl = apiBaseURL.startsWith("http")
+      ? `${apiBaseURL}/system/export/excel`
+      : "/api/system/export/excel";
     
     if (isElectron) {
       // 1. Electron: Open Save Dialog
@@ -585,12 +626,13 @@ const handleExportExcel = async () => {
       // 2. Fetch Data as ArrayBuffer
       // Use raw axios to avoid interceptor parsing JSON
       const token = sessionStorage.getItem("token");
-      const response = await axios.get('/api/system/export/excel', {
+      const response = await axios.get(exportUrl, {
         responseType: 'arraybuffer',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      await runExportSelfCheck(response.data, response.headers?.["content-type"]);
 
       // 3. Save File via IPC
       const saveRes = await window.ipcRenderer.invoke('save-file', {
@@ -606,12 +648,13 @@ const handleExportExcel = async () => {
     } else {
       // Web: Standard Browser Download
       const token = sessionStorage.getItem("token");
-      const response = await axios.get('/api/system/export/excel', {
+      const response = await axios.get(exportUrl, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      await runExportSelfCheck(response.data, response.headers?.["content-type"]);
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');

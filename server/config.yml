@@ -25,7 +25,7 @@ Session:
 
 BasicPath:
   FilePath: 'C:\Users\lrj32\Desktop\music player'
-  FileName: ''
+  FileName: 'MusicFolder'
 
 Redis:
   Addr: "127.0.0.1:6379"

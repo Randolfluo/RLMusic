@@ -26,10 +26,29 @@
               </template>
             </n-input>
           </div>
+          <button class="search-btn" @click="handleSearch">
+            <n-icon :component="Search" />
+            <span>搜索</span>
+          </button>
           <div class="stat-badge">
             <span class="label">Total</span>
             <span class="value">{{ pagination.itemCount }}</span>
           </div>
+        </div>
+      </div>
+
+      <div class="quick-stats">
+        <div class="quick-stat-card">
+          <span class="quick-label">当前页</span>
+          <span class="quick-value">{{ pagination.page }}</span>
+        </div>
+        <div class="quick-stat-card">
+          <span class="quick-label">每页</span>
+          <span class="quick-value">{{ pagination.pageSize }}</span>
+        </div>
+        <div class="quick-stat-card">
+          <span class="quick-label">本页条目</span>
+          <span class="quick-value">{{ userList.length }}</span>
         </div>
       </div>
 
@@ -43,6 +62,31 @@
           :row-class-name="'user-row'"
           :scroll-x="800"
         />
+      </div>
+
+      <div class="mobile-list">
+        <div v-for="row in userList" :key="row.id" class="mobile-card">
+          <div class="mobile-avatar">{{ row.username.charAt(0).toUpperCase() }}</div>
+          <div class="mobile-main">
+            <div class="mobile-title-row">
+              <span class="mobile-title">{{ row.username }}</span>
+              <span class="mobile-id">ID {{ row.id }}</span>
+            </div>
+            <div class="mobile-meta">
+              <span class="role" :class="row.user_group === 'admin' ? 'admin' : 'user'">
+                {{ row.user_group === 'admin' ? '管理员' : '用户' }}
+              </span>
+              <span>{{ row.email || '未绑定邮箱' }}</span>
+              <span>{{ row.last_login ? new Date(row.last_login).toLocaleString() : '从未登录' }}</span>
+            </div>
+            <div class="mobile-actions">
+              <button class="mobile-action-btn role" @click="confirmRoleChange(row)">
+                {{ row.user_group === 'admin' ? '降级普通用户' : '提升管理员' }}
+              </button>
+              <button class="mobile-action-btn delete" @click="confirmDelete(row)">删除用户</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -243,6 +287,19 @@ const handleDelete = async (row: UserInfo) => {
     message.error('删除用户失败');
   }
 };
+
+const confirmRoleChange = (row: UserInfo) => {
+  const target = row.user_group === 'admin' ? '普通用户' : '管理员';
+  if (window.confirm(`确定要将用户 ${row.username} 设为${target}吗？`)) {
+    handleRoleChange(row);
+  }
+};
+
+const confirmDelete = (row: UserInfo) => {
+  if (window.confirm('确定要删除该用户吗？此操作不可逆！')) {
+    handleDelete(row);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -311,16 +368,15 @@ const handleDelete = async (row: UserInfo) => {
 .content-wrapper {
   position: relative;
   z-index: 2;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
-/* Header */
 .header-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 20px;
 
@@ -333,8 +389,8 @@ const handleDelete = async (row: UserInfo) => {
       width: 48px;
       height: 48px;
       border-radius: 14px;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(255, 255, 255, 0.78);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -342,19 +398,19 @@ const handleDelete = async (row: UserInfo) => {
       color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(14px);
 
       &:hover {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.95);
         transform: translateX(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        color: #1e293b;
+        box-shadow: 0 10px 20px rgba(30, 41, 59, 0.12);
+        color: #334155;
       }
     }
 
     .text-content {
       .page-title {
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 800;
         color: #1e293b;
         margin: 0;
@@ -363,10 +419,11 @@ const handleDelete = async (row: UserInfo) => {
       }
 
       .page-subtitle {
-        font-size: 14px;
+        font-size: 13px;
         color: #64748b;
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         font-weight: 500;
+        letter-spacing: 0.02em;
       }
     }
   }
@@ -378,29 +435,44 @@ const handleDelete = async (row: UserInfo) => {
     flex-wrap: wrap;
 
     .search-bar {
-      width: 240px;
+      width: 260px;
       
       :deep(.n-input) {
-        border-radius: 12px;
-        background-color: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 14px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         
         &:hover, &.n-input--focus {
           background-color: #fff;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 10px 20px -14px rgba(15, 23, 42, 0.55);
         }
       }
     }
 
+    .search-btn {
+      height: 40px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 185, 129, 0.26);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9));
+      color: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
     .stat-badge {
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      padding: 10px 18px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.46));
+      border: 1px solid rgba(16, 185, 129, 0.2);
       border-radius: 100px;
       display: flex;
       align-items: center;
       gap: 8px;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(12px);
 
       .label {
         font-size: 12px;
@@ -413,41 +485,70 @@ const handleDelete = async (row: UserInfo) => {
       .value {
         font-size: 16px;
         font-weight: 700;
-        color: #10b981;
+        color: #059669;
       }
     }
   }
 }
 
-/* Glass Panel Table */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.quick-stat-card {
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.56));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  backdrop-filter: blur(12px);
+}
+
+.quick-label {
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.quick-value {
+  font-size: 20px;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 24px;
-  padding: 8px;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
+  backdrop-filter: blur(22px);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: 0 24px 36px -18px rgba(30, 41, 59, 0.22);
   overflow: hidden;
 }
 
-/* Custom Table Styles */
 :deep(.n-data-table) {
   --n-th-font-weight: 700 !important;
-  --n-th-text-color: #64748b !important;
+  --n-th-text-color: #475569 !important;
   
   .n-data-table-th {
     background: transparent !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-    padding: 16px 24px !important;
-    font-size: 13px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+    padding: 15px 18px !important;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.06em;
   }
 
   .n-data-table-td {
     background: transparent !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
-    padding: 16px 24px !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+    padding: 13px 18px !important;
     transition: background 0.2s;
   }
 
@@ -456,11 +557,10 @@ const handleDelete = async (row: UserInfo) => {
   }
 
   .n-data-table-tr:hover .n-data-table-td {
-    background: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(241, 245, 249, 0.72) !important;
   }
 }
 
-/* Cell Renderers */
 .user-info-cell {
   display: flex;
   align-items: center;
@@ -564,9 +664,17 @@ const handleDelete = async (row: UserInfo) => {
   }
 }
 
+.mobile-list {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .user-manage-container {
-    padding: 20px 16px;
+    padding: 18px 14px 28px;
+  }
+
+  .content-wrapper {
+    max-width: 100%;
   }
 
   .header-section {
@@ -576,12 +684,162 @@ const handleDelete = async (row: UserInfo) => {
     
     .header-actions {
       width: 100%;
-      justify-content: space-between;
+      justify-content: flex-start;
       
       .search-bar {
         width: 100%;
         flex: 1;
       }
+
+      .search-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  .header-section .title-group .text-content .page-title {
+    font-size: 28px;
+  }
+
+  .quick-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .quick-stat-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .quick-label {
+    font-size: 11px;
+  }
+
+  .quick-value {
+    font-size: 16px;
+  }
+
+  .table-container {
+    display: none;
+  }
+
+  .mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobile-card {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 12px;
+    align-items: start;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 14px 24px -18px rgba(15, 23, 42, 0.45);
+  }
+
+  .mobile-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #0ea5e9, #10b981);
+    color: #f8fafc;
+    font-weight: 800;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 20px -12px rgba(2, 132, 199, 0.8);
+  }
+
+  .mobile-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mobile-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-id {
+    font-size: 11px;
+    color: #64748b;
+    background: rgba(226, 232, 240, 0.8);
+    border-radius: 999px;
+    padding: 3px 8px;
+    flex-shrink: 0;
+  }
+
+  .mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    span {
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      background: rgba(241, 245, 249, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 999px;
+      padding: 3px 8px;
+    }
+
+    .role.admin {
+      background: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+      border-color: rgba(245, 158, 11, 0.24);
+    }
+
+    .role.user {
+      background: rgba(14, 165, 233, 0.14);
+      color: #0369a1;
+      border-color: rgba(14, 165, 233, 0.24);
+    }
+  }
+
+  .mobile-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .mobile-action-btn {
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid transparent;
+
+    &.role {
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(254, 243, 199, 0.84);
+      color: #b45309;
+    }
+
+    &.delete {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(254, 226, 226, 0.84);
+      color: #dc2626;
     }
   }
 }

@@ -96,11 +96,6 @@
                 class="server-input-inner"
                 @keyup.enter="applyServerUrl"
               />
-              <n-button v-if="isCapacitor" type="primary" size="large" secondary @click="scanQrCode" :loading="scanning">
-                <template #icon>
-                  <n-icon :component="QrCodeScannerOutlined" />
-                </template>
-              </n-button>
             </n-input-group>
           </div>
           <div class="server-actions">
@@ -128,14 +123,9 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { ResultCode, apiBaseURL } from "@/utils/request";
 import { useRoute, useRouter } from "vue-router"; // 引入 useRoute
 import { NIcon, NBackTop, NModal, NInput, NButton, NTag, NInputGroup, NLayout, NLayoutHeader, NLayoutContent } from "naive-ui";
-import { BarcodeScanner, SupportedFormat } from "@capacitor-community/barcode-scanner";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
-import { QrCodeScannerOutlined } from "@vicons/material";
 import { ToTop, Connection } from "@icon-park/vue-next";
-import { useMessage } from "naive-ui";
-
-const message = useMessage();
 const route = useRoute(); // 获取当前路由信息
 const router = useRouter();
 const music = musicStore();
@@ -144,7 +134,6 @@ const user = userStore();
 // const setting = settingStore();
 const showServerConfig = ref(false);
 const isCapacitor = typeof window !== "undefined" && Capacitor.isNativePlatform();
-const scanning = ref(false);
 const serverUrlInput = ref(localStorage.getItem("server_url") || "");
 const serverConnectionState = ref<"checking" | "connected" | "disconnected">("checking");
 const lastCheckedOrigin = ref("");
@@ -154,83 +143,22 @@ const normalizeServerUrl = (value: string) => {
   return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
 };
 
-const parseApiFromQr = (raw: string) => {
-  const value = raw.trim();
-  if (!value) return "";
-  try {
-    const directUrl = new URL(value);
-    const api = directUrl.searchParams.get("api");
-    if (api) return normalizeServerUrl(decodeURIComponent(api));
-    return normalizeServerUrl(value);
-  } catch {}
-
-  const apiMatch = value.match(/(?:\?|&|#)api=([^&#]+)/i);
-  if (apiMatch?.[1]) {
-    return normalizeServerUrl(decodeURIComponent(apiMatch[1]));
-  }
-
-  try {
-    const obj = JSON.parse(value);
-    if (obj?.api) return normalizeServerUrl(String(obj.api));
-  } catch {}
-
-  return normalizeServerUrl(value);
-};
-
-const buildScanErrorMessage = (error: any) => {
-  const raw = String(error?.message || error || "未知错误");
-  if (/User cancelled|canceled|cancelled/i.test(raw)) {
-    return "你已取消扫码。";
-  }
-  if (/permission|denied/i.test(raw)) {
-    return "相机权限被拒绝，请在系统设置中开启相机权限后重试。";
-  }
-  if (/timeout|超时/i.test(raw)) {
-    return "扫码超时，请将二维码放入取景框中央后重试。";
-  }
-  return `扫码失败：${raw}`;
-};
-
-const startScannerOverlay = async () => {
-  await BarcodeScanner.hideBackground();
-  document.body.classList.add("scanner-active");
-  document.documentElement.classList.add("scanner-active");
-};
-
-const stopScannerOverlay = async () => {
-  try {
-    await BarcodeScanner.showBackground();
-  } catch {}
-  try {
-    await BarcodeScanner.stopScan();
-  } catch {}
-  document.body.classList.remove("scanner-active");
-  document.documentElement.classList.remove("scanner-active");
-};
-
 onMounted(() => {
   if (isCapacitor) {
     CapacitorApp.addListener('backButton', async () => {
-      // 1. QR Scanner
-      if (scanning.value) {
-        await stopScannerOverlay();
-        scanning.value = false;
-        return;
-      }
-      
-      // 2. Server Config Modal
+      // 1. Server Config Modal
       if (showServerConfig.value) {
         showServerConfig.value = false;
         return;
       }
       
-      // 3. Big Player
+      // 2. Big Player
       if (music.showBigPlayer) {
         music.setBigPlayerState(false);
         return;
       }
       
-      // 4. Router Back or Exit
+      // 3. Router Back or Exit
       if (router.currentRoute.value.path !== '/' && router.currentRoute.value.path !== '/login') {
         router.back();
       } else {
@@ -245,69 +173,6 @@ onUnmounted(() => {
     CapacitorApp.removeAllListeners();
   }
 });
-
-const scanQrCode = async () => {
-  if (!isCapacitor) {
-    message.warning("仅移动端 App 支持扫码");
-    return;
-  }
-  scanning.value = true;
-  try {
-    const permission = await BarcodeScanner.checkPermission({ force: true });
-    if (permission.denied) {
-      await BarcodeScanner.openAppSettings();
-      message.error("相机权限已被永久拒绝，请在系统设置中手动开启");
-      return;
-    }
-    if (!permission.granted) {
-      message.error("未获得相机权限");
-      return;
-    }
-
-    await BarcodeScanner.prepare({
-      targetedFormats: [SupportedFormat.QR_CODE],
-    });
-    
-    // 暂时关闭弹窗，避免遮挡
-    const originalShowConfig = showServerConfig.value;
-    showServerConfig.value = false;
-    
-    // 确保之前任何正在进行的扫描都停止
-    await stopScannerOverlay();
-
-    await startScannerOverlay();
-    const result = await BarcodeScanner.startScan({
-      targetedFormats: [SupportedFormat.QR_CODE],
-    });
-    
-    // 恢复弹窗
-    showServerConfig.value = originalShowConfig;
-    
-    const content = result.hasContent ? String(result.content || "") : "";
-    if (!content) {
-      message.warning("未识别到二维码内容");
-      return;
-    }
-    const apiValue = parseApiFromQr(content);
-    if (!apiValue) {
-      message.error("二维码中未识别到 api 地址");
-      return;
-    }
-    
-    serverUrlInput.value = apiValue;
-    message.success("已识别并填充服务器地址");
-    
-    // 自动尝试连接
-    applyServerUrl();
-  } catch (err: any) {
-    const prettyMessage = buildScanErrorMessage(err);
-    message.error(prettyMessage);
-    showServerConfig.value = true; // 确保弹窗恢复
-  } finally {
-    await stopScannerOverlay();
-    scanning.value = false;
-  }
-};
 
 const applyServerUrl = () => {
   const normalized = normalizeServerUrl(serverUrlInput.value);

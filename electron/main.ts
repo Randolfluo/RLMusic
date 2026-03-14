@@ -52,7 +52,7 @@ app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication,Au
 
 // 设置用户数据目录，使用统一的应用名称
 app.setPath('userData', path.join(app.getPath('appData'), getAppId(appMode)))
-if (!app.requestSingleInstanceLock(appMode)) {
+if (!app.requestSingleInstanceLock({ mode: appMode })) {
   app.quit()
   process.exit(0)
 }
@@ -474,8 +474,17 @@ ipcMain.handle('show-save-dialog', async (event, options) => {
 
 ipcMain.handle('save-file', async (event, { path: filePath, data }) => {
   try {
-    // data comes as Uint8Array from renderer
-    fs.writeFileSync(filePath, Buffer.from(data))
+    let buffer: Buffer
+    if (Buffer.isBuffer(data)) {
+      buffer = data
+    } else if (data instanceof ArrayBuffer) {
+      buffer = Buffer.from(new Uint8Array(data))
+    } else if (ArrayBuffer.isView(data)) {
+      buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+    } else {
+      buffer = Buffer.from(data)
+    }
+    fs.writeFileSync(filePath, buffer)
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err.message }

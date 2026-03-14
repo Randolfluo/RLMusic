@@ -1,0 +1,29 @@
+services:
+  backend:
+    image: rlmusic:backend
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: RLMusic-backend
+    restart: unless-stopped
+    environment:
+      - BASICPATH_FILEPATH=/music
+      - BASICPATH_FILENAME=
+    volumes:
+      - ./data:/app/data
+      - ./log:/app/log
+      - ${MUSIC_BIND_PATH:-C:/RLMusic}:/music
+    ports:
+      - "12345:12345"
+
+  frontend:
+    image: rlmusic:frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: RLMusic-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "23456:23456"

@@ -7,7 +7,7 @@ import (
 	"runtime"
 	g "server/internal/global"
 	"server/internal/model"
-	"strconv"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -19,6 +19,7 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/spf13/viper"
 	"github.com/xuri/excelize/v2"
+	"gorm.io/gorm"
 )
 
 // GetLocalIPs 获取局域网IP地址列表
@@ -73,7 +74,6 @@ func (*SystemAuth) GetLocalIPs(c *gin.Context) {
 
 // ExportDatabaseToExcel 导出数据库到Excel
 func (*SystemAuth) ExportDatabaseToExcel(c *gin.Context) {
-	// 1. Check Admin Permission
 	user := GetCurrentUser(c)
 	if user == nil || user.UserGroup != "admin" {
 		ReturnError(c, g.ErrPermission, "权限不足，仅管理员可执行")
@@ -84,193 +84,139 @@ func (*SystemAuth) ExportDatabaseToExcel(c *gin.Context) {
 	f := excelize.NewFile()
 	defer func() {
 		if err := f.Close(); err != nil {
-			// log error
+			fmt.Printf("close excel failed: %v\n", err)
 		}
 	}()
 
-	// 2. Export Users
-	var users []model.User
-	if err := db.Find(&users).Error; err == nil {
-		sheetName := "Users"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "Username", "Nickname", "Email", "UserGroup", "TotalDuration", "ListeningDuration", "CreatedAt"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, u := range users {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), u.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), u.Username)
-			f.SetCellValue(sheetName, "D"+strconv.Itoa(row), u.Email)
-			f.SetCellValue(sheetName, "E"+strconv.Itoa(row), u.UserGroup)
-			f.SetCellValue(sheetName, "F"+strconv.Itoa(row), u.TotalDuration)
-			f.SetCellValue(sheetName, "G"+strconv.Itoa(row), u.ListeningDuration)
-			if u.CreatedAt != nil {
-				f.SetCellValue(sheetName, "H"+strconv.Itoa(row), u.CreatedAt.Format(time.DateTime))
+	tables, err := db.Migrator().GetTables()
+	if err != nil {
+		ReturnError(c, g.ErrDbOp, "读取数据库表失败: "+err.Error())
+		return
+	}
+	sort.Strings(tables)
+
+	usedSheetNames := map[string]struct{}{}
+	createdSheets := 0
+
+	for _, tableName := range tables {
+		sheetName := makeExcelSheetName(tableName, usedSheetNames)
+		if createdSheets == 0 {
+			if err := f.SetSheetName("Sheet1", sheetName); err != nil {
+				fmt.Printf("set first sheet name failed: %v\n", err)
+				continue
+			}
+		} else {
+			if _, err := f.NewSheet(sheetName); err != nil {
+				fmt.Printf("create sheet failed, table=%s err=%v\n", tableName, err)
+				continue
 			}
 		}
+
+		if err := writeTableToSheet(db, f, tableName, sheetName); err != nil {
+			fmt.Printf("write table failed, table=%s err=%v\n", tableName, err)
+			continue
+		}
+
+		createdSheets++
 	}
 
-	// 3. Export Songs
-	var songs []model.Song
-	if err := db.Find(&songs).Error; err == nil {
-		sheetName := "Songs"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "Title", "Artist", "Album", "Duration", "FilePath", "PlayCount", "Year", "Format"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, s := range songs {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), s.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), s.Title)
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), s.ArtistName)
-			f.SetCellValue(sheetName, "D"+strconv.Itoa(row), s.AlbumName)
-			f.SetCellValue(sheetName, "E"+strconv.Itoa(row), s.Duration)
-			f.SetCellValue(sheetName, "F"+strconv.Itoa(row), s.FilePath)
-			f.SetCellValue(sheetName, "G"+strconv.Itoa(row), s.PlayCount)
-			f.SetCellValue(sheetName, "H"+strconv.Itoa(row), s.Year)
-			f.SetCellValue(sheetName, "I"+strconv.Itoa(row), s.Format)
-		}
+	if createdSheets == 0 {
+		f.SetCellValue("Sheet1", "A1", "No tables found")
 	}
 
-	// 4. Export Playlists
-	var playlists []model.Playlist
-	if err := db.Find(&playlists).Error; err == nil {
-		sheetName := "Playlists"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "Title", "OwnerID", "IsPublic", "PlayCount", "TotalSongs"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, p := range playlists {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), p.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), p.Title)
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), p.OwnerID)
-			f.SetCellValue(sheetName, "D"+strconv.Itoa(row), p.IsPublic)
-			f.SetCellValue(sheetName, "E"+strconv.Itoa(row), p.PlayCount)
-			f.SetCellValue(sheetName, "F"+strconv.Itoa(row), p.TotalSongs)
-		}
-	}
-
-	// 5. Export Albums
-	var albums []model.Album
-	if err := db.Preload("Artist").Find(&albums).Error; err == nil {
-		sheetName := "Albums"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "Title", "Artist", "ReleaseDate"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, a := range albums {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), a.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), a.Title)
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), a.Artist.Name)
-			if a.ReleaseDate != nil {
-				f.SetCellValue(sheetName, "D"+strconv.Itoa(row), a.ReleaseDate.Format(time.DateOnly))
-			}
-		}
-	}
-
-	// 6. Export Artists
-	var artists []model.Artist
-	if err := db.Find(&artists).Error; err == nil {
-		sheetName := "Artists"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "Name", "Description"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, a := range artists {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), a.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), a.Name)
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), a.Description)
-		}
-	}
-
-	// 7. Export Histories
-	var histories []model.History
-	if err := db.Find(&histories).Error; err == nil {
-		sheetName := "Histories"
-		f.NewSheet(sheetName)
-		headers := []string{"ID", "UserID", "SongID", "CreatedAt"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, h := range histories {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), h.ID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), h.UserID)
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(row), h.SongID)
-			f.SetCellValue(sheetName, "D"+strconv.Itoa(row), h.CreatedAt.Format(time.DateTime))
-		}
-	}
-
-	// 8. Export PlaylistSongs (Join Table)
-	type PlaylistSong struct {
-		PlaylistID int
-		SongID     int
-	}
-	var playlistSongs []PlaylistSong
-	if err := db.Table("playlist_songs").Find(&playlistSongs).Error; err == nil {
-		sheetName := "PlaylistSongs"
-		f.NewSheet(sheetName)
-		headers := []string{"PlaylistID", "SongID"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, ps := range playlistSongs {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), ps.PlaylistID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), ps.SongID)
-		}
-	}
-
-	// 9. Export SongArtists (Join Table)
-	type SongArtist struct {
-		SongID   int
-		ArtistID int
-	}
-	var songArtists []SongArtist
-	if err := db.Table("song_artists").Find(&songArtists).Error; err == nil {
-		sheetName := "SongArtists"
-		f.NewSheet(sheetName)
-		headers := []string{"SongID", "ArtistID"}
-		for i, h := range headers {
-			cell, _ := excelize.CoordinatesToCellName(i+1, 1)
-			f.SetCellValue(sheetName, cell, h)
-		}
-		for i, sa := range songArtists {
-			row := i + 2
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(row), sa.SongID)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(row), sa.ArtistID)
-		}
-	}
-
-	// Delete default Sheet1 if unused
-	f.DeleteSheet("Sheet1")
-
-	// Set Headers for Download
 	fileName := fmt.Sprintf("database_export_%s.xlsx", time.Now().Format("20060102150405"))
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 	c.Header("File-Name", fileName)
 	c.Header("Access-Control-Expose-Headers", "File-Name")
 
-	// Write to Response
 	if _, err := f.WriteTo(c.Writer); err != nil {
-		// Log error (can't return JSON error here as headers already sent)
 		fmt.Printf("Export failed: %v\n", err)
+	}
+}
+
+func writeTableToSheet(db *gorm.DB, f *excelize.File, tableName, sheetName string) error {
+	rows, err := db.Table(tableName).Rows()
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	for i, col := range columns {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, col)
+	}
+
+	rowNum := 2
+	for rows.Next() {
+		values := make([]any, len(columns))
+		dest := make([]any, len(columns))
+		for i := range values {
+			dest[i] = &values[i]
+		}
+		if err := rows.Scan(dest...); err != nil {
+			return err
+		}
+
+		for i, val := range values {
+			cell, _ := excelize.CoordinatesToCellName(i+1, rowNum)
+			f.SetCellValue(sheetName, cell, normalizeExcelCellValue(val))
+		}
+		rowNum++
+	}
+
+	return rows.Err()
+}
+
+func normalizeExcelCellValue(value any) any {
+	switch v := value.(type) {
+	case nil:
+		return ""
+	case []byte:
+		return string(v)
+	case time.Time:
+		return v.Format(time.DateTime)
+	default:
+		return v
+	}
+}
+
+func makeExcelSheetName(raw string, used map[string]struct{}) string {
+	clean := strings.NewReplacer("\\", "_", "/", "_", "*", "_", "?", "_", "[", "_", "]", "_", ":", "_").Replace(raw)
+	clean = strings.TrimSpace(clean)
+	if clean == "" {
+		clean = "Sheet"
+	}
+
+	trimTo := func(s string, max int) string {
+		rs := []rune(s)
+		if len(rs) <= max {
+			return s
+		}
+		return string(rs[:max])
+	}
+
+	candidate := trimTo(clean, 31)
+	if _, exists := used[candidate]; !exists {
+		used[candidate] = struct{}{}
+		return candidate
+	}
+
+	index := 2
+	for {
+		suffix := fmt.Sprintf("_%d", index)
+		base := trimTo(clean, 31-len([]rune(suffix)))
+		candidate = base + suffix
+		if _, exists := used[candidate]; !exists {
+			used[candidate] = struct{}{}
+			return candidate
+		}
+		index++
 	}
 }
 

@@ -443,25 +443,9 @@ func (*SongAuth) GetSongCover(c *gin.Context) {
 
 	// 2. 如果源文件没有封面或读取失败，降级使用缓存的缩略图
 	if song.CoverID == nil || song.Cover.Path == "" {
-		// 尝试返回默认封面
-		// 查找可能的路径 (兼容不同的运行目录)
-		candidates := []string{
-			"public/images/logo/favicon.png",
-			"../public/images/logo/favicon.png",
-			"../../public/images/logo/favicon.png",
-			filepath.Join(g.GetConfig().BasicPath.FilePath, "localmusicplayer", "public", "images", "logo", "favicon.png"),
+		if serveDefaultAppIcon(c) {
+			return
 		}
-
-		for _, path := range candidates {
-			// 转换为绝对路径（如果是相对路径）
-			absPath, _ := filepath.Abs(path)
-			if _, err := os.Stat(absPath); err == nil {
-				c.File(absPath)
-				return
-			}
-		}
-
-		// 404 Not Found if no cover and no default
 		c.Status(404)
 		return
 	}
@@ -470,11 +454,44 @@ func (*SongAuth) GetSongCover(c *gin.Context) {
 	coverPath := filepath.Join("./data/covers", song.Cover.Path)
 
 	if _, err := os.Stat(coverPath); os.IsNotExist(err) {
+		if serveDefaultAppIcon(c) {
+			return
+		}
 		c.Status(404)
 		return
 	}
 
 	c.File(coverPath)
+}
+
+func serveDefaultAppIcon(c *gin.Context) bool {
+	candidates := []string{
+		"public/images/logo/favicon.png",
+		"../public/images/logo/favicon.png",
+		"../../public/images/logo/favicon.png",
+	}
+
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "public", "images", "logo", "favicon.png"),
+			filepath.Join(exeDir, "..", "public", "images", "logo", "favicon.png"),
+			filepath.Join(exeDir, "..", "..", "public", "images", "logo", "favicon.png"),
+		)
+	}
+
+	for _, path := range candidates {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			continue
+		}
+		if _, err := os.Stat(absPath); err == nil {
+			c.File(absPath)
+			return true
+		}
+	}
+
+	return false
 }
 
 // GetSongDetail 获取歌曲详细信息
