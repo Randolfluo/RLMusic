@@ -10,6 +10,42 @@
 - **实时互动**：一起听房间与实时消息同步（WebSocket）。
 - **后台管理**：用户、公共歌单等管理能力。
 
+## 系统架构
+
+```mermaid
+graph TD
+    User[用户 User] --> Web[Web 端]
+    User --> Electron[Electron 桌面端]
+    User --> Android[Android 移动端]
+
+    subgraph Frontend [前端表现层 (Vue 3 + Naive UI)]
+        Web
+        Electron
+        Android
+        Store[Pinia 状态管理]
+        Router[Vue Router]
+        Axios[Axios 请求封装]
+    end
+
+    subgraph Backend [后端服务层 (Go + Gin)]
+        API[RESTful API 接口]
+        Auth[JWT 鉴权]
+        Logic[业务逻辑 (Song/User/System)]
+        Scanner[文件扫描器]
+        AI_Service[AI 服务 (LLM + TTS)]
+    end
+
+    subgraph Data [数据持久层]
+        SQLite[(SQLite / MySQL)]
+        FS[本地文件系统 (Cover/Music/Log)]
+    end
+
+    Frontend -->|HTTP / WebSocket| Backend
+    Backend -->|GORM| SQLite
+    Backend -->|File IO| FS
+    Electron -->|IPC| Frontend
+```
+
 ## 技术栈
 - **前端**：Vue 3、TypeScript、Vite、Pinia、Naive UI
 - **桌面端**：Electron、Electron Builder
@@ -99,11 +135,12 @@ pnpm build:web
 pnpm build:client
 pnpm build:server
 pnpm build:android
+pnpm build:all
 ```
 - Web 输出目录：`dist/`
 - Electron 输出目录：`release/`
 
-### 3) Docker 部署（推荐）
+### 3) Docker 部署
 
 项目采用前后端分离容器：
 - 容器名：`RLMusic-frontend`、`RLMusic-backend`
@@ -176,6 +213,10 @@ QwenTTS:
 SiliconFlow:
   ApiKey: "sk-..."
 ```
+
+## AI功能的使用
+需要现在系统环境变量添加 `QwenTTS_API_KEY` 和 `SiliconFlow_API_KEY` 两个变量，值分别为 Qwen 平台和 SiliconFlow 平台的 API 密钥。
+
 
 ## 开发计划（Roadmap）
 - [x] 基础播放与歌曲管理
