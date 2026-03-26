@@ -18,7 +18,7 @@ graph TD
     User --> Electron[Electron 桌面端]
     User --> Android[Android 移动端]
 
-    subgraph Frontend [前端表现层 (Vue 3 + Naive UI)]
+    subgraph Frontend [前端表现层 Vue3 NaiveUI]
         Web
         Electron
         Android
@@ -27,17 +27,17 @@ graph TD
         Axios[Axios 请求封装]
     end
 
-    subgraph Backend [后端服务层 (Go + Gin)]
+    subgraph Backend [后端服务层 Go Gin]
         API[RESTful API 接口]
         Auth[JWT 鉴权]
-        Logic[业务逻辑 (Song/User/System)]
+        Logic[业务逻辑 Song/User/System]
         Scanner[文件扫描器]
-        AI_Service[AI 服务 (LLM + TTS)]
+        AI_Service[AI 服务 LLM TTS]
     end
 
     subgraph Data [数据持久层]
         SQLite[(SQLite / MySQL)]
-        FS[本地文件系统 (Cover/Music/Log)]
+        FS[本地文件系统 Cover/Music/Log]
     end
 
     Frontend -->|HTTP / WebSocket| Backend
@@ -218,15 +218,7 @@ SiliconFlow:
 需要现在系统环境变量添加 `QwenTTS_API_KEY` 和 `SiliconFlow_API_KEY` 两个变量，值分别为 Qwen 平台和 SiliconFlow 平台的 API 密钥。
 
 
-## 开发计划（Roadmap）
-- [x] 基础播放与歌曲管理
-- [x] 多端支持（Web / Electron / Android）
-- [x] Docker 容器化部署
-- [x] AI 文案与播客开场白
-- [ ] 歌词智能翻译与纠错
-- [ ] 内容理解推荐
-- [ ] 更多格式支持（FLAC/WAV/APE）
-- [ ] DLNA / Chromecast
+
 
 ## 致谢
 - [Vue 3](https://vuejs.org/) / [Vite](https://vitejs.dev/)
@@ -239,3 +231,15 @@ SiliconFlow:
 
 ## License
 MIT
+
+# TODO
+生成概述后再提示
+艺术家模型ai生成顺序
+添加压力测试 
+删除或重写桌面歌词功能
+支持用户在设置页里自定义模型和api
+优化搜索栏，如不区分大小写，区分关键词
+音频传输的是什么，是如何传输的
+提示词是否打包进了electron服务端里
+修改项目名为RLMusic，删除所有localmusicplayer的字段
+electron端当歌曲无对应信息时，应该如何处理
