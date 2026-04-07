@@ -1,132 +1,188 @@
 <template>
   <div class="playlist-manage-container">
-    <!-- Ambient Background Effects -->
-    <div class="ambient-glows">
-      <div class="glow-orb orb-1"></div>
-      <div class="glow-orb orb-2"></div>
+    <!-- 动态背景层 -->
+    <div class="ambient-background">
+      <div class="gradient-blob blob-1"></div>
+      <div class="gradient-blob blob-2"></div>
+      <div class="gradient-blob blob-3"></div>
+      <div class="grain-overlay"></div>
     </div>
-    <div class="noise-overlay"></div>
 
     <div class="content-wrapper">
-      <div class="header-section">
-        <div class="title-group">
-          <button class="nav-btn" @click="router.back()">
+      <!-- 杂志风格标题区 -->
+      <header class="editorial-header">
+        <div class="header-left">
+          <button class="back-btn" @click="router.back()">
             <n-icon :component="Left" />
           </button>
-          <div class="text-content">
-            <h1 class="page-title">公共歌单库</h1>
-            <p class="page-subtitle">管理全站公开的音乐收藏集</p>
+          <div class="title-stack">
+            <span class="kicker">Music Collection</span>
+            <h1 class="headline">公共歌单库</h1>
+            <p class="deck">管理全站公开的音乐收藏集</p>
           </div>
         </div>
-        <div class="header-actions">
-          <div class="stat-badge">
-            <span class="label">Total</span>
-            <span class="value">{{ pagination.itemCount }}</span>
+        <div class="header-right">
+          <div class="stat-pill">
+            <span class="stat-number">{{ pagination.itemCount }}</span>
+            <span class="stat-label">个歌单</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- 数据概览卡片 -->
+      <section class="metrics-bar">
+        <div class="metric-item">
+          <span class="metric-value">{{ pagination.page }}</span>
+          <span class="metric-label">当前页</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+          <span class="metric-value">{{ pagination.pageSize }}</span>
+          <span class="metric-label">每页显示</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+          <span class="metric-value">{{ playlistList.length }}</span>
+          <span class="metric-label">本页歌单</span>
+        </div>
+      </section>
+
+      <!-- 桌面端表格视图 -->
+      <div v-if="!isMobile" class="table-view">
+        <div class="table-container">
+          <n-data-table
+            :columns="columns"
+            :data="playlistList"
+            :loading="loading"
+            :row-key="row => row.id"
+            :row-class-name="'playlist-row'"
+            :scroll-x="900"
+          />
+        </div>
+      </div>
+
+      <!-- 移动端卡片视图 -->
+      <div v-else class="grid-view">
+        <div class="playlist-cards">
+          <div
+            v-for="playlist in playlistList"
+            :key="playlist.id"
+            class="playlist-card"
+          >
+            <div class="card-accent"></div>
+            <div class="card-content">
+              <div class="playlist-header">
+                <div class="cover-wrapper">
+                  <img
+                    :src="resolveCoverUrl(playlist.cover_url) || '/images/pic/default.png'"
+                    alt="cover"
+                    class="cover-img"
+                  />
+                </div>
+                <div class="playlist-meta">
+                  <h3 class="playlist-title">{{ playlist.title }}</h3>
+                  <span class="playlist-id">#{{ playlist.id }}</span>
+                </div>
+              </div>
+
+              <div class="playlist-stats">
+                <div class="stat-badge">
+                  <n-icon :component="Music" />
+                  <span>{{ playlist.total_songs || 0 }} 首歌曲</span>
+                </div>
+                <div class="stat-badge plays">
+                  <n-icon :component="PlayOne" />
+                  <span>{{ (playlist.play_count || 0).toLocaleString() }} 播放</span>
+                </div>
+              </div>
+
+              <div class="playlist-owner">
+                <n-icon :component="User" />
+                <span>创建者 UID {{ playlist.owner_id }}</span>
+              </div>
+
+              <button class="delete-btn" @click="confirmDelete(playlist)">
+                <n-icon :component="Delete" />
+                删除歌单
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="quick-stats">
-        <div class="quick-stat-card">
-          <span class="quick-label">当前页</span>
-          <span class="quick-value">{{ pagination.page }}</span>
-        </div>
-        <div class="quick-stat-card">
-          <span class="quick-label">每页</span>
-          <span class="quick-value">{{ pagination.pageSize }}</span>
-        </div>
-        <div class="quick-stat-card">
-          <span class="quick-label">本页条目</span>
-          <span class="quick-value">{{ playlistList.length }}</span>
-        </div>
-      </div>
-
-      <div class="table-container glass-panel">
-        <n-data-table
-          :columns="columns"
-          :data="playlistList"
-          :loading="loading"
-          :pagination="pagination"
-          :row-key="row => row.id"
-          :row-class-name="'playlist-row'"
-          :scroll-x="800"
-          remote
+      <!-- 分页器 -->
+      <div class="pagination-wrapper">
+        <n-pagination
+          v-model:page="pagination.page"
+          v-model:page-size="pagination.pageSize"
+          :item-count="pagination.itemCount"
+          :show-size-picker="true"
+          :page-sizes="pagination.pageSizes"
+          @update:page="fetchPlaylists"
+          @update:page-size="handlePageSizeChange"
         />
-      </div>
-
-      <div class="mobile-list">
-        <div v-for="row in playlistList" :key="row.id" class="mobile-card">
-          <div class="mobile-cover">
-            <img :src="resolveCoverUrl(row.cover_url) || '/images/pic/default.png'" alt="cover" />
-          </div>
-          <div class="mobile-main">
-            <div class="mobile-title-row">
-              <span class="mobile-title">{{ row.title }}</span>
-              <span class="mobile-id">ID {{ row.id }}</span>
-            </div>
-            <div class="mobile-meta">
-              <span>歌曲 {{ row.total_songs || 0 }}</span>
-              <span>播放 {{ (row.play_count || 0).toLocaleString() }}</span>
-              <span>创建者 UID {{ row.owner_id }}</span>
-            </div>
-            <button class="mobile-delete-btn" @click="confirmDelete(row)">删除歌单</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue';
+import { ref, reactive, h, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMessage, NPopconfirm, NImage, NIcon, NDataTable, type DataTableColumns } from 'naive-ui';
+import { useMessage, NPopconfirm, NImage, NIcon, NDataTable, NPagination, type DataTableColumns } from 'naive-ui';
 import { Left, Delete, Music, PlayOne, User } from '@icon-park/vue-next';
 import { getPublicPlaylists, deletePublicPlaylist } from '@/api/playlist';
 import { resolveCoverUrl } from "@/api/song";
-// Force reload dependency
 import { ResultCode } from "@/utils/request";
 
 const router = useRouter();
 const message = useMessage();
+
+// 响应式窗口大小检测
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value < 768);
+
+const handleResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
 
 const loading = ref(false);
 const playlistList = ref<any[]>([]);
 
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
+  pageSize: 12,
   itemCount: 0,
   showSizePicker: true,
-  pageSizes: [10, 20, 50],
-  prefix: ({ itemCount }: { itemCount?: number }) => `共 ${itemCount || 0} 个歌单`,
-  onChange: (page: number) => {
-    pagination.page = page;
-    fetchPlaylists();
-  },
-  onUpdatePageSize: (pageSize: number) => {
-    pagination.pageSize = pageSize;
-    pagination.page = 1;
-    fetchPlaylists();
-  }
+  pageSizes: [12, 24, 48],
 });
+
+const handlePageSizeChange = (pageSize: number) => {
+  pagination.pageSize = pageSize;
+  pagination.page = 1;
+  fetchPlaylists();
+};
 
 const columns: DataTableColumns = [
   {
     title: '封面',
     key: 'cover',
-    width: 80,
+    width: 90,
     render(row: any) {
       const src = resolveCoverUrl(row.cover_url);
-      return h('div', { class: 'cover-wrapper' }, [
+      return h('div', { class: 'table-cover-wrapper' }, [
         h(NImage, {
-            width: 48,
-            height: 48,
-            src: src,
-            fallbackSrc: "/images/pic/default.png",
-            objectFit: 'cover',
+          width: 56,
+          height: 56,
+          src: src,
+          fallbackSrc: "/images/pic/default.png",
+          objectFit: 'cover',
           showToolbar: false,
-          intersectionObserverOptions: { rootMargin: '100px' }
+          style: { borderRadius: '12px' }
         })
       ]);
     }
@@ -135,23 +191,23 @@ const columns: DataTableColumns = [
     title: '歌单信息',
     key: 'title',
     render(row: any) {
-      return h('div', { class: 'info-cell' }, [
-        h('span', { class: 'playlist-title' }, row.title),
-        h('span', { class: 'playlist-id' }, `ID: ${row.id}`)
+      return h('div', { class: 'table-info-cell' }, [
+        h('span', { class: 'table-playlist-title' }, row.title),
+        h('span', { class: 'table-playlist-id' }, `#${row.id}`)
       ]);
     }
   },
   {
     title: '统计',
     key: 'stats',
-    width: 200,
+    width: 220,
     render(row: any) {
-      return h('div', { class: 'stats-cell' }, [
-        h('div', { class: 'stat-item' }, [
+      return h('div', { class: 'table-stats' }, [
+        h('div', { class: 'table-stat-item' }, [
           h(NIcon, { component: Music, size: 14 }),
-          h('span', `${row.total_songs || 0}`)
+          h('span', `${row.total_songs || 0} 首`)
         ]),
-        h('div', { class: 'stat-item' }, [
+        h('div', { class: 'table-stat-item plays' }, [
           h(NIcon, { component: PlayOne, size: 14 }),
           h('span', (row.play_count || 0).toLocaleString())
         ])
@@ -161,9 +217,9 @@ const columns: DataTableColumns = [
   {
     title: '创建者',
     key: 'owner_id',
-    width: 150,
+    width: 160,
     render(row: any) {
-      return h('div', { class: 'user-cell' }, [
+      return h('div', { class: 'table-owner' }, [
         h(NIcon, { component: User, size: 14 }),
         h('span', `UID ${row.owner_id}`)
       ]);
@@ -186,7 +242,7 @@ const columns: DataTableColumns = [
         {
           trigger: () => h(
             'button',
-            { class: 'action-btn delete', title: '删除歌单' },
+            { class: 'table-delete-btn', title: '删除歌单' },
             h(NIcon, { component: Delete, size: 18 })
           ),
           default: () => '确定要删除该公共歌单吗？此操作不可逆！'
@@ -212,7 +268,6 @@ const fetchPlaylists = async () => {
     }
   } catch (error) {
     message.error('获取歌单列表失败');
-    console.error(error);
   } finally {
     loading.value = false;
   }
@@ -242,222 +297,282 @@ const confirmDelete = (row: any) => {
 };
 </script>
 
-<style lang="scss" scoped>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+<style lang="scss">
+// 导入特色字体
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  // 编辑风格配色 - 温暖米色调
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f5f2ed;
+  --bg-tertiary: #ebe7e0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --accent-coral: #e07a5f;
+  --accent-teal: #3d8b8b;
+  --accent-gold: #d4a574;
+  --accent-ink: #2c3e50;
+  --music-purple: #7c6fae;
+  --play-orange: #e07a5f;
+  --danger-red: #c75b5b;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-deep: 0 12px 40px rgba(0, 0, 0, 0.14);
+}
 
 .playlist-manage-container {
-  position: relative;
   min-height: 100vh;
-  width: 100%;
-  padding: 40px;
-  background: #f8f9fc;
+  background: var(--bg-primary);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  overflow: hidden;
-
-  :global(.dark) & {
-    background: #0f1115;
-    color: #fff;
-  }
+  position: relative;
+  overflow-x: hidden;
 }
 
-/* Ambient Background */
-.ambient-glows {
+// 动态背景
+.ambient-background {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 0;
+  overflow: hidden;
   pointer-events: none;
+}
 
-  .glow-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.4;
-  }
+.gradient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: blob-float 20s ease-in-out infinite;
 
-  .orb-1 {
-    top: -10%;
-    right: -5%;
+  &.blob-1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0) 70%);
+    background: linear-gradient(135deg, rgba(124, 111, 174, 0.25), rgba(212, 165, 116, 0.2));
+    top: -200px;
+    right: -100px;
+    animation-delay: 0s;
   }
 
-  .orb-2 {
-    bottom: -10%;
-    left: -10%;
+  &.blob-2 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0) 70%);
+    background: linear-gradient(135deg, rgba(224, 122, 95, 0.2), rgba(61, 139, 139, 0.15));
+    bottom: -150px;
+    left: -150px;
+    animation-delay: -7s;
+  }
+
+  &.blob-3 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, rgba(61, 139, 139, 0.15), rgba(124, 111, 174, 0.1));
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -14s;
   }
 }
 
-.noise-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/200' opacity='0.03'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  z-index: 1;
-  pointer-events: none;
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
 }
 
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+// 内容包装器
 .content-wrapper {
   position: relative;
-  z-index: 2;
-  max-width: 1280px;
+  z-index: 1;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 48px 32px;
+
+  @media (max-width: 768px) {
+    padding: 24px 16px;
+  }
 }
 
-.header-section {
+// 编辑风格标题区
+.editorial-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 20px;
-  gap: 20px;
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--bg-tertiary);
 
-  .title-group {
-    display: flex;
-    align-items: center;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 20px;
-
-    .nav-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: rgba(255, 255, 255, 0.78);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      color: #64748b;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(14px);
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.95);
-        transform: translateX(-2px);
-        box-shadow: 0 10px 20px rgba(30, 41, 59, 0.12);
-        color: #334155;
-      }
-    }
-
-    .text-content {
-      .page-title {
-        font-size: 34px;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0;
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-      }
-
-      .page-subtitle {
-        font-size: 13px;
-        color: #64748b;
-        margin: 8px 0 0;
-        font-weight: 500;
-        letter-spacing: 0.02em;
-      }
-    }
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    .stat-badge {
-      padding: 10px 18px;
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.46));
-      border: 1px solid rgba(59, 130, 246, 0.16);
-      border-radius: 100px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      backdrop-filter: blur(12px);
-
-      .label {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #94a3b8;
-        font-weight: 700;
-      }
-
-      .value {
-        font-size: 16px;
-        font-weight: 700;
-        color: #2563eb;
-      }
-    }
+    margin-bottom: 28px;
   }
 }
 
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
+.header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
 }
 
-.quick-stat-card {
-  background: linear-gradient(130deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.56));
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 14px;
-  padding: 12px 14px;
+.back-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--bg-tertiary);
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
+
+  &:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(-2px);
+    color: var(--text-primary);
+  }
+}
+
+.title-stack {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  backdrop-filter: blur(12px);
+  gap: 4px;
 }
 
-.quick-label {
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--music-purple);
+}
+
+.headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 32px;
+  }
+}
+
+.deck {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 8px 0 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, var(--accent-ink), #3d4f5f);
+  border-radius: 100px;
+  color: white;
+
+  .stat-number {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    opacity: 0.8;
+  }
+}
+
+// 数据指标栏
+.metrics-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    justify-content: space-around;
+    gap: 0;
+  }
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Playfair Display', serif;
+}
+
+.metric-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
+  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.quick-value {
-  font-size: 20px;
-  color: #0f172a;
-  font-weight: 700;
-  line-height: 1;
+.metric-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--bg-tertiary);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 }
 
-.glass-panel {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
-  backdrop-filter: blur(22px);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 22px;
-  padding: 10px;
-  box-shadow: 0 24px 36px -18px rgba(30, 41, 59, 0.22);
-  overflow: hidden;
+// 表格视图样式
+.table-view {
+  margin-bottom: 24px;
+}
+
+.table-container {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: var(--shadow-soft);
 }
 
 :deep(.n-data-table) {
-  --n-th-font-weight: 700 !important;
-  --n-th-text-color: #475569 !important;
-  
+  --n-th-font-weight: 600 !important;
+  --n-th-text-color: var(--text-secondary) !important;
+  --n-border-color: transparent !important;
+
   .n-data-table-th {
     background: transparent !important;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
-    padding: 15px 18px !important;
+    padding: 16px 20px !important;
     font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
   }
 
   .n-data-table-td {
     background: transparent !important;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
-    padding: 13px 18px !important;
-    transition: background 0.2s;
+    padding: 16px 20px !important;
+    border-bottom: 1px solid var(--bg-tertiary) !important;
   }
 
   .n-data-table-tr:last-child .n-data-table-td {
@@ -465,81 +580,78 @@ const confirmDelete = (row: any) => {
   }
 
   .n-data-table-tr:hover .n-data-table-td {
-    background: rgba(241, 245, 249, 0.72) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
   }
 }
 
-.cover-wrapper {
+.table-cover-wrapper {
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s;
-  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+
   &:hover {
     transform: scale(1.05);
   }
 }
 
-.info-cell {
+.table-info-cell {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  
-  .playlist-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 4px;
-  }
-  
-  .playlist-id {
-    font-size: 12px;
-    font-family: monospace;
-    color: #94a3b8;
-    background: rgba(0,0,0,0.03);
-    padding: 2px 6px;
-    border-radius: 4px;
-    width: fit-content;
-  }
+  gap: 4px;
 }
 
-.stats-cell {
+.table-playlist-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.table-playlist-id {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.table-stats {
   display: flex;
-  gap: 12px;
-  
-  .stat-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #475569;
-    font-size: 12px;
-    font-weight: 600;
-    background: rgba(226, 232, 240, 0.5);
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 999px;
-    padding: 4px 10px;
-    
-    .n-icon {
-      color: #94a3b8;
-    }
+  gap: 10px;
+}
+
+.table-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(124, 111, 174, 0.1);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--music-purple);
+  font-weight: 600;
+
+  &.plays {
+    background: rgba(224, 122, 95, 0.1);
+    color: var(--play-orange);
+  }
+
+  .n-icon {
+    opacity: 0.7;
   }
 }
 
-.user-cell {
+.table-owner {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #475569;
-  font-weight: 600;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.68);
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.03);
-  width: fit-content;
+  color: var(--text-secondary);
+
+  .n-icon {
+    color: var(--text-muted);
+  }
 }
 
-.action-btn {
+.table-delete-btn {
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -549,158 +661,164 @@ const confirmDelete = (row: any) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
-  color: #94a3b8;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
 
-  &.delete:hover {
-    background: #fee2e2;
-    color: #ef4444;
-    transform: scale(1.1);
+  &:hover {
+    background: rgba(199, 91, 91, 0.1);
+    color: var(--danger-red);
   }
 }
 
-.mobile-list {
-  display: none;
+// 网格/卡片视图（移动端）
+.grid-view {
+  margin-bottom: 24px;
 }
 
-@media (max-width: 768px) {
-  .playlist-manage-container {
-    padding: 18px 14px 28px;
+.playlist-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.playlist-card {
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--music-purple), var(--accent-coral));
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.playlist-header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cover-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.playlist-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-id {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.playlist-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(124, 111, 174, 0.1);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--music-purple);
+  font-weight: 600;
+
+  &.plays {
+    background: rgba(224, 122, 95, 0.1);
+    color: var(--play-orange);
   }
 
-  .content-wrapper {
-    max-width: 100%;
+  .n-icon {
+    opacity: 0.7;
   }
+}
 
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-    
-    .header-actions {
-      width: 100%;
-      justify-content: space-between;
-    }
+.playlist-owner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+
+  .n-icon {
+    color: var(--text-muted);
   }
+}
 
-  .header-section .title-group .text-content .page-title {
-    font-size: 28px;
+.delete-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(199, 91, 91, 0.1);
+  color: var(--danger-red);
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--danger-red);
+    color: white;
   }
+}
 
-  .quick-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .quick-stat-card {
-    padding: 10px;
-    border-radius: 12px;
-  }
-
-  .quick-label {
-    font-size: 11px;
-  }
-
-  .quick-value {
-    font-size: 16px;
-  }
-
-  .table-container {
-    display: none;
-  }
-
-  .mobile-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .mobile-card {
-    display: grid;
-    grid-template-columns: 64px 1fr;
-    gap: 12px;
-    align-items: start;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7));
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 14px 24px -18px rgba(15, 23, 42, 0.45);
-  }
-
-  .mobile-cover {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 14px -8px rgba(30, 41, 59, 0.5);
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-  }
-
-  .mobile-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .mobile-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .mobile-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #0f172a;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mobile-id {
-    font-size: 11px;
-    color: #64748b;
-    background: rgba(226, 232, 240, 0.8);
-    border-radius: 999px;
-    padding: 3px 8px;
-    flex-shrink: 0;
-  }
-
-  .mobile-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-
-    span {
-      font-size: 11px;
-      font-weight: 600;
-      color: #334155;
-      background: rgba(241, 245, 249, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 999px;
-      padding: 3px 8px;
-    }
-  }
-
-  .mobile-delete-btn {
-    margin-top: 2px;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    background: rgba(254, 226, 226, 0.74);
-    color: #dc2626;
-    border-radius: 10px;
-    padding: 7px 10px;
-    font-size: 12px;
-    font-weight: 700;
-    width: 100%;
-  }
+// 分页器
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
 }
 </style>
