@@ -252,7 +252,7 @@ function createWindow() {
   splash.loadFile(path.join(process.env.VITE_PUBLIC as string, 'loading.html'))
 
   win = new BrowserWindow({
-    title: 'Local Music Player',
+    title: 'RLmusic',
     show: false, // 先隐藏主窗口
     icon: iconPath,
     width: 1200,

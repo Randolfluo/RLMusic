@@ -189,6 +189,45 @@ docker compose restart backend
 ```
 3. 在前端执行一次音乐扫描。
 
+### 4) 压力测试（分阶段升压 + 流式播放独立测试）
+
+项目根目录提供压测脚本：`api_test_scan.py`。  
+脚本会先创建测试用户，再执行两类压测：
+- 通用 API 分阶段升压压测（搜索、系统、歌单、详情等）
+- 歌曲流式播放独立压测（`/api/song/stream/:id`，单独统计）
+
+**运行方式**
+```bash
+python api_test_scan.py
+```
+
+**前置条件**
+- 后端服务已启动：`http://localhost:12345`
+- 前端服务已启动（用于 `web_home` 场景）：`http://localhost:23456`
+- 音乐库中至少有可播放歌曲（用于流式播放场景自动发现 `song_id`）
+
+**关键参数（`api_test_scan.py`）**
+- `TEST_USER_COUNT`：测试用户创建数量
+- `REQUEST_TIMEOUT`：单次请求超时（秒）
+- `STREAM_READ_BYTES`：流式播放每次探测最大读取字节数（默认 `64KB`）
+- `PRESSURE_STAGES`：分阶段升压配置，支持多阶段并发与总请求数
+
+`PRESSURE_STAGES` 示例：
+```python
+PRESSURE_STAGES = [
+    {"name": "stage-1", "concurrency": 20, "total_requests": 300},
+    {"name": "stage-2", "concurrency": 50, "total_requests": 1000},
+    {"name": "stage-3", "concurrency": 100, "total_requests": 3000},
+]
+```
+
+**输出说明**
+- 每个阶段会输出：`总QPS`、各场景 `QPS`、成功率、`P95/P99`
+- 流式播放会额外输出：`TTFB(P95)`（首包时间，越低通常表示起播越快）
+- 最后分别输出两张总览：
+  - `分阶段总览`（通用 API）
+  - `流式播放分阶段总览`（播放链路）
+
 ## 配置说明
 
 ### 前端环境变量（`.env`）
@@ -234,8 +273,6 @@ MIT
 
 # TODO
 生成概述后再提示
-艺术家模型ai生成顺序
-添加压力测试 
 删除或重写桌面歌词功能
 支持用户在设置页里自定义模型和api
 优化搜索栏，如不区分大小写，区分关键词

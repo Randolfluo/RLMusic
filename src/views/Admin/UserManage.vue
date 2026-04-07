@@ -56,6 +56,7 @@
         <n-data-table
           :columns="columns"
           :data="userList"
+          :remote="true"
           :loading="loading"
           :pagination="pagination"
           :row-key="(row: any) => row.id"
@@ -88,6 +89,17 @@
           </div>
         </div>
       </div>
+      <div class="mobile-pagination">
+        <n-pagination
+          :page="pagination.page"
+          :page-size="pagination.pageSize"
+          :item-count="pagination.itemCount"
+          :show-size-picker="true"
+          :page-sizes="pagination.pageSizes"
+          @update:page="handlePageChange"
+          @update:page-size="handlePageSizeChange"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -95,7 +107,7 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMessage, NPopconfirm, NInput, NIcon, NDataTable, type DataTableColumns } from 'naive-ui';
+import { useMessage, NPopconfirm, NInput, NIcon, NDataTable, NPagination, type DataTableColumns } from 'naive-ui';
 import { Left, Search, User, Mail, Time, Permissions, Delete } from '@icon-park/vue-next';
 import { adminGetAllUsers, adminUpdateUserRole, adminDeleteUser, type UserInfo } from '@/api/user'; 
 import { ResultCode } from "@/utils/request";
@@ -115,15 +127,23 @@ const pagination = reactive({
   pageSizes: [10, 20, 50],
   prefix: ({ itemCount }: { itemCount?: number }) => `共 ${itemCount || 0} 位用户`,
   onChange: (page: number) => {
-    pagination.page = page;
-    fetchUsers();
+    handlePageChange(page);
   },
   onUpdatePageSize: (pageSize: number) => {
-    pagination.pageSize = pageSize;
-    pagination.page = 1;
-    fetchUsers();
+    handlePageSizeChange(pageSize);
   }
 });
+
+const handlePageChange = (page: number) => {
+  pagination.page = page;
+  fetchUsers();
+};
+
+const handlePageSizeChange = (pageSize: number) => {
+  pagination.pageSize = pageSize;
+  pagination.page = 1;
+  fetchUsers();
+};
 
 const columns: DataTableColumns<UserInfo> = [
   {
@@ -668,6 +688,10 @@ const confirmDelete = (row: UserInfo) => {
   display: none;
 }
 
+.mobile-pagination {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .user-manage-container {
     padding: 18px 14px 28px;
@@ -729,6 +753,18 @@ const confirmDelete = (row: UserInfo) => {
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .mobile-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+
+    :deep(.n-pagination) {
+      flex-wrap: wrap;
+      justify-content: center;
+      row-gap: 8px;
+    }
   }
 
   .mobile-card {

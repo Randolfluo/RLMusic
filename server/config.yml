@@ -24,8 +24,8 @@ Session:
   MaxAge: 600 # second
 
 BasicPath:
-  FilePath: 'C:\Users\lrj32\Desktop\music player'
-  FileName: 'MusicFolder'
+  FilePath: 'C:\Users\lrj32\Desktop'
+  FileName: 'music'
 
 Redis:
   Addr: "127.0.0.1:6379"
