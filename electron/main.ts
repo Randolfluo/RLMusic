@@ -59,7 +59,6 @@ if (!app.requestSingleInstanceLock({ mode: appMode })) {
 
 let win: BrowserWindow | null
 let splash: BrowserWindow | null
-let desktopLyricWindow: BrowserWindow | null = null
 let serverProcess: any = null // 保存后端进程实例
 let frontendServer: http.Server | null = null
 
@@ -298,121 +297,6 @@ function createWindow() {
     return { action: 'deny' }
   })
 }
-
-// 创建桌面歌词窗口
-function createDesktopLyricWindow() {
-  if (desktopLyricWindow) return
-
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
-
-  desktopLyricWindow = new BrowserWindow({
-    width: 800,
-    height: 120,
-    x: (width - 800) / 2,
-    y: height - 150,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: true, // 允许调整大小
-    webPreferences: {
-      preload: path.join(__dirname, '../dist-electron/preload.mjs'),
-      nodeIntegration: true,
-      contextIsolation: true,
-    },
-    backgroundColor: '#00000000', // Ensure transparency
-  })
-
-  // 加载路由
-  if (VITE_DEV_SERVER_URL) {
-    const url = VITE_DEV_SERVER_URL.endsWith('/') ? VITE_DEV_SERVER_URL : `${VITE_DEV_SERVER_URL}/`
-    desktopLyricWindow.loadURL(`${url}#/desktop-lyric`)
-  } else {
-    // 生产环境下加载 hash 路由
-    desktopLyricWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'desktop-lyric' })
-  }
-
-  desktopLyricWindow.on('closed', () => {
-    desktopLyricWindow = null
-  })
-}
-
-// IPC 监听
-ipcMain.on('open-desktop-lyric', () => {
-  createDesktopLyricWindow()
-})
-
-ipcMain.on('close-desktop-lyric', () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.close()
-  }
-})
-
-ipcMain.on('update-desktop-lyric', (event, data) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send('update-lyric', data)
-  }
-})
-
-ipcMain.on('desktop-lyric-control', (event, action) => {
-  if (win) {
-    win.webContents.send('player-control', action)
-  }
-})
-
-ipcMain.on('desktop-lyric-move', (event, direction) => {
-  if (desktopLyricWindow) {
-    const [x, y] = desktopLyricWindow.getPosition()
-    const { width } = screen.getPrimaryDisplay().workAreaSize
-    const winWidth = desktopLyricWindow.getBounds().width
-    
-    // 每次移动 50px
-    const step = 50
-    let newX = x
-
-    if (direction === 'left') {
-      newX = x - step
-    } else if (direction === 'right') {
-      newX = x + step
-    }
-
-    // 边界检查（可选）
-    // if (newX < 0) newX = 0
-    // if (newX + winWidth > width) newX = width - winWidth
-
-    desktopLyricWindow.setPosition(newX, y)
-  }
-})
-
-ipcMain.on('lock-desktop-lyric', (event, locked) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(locked, { forward: true })
-    if (locked) {
-      desktopLyricWindow.setFocusable(false)
-      // 告诉渲染进程已锁定
-      desktopLyricWindow.webContents.send('desktop-lyric-locked', true)
-    } else {
-      desktopLyricWindow.setFocusable(true)
-      // 告诉渲染进程已解锁
-      desktopLyricWindow.webContents.send('desktop-lyric-locked', false)
-    }
-  }
-})
-
-// 添加解锁监听
-ipcMain.on('unlock-desktop-lyric', () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(false, { forward: true })
-    desktopLyricWindow.setFocusable(true)
-    desktopLyricWindow.webContents.send('desktop-lyric-locked', false)
-  }
-})
-
-ipcMain.on('update-desktop-lyric-settings', (event, settings) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send('update-settings', settings)
-  }
-})
 
 // 清除应用所有数据
 ipcMain.handle('app-clear-data', async () => {

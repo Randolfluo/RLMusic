@@ -11,10 +11,10 @@
         </template>
       </n-button>
     </div>
-    
+
     <div class="stats-grid">
       <!-- 资源统计 -->
-      <div class="stats-card glass-card blue-theme">
+      <div class="stats-card glass-card coral-theme">
         <div class="card-icon">
           <n-icon :component="Music" />
         </div>
@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card purple-theme">
+      <div class="stats-card glass-card teal-theme">
         <div class="card-icon">
           <n-icon :component="RecordDisc" />
         </div>
@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card pink-theme">
+      <div class="stats-card glass-card gold-theme">
         <div class="card-icon">
           <n-icon :component="People" />
         </div>
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card orange-theme">
+      <div class="stats-card glass-card purple-theme">
         <div class="card-icon">
           <n-icon :component="MusicList" />
         </div>
@@ -63,7 +63,7 @@
       </div>
 
       <!-- 时间与用户 -->
-      <div class="stats-card glass-card cyan-theme interactive" @click="toggleUnit('uptime')">
+      <div class="stats-card glass-card blue-theme interactive" @click="toggleUnit('uptime')">
         <div class="card-icon">
           <n-icon :component="Time" />
         </div>
@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card teal-theme interactive" @click="toggleUnit('music')">
+      <div class="stats-card glass-card green-theme interactive" @click="toggleUnit('music')">
         <div class="card-icon">
           <n-icon :component="Customer" />
         </div>
@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card green-theme interactive" @click="toggleUnit('listen')">
+      <div class="stats-card glass-card ink-theme interactive" @click="toggleUnit('listen')">
         <div class="card-icon">
           <n-icon :component="Headset" />
         </div>
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <div class="stats-card glass-card indigo-theme">
+      <div class="stats-card glass-card user-theme">
         <div class="card-icon">
           <n-icon :component="User" />
         </div>
@@ -121,9 +121,9 @@
 import { ref, onMounted, reactive } from "vue";
 import { getSystemStats, type SystemStats } from "@/api/system";
 import { ResultCode } from "@/utils/request";
-import { 
-  Refresh, Music, RecordDisc, People, MusicList, 
-  Time, Customer, Headset, User, ChartGraph 
+import {
+  Refresh, Music, RecordDisc, People, MusicList,
+  Time, Customer, Headset, User, ChartGraph
 } from "@icon-park/vue-next";
 
 const loading = ref(false);
@@ -202,9 +202,12 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 .stats-container {
   margin-bottom: 24px;
   animation: fadeIn 0.5s ease-out;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 
   .header {
     display: flex;
@@ -215,21 +218,27 @@ onMounted(() => {
     .section-title {
       font-size: 18px;
       font-weight: 700;
-      color: var(--n-text-color);
+      color: #1a1a1a;
       display: flex;
       align-items: center;
       gap: 8px;
       margin: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
 
       .title-icon {
-        color: var(--n-primary-color);
+        color: #e07a5f;
       }
     }
 
     .refresh-btn {
       transition: transform 0.3s ease;
+      background: #f5f2ed !important;
+      border-color: #ebe7e0 !important;
+      color: #666666 !important;
+
       &:hover {
         transform: rotate(180deg);
+        background: #ebe7e0 !important;
       }
     }
   }
@@ -239,14 +248,14 @@ onMounted(() => {
     grid-template-columns: repeat(1, 1fr);
     gap: 16px;
     width: 100%;
-    
+
     @media (min-width: 640px) {
       grid-template-columns: repeat(2, 1fr);
     }
-    
+
     @media (min-width: 1024px) {
       grid-template-columns: repeat(4, 1fr);
-      
+
       .span-2-desktop {
         grid-column: span 2;
       }
@@ -256,18 +265,23 @@ onMounted(() => {
   .stats-card {
     display: flex;
     align-items: center;
-    padding: 16px;
-    border-radius: 16px;
-    background: var(--n-card-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.04),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     min-height: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
     box-sizing: border-box;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      transform: translateY(-6px) scale(1.02);
+      box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.08),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.6);
       z-index: 1;
     }
 
@@ -279,15 +293,21 @@ onMounted(() => {
     }
 
     .card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 24px;
+      font-size: 26px;
       margin-right: 16px;
       flex-shrink: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    &:hover .card-icon {
+      transform: scale(1.1) rotate(5deg);
     }
 
     .card-content {
@@ -297,44 +317,71 @@ onMounted(() => {
       :deep(.n-statistic) {
         .n-statistic__label {
           font-size: 12px;
-          color: var(--n-text-color-3);
+          color: #666666;
           margin-bottom: 4px;
         }
         .n-statistic-value__content {
-          font-weight: 800;
+          font-weight: 700;
           font-size: 20px;
-          font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+          color: #1a1a1a;
+          font-family: 'Playfair Display', serif;
         }
         .n-statistic-value__suffix {
           font-size: 12px;
           margin-left: 4px;
-          color: var(--n-text-color-3);
+          color: #999999;
         }
       }
     }
 
-    // Color Themes
-    &.blue-theme { .card-icon { background: rgba(33, 150, 243, 0.1); color: #2196f3; } }
-    &.purple-theme { .card-icon { background: rgba(156, 39, 176, 0.1); color: #9c27b0; } }
-    &.pink-theme { .card-icon { background: rgba(233, 30, 99, 0.1); color: #e91e63; } }
-    &.orange-theme { .card-icon { background: rgba(255, 152, 0, 0.1); color: #ff9800; } }
-    &.cyan-theme { .card-icon { background: rgba(0, 188, 212, 0.1); color: #00bcd4; } }
-    &.teal-theme { .card-icon { background: rgba(0, 150, 136, 0.1); color: #009688; } }
-    &.green-theme { .card-icon { background: rgba(76, 175, 80, 0.1); color: #4caf50; } }
-    &.indigo-theme { .card-icon { background: rgba(63, 81, 181, 0.1); color: #3f51b5; } }
-    &.red-theme { .card-icon { background: rgba(244, 67, 54, 0.1); color: #f44336; } }
-    &.yellow-theme { .card-icon { background: rgba(255, 235, 59, 0.1); color: #fbc02d; } }
-    &.gray-theme { .card-icon { background: rgba(158, 158, 158, 0.1); color: #9e9e9e; } }
+    // Color Themes - 温暖米色调配色
+    &.coral-theme { .card-icon { background: linear-gradient(135deg, #e07a5f 0%, #d4a574 100%); color: white; } }
+    &.teal-theme { .card-icon { background: linear-gradient(135deg, #3d8b8b 0%, #5b8db8 100%); color: white; } }
+    &.gold-theme { .card-icon { background: linear-gradient(135deg, #d4a574 0%, #e07a5f 100%); color: white; } }
+    &.purple-theme { .card-icon { background: linear-gradient(135deg, #7c6fae 0%, #a89bc9 100%); color: white; } }
+    &.blue-theme { .card-icon { background: linear-gradient(135deg, #5b8db8 0%, #3d8b8b 100%); color: white; } }
+    &.green-theme { .card-icon { background: linear-gradient(135deg, #11998e 0%, #38d39f 100%); color: white; } }
+    &.ink-theme { .card-icon { background: linear-gradient(135deg, #2c3e50 0%, #3d8b8b 100%); color: white; } }
+    &.user-theme { .card-icon { background: linear-gradient(135deg, #3d8b8b 0%, #7c6fae 100%); color: white; } }
   }
 
   .divider {
     margin-top: 24px;
     opacity: 0.6;
+    border-color: #ebe7e0;
   }
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark Mode Support */
+:global(.dark) {
+  .stats-container {
+    .section-title {
+      color: #ffffff;
+    }
+
+    .stats-card {
+      background: rgba(40, 40, 40, 0.6);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+      &:hover {
+        background: rgba(50, 50, 50, 0.7);
+        box-shadow:
+          0 8px 30px rgba(0, 0, 0, 0.3),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    :deep(.n-statistic-value__content) {
+      color: #ffffff !important;
+    }
+  }
 }
 </style>

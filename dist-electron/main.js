@@ -1,4 +1,4 @@
-import { app, ipcMain, dialog, BrowserWindow, screen, shell } from "electron";
+import { app, ipcMain, dialog, BrowserWindow, shell } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -29,7 +29,6 @@ if (!app.requestSingleInstanceLock({ mode: appMode })) {
 }
 let win;
 let splash;
-let desktopLyricWindow = null;
 let serverProcess = null;
 let frontendServer = null;
 const getAppConfigPath = () => path.join(app.getPath("userData"), "app-config.json");
@@ -226,95 +225,6 @@ function createWindow() {
     return { action: "deny" };
   });
 }
-function createDesktopLyricWindow() {
-  if (desktopLyricWindow) return;
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  desktopLyricWindow = new BrowserWindow({
-    width: 800,
-    height: 120,
-    x: (width - 800) / 2,
-    y: height - 150,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: true,
-    // 允许调整大小
-    webPreferences: {
-      preload: path.join(__dirname$1, "../dist-electron/preload.mjs"),
-      nodeIntegration: true,
-      contextIsolation: true
-    },
-    backgroundColor: "#00000000"
-    // Ensure transparency
-  });
-  if (VITE_DEV_SERVER_URL) {
-    const url = VITE_DEV_SERVER_URL.endsWith("/") ? VITE_DEV_SERVER_URL : `${VITE_DEV_SERVER_URL}/`;
-    desktopLyricWindow.loadURL(`${url}#/desktop-lyric`);
-  } else {
-    desktopLyricWindow.loadFile(path.join(RENDERER_DIST, "index.html"), { hash: "desktop-lyric" });
-  }
-  desktopLyricWindow.on("closed", () => {
-    desktopLyricWindow = null;
-  });
-}
-ipcMain.on("open-desktop-lyric", () => {
-  createDesktopLyricWindow();
-});
-ipcMain.on("close-desktop-lyric", () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.close();
-  }
-});
-ipcMain.on("update-desktop-lyric", (event, data) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send("update-lyric", data);
-  }
-});
-ipcMain.on("desktop-lyric-control", (event, action) => {
-  if (win) {
-    win.webContents.send("player-control", action);
-  }
-});
-ipcMain.on("desktop-lyric-move", (event, direction) => {
-  if (desktopLyricWindow) {
-    const [x, y] = desktopLyricWindow.getPosition();
-    const { width } = screen.getPrimaryDisplay().workAreaSize;
-    desktopLyricWindow.getBounds().width;
-    const step = 50;
-    let newX = x;
-    if (direction === "left") {
-      newX = x - step;
-    } else if (direction === "right") {
-      newX = x + step;
-    }
-    desktopLyricWindow.setPosition(newX, y);
-  }
-});
-ipcMain.on("lock-desktop-lyric", (event, locked) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(locked, { forward: true });
-    if (locked) {
-      desktopLyricWindow.setFocusable(false);
-      desktopLyricWindow.webContents.send("desktop-lyric-locked", true);
-    } else {
-      desktopLyricWindow.setFocusable(true);
-      desktopLyricWindow.webContents.send("desktop-lyric-locked", false);
-    }
-  }
-});
-ipcMain.on("unlock-desktop-lyric", () => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.setIgnoreMouseEvents(false, { forward: true });
-    desktopLyricWindow.setFocusable(true);
-    desktopLyricWindow.webContents.send("desktop-lyric-locked", false);
-  }
-});
-ipcMain.on("update-desktop-lyric-settings", (event, settings) => {
-  if (desktopLyricWindow) {
-    desktopLyricWindow.webContents.send("update-settings", settings);
-  }
-});
 ipcMain.handle("app-clear-data", async () => {
   try {
     if (win) {

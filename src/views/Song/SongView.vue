@@ -310,6 +310,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .song-view-container {
+  background: #faf8f5;
   position: relative;
   min-height: 100vh;
   width: 100%;

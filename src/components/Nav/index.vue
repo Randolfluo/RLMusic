@@ -396,17 +396,14 @@ const dropdownSelect = (key) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  // Glassmorphism background is usually handled by the parent or global header style, 
-  // but we can add a subtle background here if needed. 
-  // For now, we assume the parent container might have some background, 
-  // or we make this nav transparent to blend with the page background.
-  background: rgba(255, 255, 255, 0.4);
+  // Glassmorphism background - warm beige theme
+  background: rgba(245, 242, 237, 0.85);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   transition: all 0.3s ease;
 
   :global(.dark) & {
-    background: rgba(30, 30, 30, 0.4);
+    background: rgba(40, 40, 40, 0.85);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
@@ -450,7 +447,7 @@ const dropdownSelect = (key) => {
       .app-name {
         font-size: 20px;
         font-weight: 800;
-        background: linear-gradient(120deg, var(--n-primary-color), #4facfe);
+        background: linear-gradient(135deg, #e07a5f 0%, #d4a574 50%, #3d8b8b 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.5px;

@@ -410,9 +410,9 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .main-layout {
-  height: 100vh;
-  /* 柔和的浅色渐变背景 */
-  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  min-height: 100vh;
+  /* 温暖米白色背景 */
+  background: #faf8f5;
   transition: background 0.3s ease;
 
   :global(.dark) & {
@@ -433,7 +433,11 @@ onMounted(() => {
   top: 60px;
   bottom: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: transparent !important;
+  background: #faf8f5 !important;
+
+  :global(.dark) & {
+    background: #1a1a1a !important;
+  }
 
   &.show-player {
     bottom: 90px; /* 留出播放器空间 */

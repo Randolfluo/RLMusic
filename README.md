@@ -280,3 +280,20 @@ MIT
 提示词是否打包进了electron服务端里
 修改项目名为RLMusic，删除所有localmusicplayer的字段
 electron端当歌曲无对应信息时，应该如何处理
+
+
+美化艺术家页 Artist/index.vue
+
+美化专辑页 Album/index.vue
+
+美化登录页 Login/LoginView.vue
+
+美化设置页 Setting/SettingView.vue
+
+美化历史记录页 History/HistoryView.vue
+
+美化错误状态页 403/404/500.vue
+
+美化我喜欢的歌曲页 User/like.vue
+
+歌曲管理页组件参照管理员端用户管理页ui设计，同时修复进入用户管理页时导航栏头像异常放大的问题

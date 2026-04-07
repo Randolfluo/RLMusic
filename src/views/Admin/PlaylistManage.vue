@@ -297,7 +297,7 @@ const confirmDelete = (row: any) => {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 // 导入特色字体
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 

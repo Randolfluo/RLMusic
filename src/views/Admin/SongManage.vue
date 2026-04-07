@@ -1,5 +1,5 @@
 <template>
-  <div class="user-manage-container">
+  <div class="song-manage-container">
     <!-- 动态背景层 -->
     <div class="ambient-background">
       <div class="gradient-blob blob-1"></div>
@@ -16,15 +16,15 @@
             <n-icon :component="Left" />
           </button>
           <div class="title-stack">
-            <span class="kicker">Administration</span>
-            <h1 class="headline">用户管理</h1>
-            <p class="deck">管理全站注册用户与权限</p>
+            <span class="kicker">Music Library</span>
+            <h1 class="headline">歌曲管理</h1>
+            <p class="deck">管理曲库中的所有音乐资源</p>
           </div>
         </div>
         <div class="header-right">
           <div class="stat-pill">
             <span class="stat-number">{{ pagination.itemCount }}</span>
-            <span class="stat-label">位用户</span>
+            <span class="stat-label">首歌曲</span>
           </div>
         </div>
       </header>
@@ -38,7 +38,7 @@
           <input
             v-model="searchText"
             type="text"
-            placeholder="搜索用户名..."
+            placeholder="搜索歌曲、歌手、专辑..."
             class="search-input"
             @keyup.enter="handleSearch"
           />
@@ -78,8 +78,8 @@
         </div>
         <div class="metric-divider"></div>
         <div class="metric-item">
-          <span class="metric-value">{{ userList.length }}</span>
-          <span class="metric-label">本页用户</span>
+          <span class="metric-value">{{ songList.length }}</span>
+          <span class="metric-label">本页歌曲</span>
         </div>
       </section>
 
@@ -89,11 +89,11 @@
           <div class="table-container">
             <n-data-table
               :columns="columns"
-              :data="userList"
+              :data="songList"
               :loading="loading"
               :row-key="(row: any) => row.id"
-              :row-class-name="'user-row'"
-              :scroll-x="900"
+              :row-class-name="'song-row'"
+              :scroll-x="1000"
             />
           </div>
         </div>
@@ -102,53 +102,65 @@
       <!-- 网格/卡片视图 -->
       <Transition name="fade-scale">
         <div v-if="viewMode === 'grid' || isMobile" class="grid-view">
-          <div class="user-cards">
+          <div class="song-cards">
             <div
-              v-for="user in userList"
-              :key="user.id"
-              class="user-card"
-              :class="{ 'is-admin': user.user_group === 'admin' }"
+              v-for="song in songList"
+              :key="song.id"
+              class="song-card"
+              @click="playSong(song)"
             >
               <div class="card-accent"></div>
               <div class="card-content">
-                <div class="user-header">
-                  <div class="avatar-ring">
-                    <div class="avatar">{{ user.username.charAt(0).toUpperCase() }}</div>
+                <div class="song-header">
+                  <div class="cover-wrapper">
+                    <img
+                      v-if="song.cover_url || song.album?.picUrl"
+                      :src="resolveCoverUrl(song.cover_url) || song.album?.picUrl || getSongCover(song.id)"
+                      class="cover-img"
+                      alt="cover"
+                    />
+                    <div v-else class="cover-placeholder">
+                      <n-icon :component="Music" />
+                    </div>
+                    <div class="play-overlay">
+                      <n-icon :component="Play" />
+                    </div>
                   </div>
-                  <div class="user-meta">
-                    <h3 class="user-name">{{ user.username }}</h3>
-                    <span class="user-id">#{{ user.id }}</span>
-                  </div>
-                  <div class="role-tag" :class="user.user_group">
-                    {{ user.user_group === 'admin' ? '管理员' : '用户' }}
+                  <div class="song-meta">
+                    <h3 class="song-title">{{ song.title || song.name }}</h3>
+                    <span class="song-artist">{{ formatArtists(song) }}</span>
                   </div>
                 </div>
 
-                <div class="user-details">
+                <div class="song-details">
                   <div class="detail-item">
-                    <n-icon :component="Mail" />
-                    <span>{{ user.email || '未绑定邮箱' }}</span>
+                    <n-icon :component="Disk" />
+                    <span>{{ song.album?.name || song.album_name || '未知专辑' }}</span>
                   </div>
                   <div class="detail-item">
                     <n-icon :component="Time" />
-                    <span>{{ user.last_login ? formatDate(user.last_login) : '从未登录' }}</span>
+                    <span>{{ formatDuration(song.duration) }}</span>
+                  </div>
+                  <div class="detail-item" v-if="song.play_count">
+                    <n-icon :component="PlayOne" />
+                    <span>{{ formatPlayCount(song.play_count) }} 次播放</span>
                   </div>
                 </div>
 
                 <div class="card-actions">
                   <button
-                    class="action-btn secondary"
-                    @click="confirmRoleChange(user)"
+                    class="action-btn primary"
+                    @click.stop="playSong(song)"
                   >
-                    <n-icon :component="Permissions" />
-                    {{ user.user_group === 'admin' ? '降级' : '提升' }}
+                    <n-icon :component="Play" />
+                    播放
                   </button>
                   <button
-                    class="action-btn danger"
-                    @click="confirmDelete(user)"
+                    class="action-btn secondary"
+                    @click.stop="viewDetail(song)"
                   >
-                    <n-icon :component="Delete" />
-                    删除
+                    <n-icon :component="Detail" />
+                    详情
                   </button>
                 </div>
               </div>
@@ -165,7 +177,7 @@
           :item-count="pagination.itemCount"
           :show-size-picker="true"
           :page-sizes="pagination.pageSizes"
-          @update:page="fetchUsers"
+          @update:page="fetchSongs"
           @update:page-size="handlePageSizeChange"
         />
       </div>
@@ -176,13 +188,30 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMessage, NPopconfirm, NDataTable, NPagination, NIcon, type DataTableColumns } from 'naive-ui';
-import { Left, Search, User, Mail, Time, Permissions, Delete, List, GridFour } from '@icon-park/vue-next';
-import { adminGetAllUsers, adminUpdateUserRole, adminDeleteUser, type UserInfo } from '@/api/user';
+import { useMessage, NDataTable, NPagination, NIcon, NTag, type DataTableColumns } from 'naive-ui';
+import { Left, Search, Music, Play, Disk, Time, PlayOne, Detail, List, GridFour } from '@icon-park/vue-next';
+import { searchSong } from '@/api/search';
+import { getSongCover, resolveCoverUrl } from '@/api/song';
 import { ResultCode } from "@/utils/request";
+import { useMusicDataStore } from '@/store/musicData';
+
+interface Song {
+  id: number;
+  title?: string;
+  name?: string;
+  artist?: string;
+  artists?: Array<{ name: string; id: number }>;
+  artist_name?: string;
+  album?: { name: string; id: number; picUrl?: string };
+  album_name?: string;
+  cover_url?: string;
+  duration?: number;
+  play_count?: number;
+}
 
 const router = useRouter();
 const message = useMessage();
+const music = useMusicDataStore();
 
 // 响应式窗口大小检测
 const windowWidth = ref(window.innerWidth);
@@ -196,7 +225,7 @@ const handleResize = () => {
 
 const loading = ref(false);
 const searchText = ref('');
-const userList = ref<UserInfo[]>([]);
+const songList = ref<Song[]>([]);
 
 const pagination = reactive({
   page: 1,
@@ -206,131 +235,142 @@ const pagination = reactive({
   pageSizes: [12, 24, 48],
 });
 
-const formatDate = (date: string) => {
-  const d = new Date(date);
-  return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const formatArtists = (song: Song) => {
+  if (song.artists && song.artists.length > 0) {
+    return song.artists.map(a => a.name).join(', ');
+  }
+  if (song.artist) {
+    return song.artist;
+  }
+  if (song.artist_name) {
+    return song.artist_name;
+  }
+  return '未知歌手';
+};
+
+const formatDuration = (duration?: number) => {
+  if (!duration) return '00:00';
+  const minutes = Math.floor(duration / 60);
+  const seconds = Math.floor(duration % 60);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const formatPlayCount = (count: number) => {
+  if (count >= 10000) {
+    return (count / 10000).toFixed(1) + 'w';
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + 'k';
+  }
+  return count.toString();
 };
 
 const handlePageSizeChange = (pageSize: number) => {
   pagination.pageSize = pageSize;
   pagination.page = 1;
-  fetchUsers();
+  fetchSongs();
 };
 
-const fetchUsers = async () => {
+const fetchSongs = async () => {
   loading.value = true;
   try {
-    const res = await adminGetAllUsers({
-      page: pagination.page,
+    const res: any = await searchSong({
+      keywords: searchText.value || 'a',
       limit: pagination.pageSize,
-      query: searchText.value
+      offset: (pagination.page - 1) * pagination.pageSize,
     });
     if (res.code === ResultCode.SUCCESS) {
-      userList.value = res.data.list;
-      pagination.itemCount = res.data.total;
+      songList.value = res.data?.songs || res.data?.result?.songs || [];
+      pagination.itemCount = res.data?.total || res.data?.result?.songCount || 0;
     } else {
-      message.error(res.message || '获取用户列表失败');
+      message.error(res.message || '获取歌曲列表失败');
     }
   } catch (error) {
-    message.error('获取用户列表失败');
+    message.error('获取歌曲列表失败');
   } finally {
     loading.value = false;
   }
 };
 
-const columns: DataTableColumns<UserInfo> = [
+const columns: DataTableColumns<Song> = [
   {
-    title: '用户',
-    key: 'username',
-    width: 200,
-    render(row: UserInfo) {
-      return h('div', { class: 'table-user-cell' }, [
-        h('div', { class: 'table-avatar' }, row.username.charAt(0).toUpperCase()),
-        h('div', { class: 'table-user-info' }, [
-          h('span', { class: 'table-username' }, row.username),
-          h('span', { class: 'table-user-id' }, `#${row.id}`)
+    title: '封面',
+    key: 'cover',
+    width: 80,
+    render(row: Song) {
+      const coverUrl = row.cover_url ? resolveCoverUrl(row.cover_url) : row.album?.picUrl || getSongCover(row.id);
+      return h('div', { class: 'table-cover' }, [
+        h('img', {
+          src: coverUrl,
+          class: 'table-cover-img',
+          onError: (e: Event) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/images/logo/favicon.png';
+          }
+        })
+      ]);
+    }
+  },
+  {
+    title: '歌曲',
+    key: 'title',
+    width: 280,
+    render(row: Song) {
+      return h('div', { class: 'table-song-cell' }, [
+        h('div', { class: 'table-song-info' }, [
+          h('span', { class: 'table-song-title' }, row.title || row.name),
+          h('span', { class: 'table-song-artist' }, formatArtists(row))
         ])
       ]);
     }
   },
   {
-    title: '角色',
-    key: 'user_group',
-    width: 120,
-    align: 'center',
-    render(row: UserInfo) {
-      return h('span', {
-        class: `table-role ${row.user_group}`
-      }, row.user_group === 'admin' ? '管理员' : '普通用户');
-    }
-  },
-  {
-    title: '邮箱',
-    key: 'email',
-    width: 240,
-    render(row: UserInfo) {
-      return h('div', { class: 'table-email' }, [
-        h(NIcon, { component: Mail, size: 14 }),
-        h('span', row.email || '未绑定邮箱')
+    title: '专辑',
+    key: 'album',
+    width: 200,
+    render(row: Song) {
+      return h('div', { class: 'table-album' }, [
+        h(NIcon, { component: Disk, size: 14 }),
+        h('span', row.album?.name || row.album_name || '未知专辑')
       ]);
     }
   },
   {
-    title: '上次登录',
-    key: 'last_login',
-    width: 180,
-    render(row: UserInfo) {
-      return h('div', { class: 'table-time' }, [
+    title: '时长',
+    key: 'duration',
+    width: 100,
+    render(row: Song) {
+      return h('div', { class: 'table-duration' }, [
         h(NIcon, { component: Time, size: 14 }),
-        h('span', row.last_login ? formatDate(row.last_login) : '从未登录')
+        h('span', formatDuration(row.duration))
       ]);
     }
   },
   {
     title: '操作',
     key: 'actions',
-    width: 160,
+    width: 140,
     fixed: 'right',
     align: 'center',
-    render(row: UserInfo) {
+    render(row: Song) {
       return h('div', { class: 'table-actions' }, [
-        h(
-          NPopconfirm,
-          {
-            onPositiveClick: () => handleRoleChange(row),
-            positiveText: '确认',
-            negativeText: '取消'
-          },
-          {
-            trigger: () => h('button', {
-              class: 'table-btn role',
-              title: row.user_group === 'admin' ? '降级' : '提升'
-            }, h(NIcon, { component: Permissions, size: 16 })),
-            default: () => `确定要${row.user_group === 'admin' ? '降级' : '提升'}该用户？`
-          }
-        ),
-        h(
-          NPopconfirm,
-          {
-            onPositiveClick: () => handleDelete(row),
-            positiveText: '确认删除',
-            negativeText: '取消'
-          },
-          {
-            trigger: () => h('button', {
-              class: 'table-btn delete',
-              title: '删除用户'
-            }, h(NIcon, { component: Delete, size: 16 })),
-            default: () => '确定删除该用户？此操作不可逆！'
-          }
-        )
+        h('button', {
+          class: 'table-btn play',
+          onClick: () => playSong(row),
+          title: '播放'
+        }, h(NIcon, { component: Play, size: 16 })),
+        h('button', {
+          class: 'table-btn detail',
+          onClick: () => viewDetail(row),
+          title: '查看详情'
+        }, h(NIcon, { component: Detail, size: 16 }))
       ]);
     }
   }
 ];
 
 onMounted(() => {
-  fetchUsers();
+  fetchSongs();
   window.addEventListener('resize', handleResize);
 });
 
@@ -340,52 +380,31 @@ onUnmounted(() => {
 
 const handleSearch = () => {
   pagination.page = 1;
-  fetchUsers();
+  fetchSongs();
 };
 
-const handleRoleChange = async (row: UserInfo) => {
-  const newRole = row.user_group === 'admin' ? 'user' : 'admin';
-  try {
-    const res = await adminUpdateUserRole(row.id, newRole);
-    if (res.code === ResultCode.SUCCESS) {
-      message.success('修改权限成功');
-      fetchUsers();
-    } else {
-      message.error(res.message || '修改权限失败');
-    }
-  } catch (error) {
-    message.error('修改权限失败');
-  }
+const playSong = (song: Song) => {
+  const track = {
+    ...song,
+    name: song.title || song.name,
+    artist: song.artists || [{ name: song.artist || song.artist_name, id: 0 }],
+    album: song.album || { name: song.album_name, id: 0 },
+    picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : song.album?.picUrl || getSongCover(song.id)
+  };
+
+  music.setPlaylists([track, ...songList.value.map(s => ({
+    ...s,
+    name: s.title || s.name,
+    artist: s.artists || [{ name: s.artist || s.artist_name, id: 0 }],
+    album: s.album || { name: s.album_name, id: 0 },
+    picUrl: s.cover_url ? resolveCoverUrl(s.cover_url) : s.album?.picUrl || getSongCover(s.id)
+  }))]);
+  music.setPlaySongIndex(0);
+  music.setPlayState(true);
 };
 
-const handleDelete = async (row: UserInfo) => {
-  try {
-    const res = await adminDeleteUser(row.id);
-    if (res.code === ResultCode.SUCCESS) {
-      message.success('删除用户成功');
-      if (userList.value.length === 1 && pagination.page > 1) {
-        pagination.page--;
-      }
-      fetchUsers();
-    } else {
-      message.error(res.message || '删除用户失败');
-    }
-  } catch (error) {
-    message.error('删除用户失败');
-  }
-};
-
-const confirmRoleChange = (row: UserInfo) => {
-  const target = row.user_group === 'admin' ? '普通用户' : '管理员';
-  if (window.confirm(`确定要将用户 ${row.username} 设为${target}吗？`)) {
-    handleRoleChange(row);
-  }
-};
-
-const confirmDelete = (row: UserInfo) => {
-  if (window.confirm('确定要删除该用户吗？此操作不可逆！')) {
-    handleDelete(row);
-  }
+const viewDetail = (song: Song) => {
+  router.push(`/song/${song.id}`);
 };
 </script>
 
@@ -405,15 +424,14 @@ const confirmDelete = (row: UserInfo) => {
   --accent-teal: #3d8b8b;
   --accent-gold: #d4a574;
   --accent-ink: #2c3e50;
-  --admin-purple: #7c6fae;
-  --user-blue: #5b8db8;
-  --danger-red: #c75b5b;
+  --music-green: #10b981;
+  --music-blue: #5b8db8;
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
   --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.1);
   --shadow-deep: 0 12px 40px rgba(0, 0, 0, 0.14);
 }
 
-.user-manage-container {
+.song-manage-container {
   min-height: 100vh;
   background: var(--bg-primary);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -458,10 +476,9 @@ const confirmDelete = (row: UserInfo) => {
   &.blob-3 {
     width: 400px;
     height: 400px;
-    background: linear-gradient(135deg, rgba(124, 111, 174, 0.15), rgba(224, 122, 95, 0.1));
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(224, 122, 95, 0.1));
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    left: 30%;
     animation-delay: -14s;
   }
 }
@@ -575,7 +592,7 @@ const confirmDelete = (row: UserInfo) => {
   align-items: baseline;
   gap: 6px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--accent-ink), #3d4f5f);
+  background: linear-gradient(135deg, var(--accent-teal), #5aadae);
   border-radius: 100px;
   color: white;
 
@@ -606,7 +623,7 @@ const confirmDelete = (row: UserInfo) => {
 
 .search-wrapper {
   flex: 1;
-  max-width: 400px;
+  max-width: 480px;
   display: flex;
   align-items: center;
   background: var(--bg-secondary);
@@ -780,62 +797,44 @@ const confirmDelete = (row: UserInfo) => {
   }
 }
 
-.table-user-cell {
+.table-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.table-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.table-song-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.table-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-coral), var(--accent-gold));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.table-user-info {
+.table-song-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
-.table-username {
+.table-song-title {
   font-weight: 600;
   color: var(--text-primary);
   font-size: 14px;
 }
 
-.table-user-id {
+.table-song-artist {
   font-size: 12px;
   color: var(--text-muted);
-  font-family: monospace;
 }
 
-.table-role {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-
-  &.admin {
-    background: rgba(124, 111, 174, 0.15);
-    color: var(--admin-purple);
-  }
-
-  &.user {
-    background: rgba(91, 141, 184, 0.15);
-    color: var(--user-blue);
-  }
-}
-
-.table-email, .table-time {
+.table-album, .table-duration {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -866,14 +865,14 @@ const confirmDelete = (row: UserInfo) => {
   transition: all 0.2s ease;
   color: var(--text-muted);
 
-  &.role:hover {
-    background: rgba(124, 111, 174, 0.1);
-    color: var(--admin-purple);
+  &.play:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--music-green);
   }
 
-  &.delete:hover {
-    background: rgba(199, 91, 91, 0.1);
-    color: var(--danger-red);
+  &.detail:hover {
+    background: rgba(91, 141, 184, 0.1);
+    color: var(--music-blue);
   }
 }
 
@@ -882,9 +881,9 @@ const confirmDelete = (row: UserInfo) => {
   margin-bottom: 24px;
 }
 
-.user-cards {
+.song-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
 
   @media (max-width: 768px) {
@@ -893,26 +892,25 @@ const confirmDelete = (row: UserInfo) => {
   }
 }
 
-.user-card {
+.song-card {
   position: relative;
   background: var(--bg-secondary);
   border-radius: 20px;
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: var(--shadow-soft);
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-medium);
-  }
 
-  &.is-admin {
-    .card-accent {
-      background: linear-gradient(180deg, var(--admin-purple), transparent);
+    .play-overlay {
+      opacity: 1;
     }
 
-    .avatar-ring {
-      background: linear-gradient(135deg, var(--admin-purple), #a89bc9);
+    .cover-img, .cover-placeholder {
+      transform: scale(1.05);
     }
   }
 }
@@ -923,86 +921,89 @@ const confirmDelete = (row: UserInfo) => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(180deg, var(--accent-coral), transparent);
+  background: linear-gradient(180deg, var(--accent-teal), transparent);
 }
 
 .card-content {
   padding: 20px;
 }
 
-.user-header {
+.song-header {
   display: flex;
   align-items: center;
   gap: 14px;
   margin-bottom: 16px;
 }
 
-.avatar-ring {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-coral), var(--accent-gold));
-  padding: 3px;
+.cover-wrapper {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+  .cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .cover-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--accent-coral), var(--accent-gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    transition: transform 0.4s ease;
+  }
+
+  .play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+    font-size: 28px;
+  }
 }
 
-.avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: var(--bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.user-meta {
+.song-meta {
   flex: 1;
   min-width: 0;
 }
 
-.user-name {
+.song-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.user-id {
-  font-size: 12px;
+.song-artist {
+  font-size: 13px;
   color: var(--text-muted);
-  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.role-tag {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-
-  &.admin {
-    background: rgba(124, 111, 174, 0.15);
-    color: var(--admin-purple);
-  }
-
-  &.user {
-    background: rgba(91, 141, 184, 0.15);
-    color: var(--user-blue);
-  }
-}
-
-.user-details {
+.song-details {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -1044,22 +1045,22 @@ const confirmDelete = (row: UserInfo) => {
   cursor: pointer;
   transition: all 0.2s ease;
 
+  &.primary {
+    background: linear-gradient(135deg, var(--accent-teal), #5aadae);
+    color: white;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(61, 139, 139, 0.35);
+    }
+  }
+
   &.secondary {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
 
     &:hover {
       background: var(--accent-ink);
-      color: white;
-    }
-  }
-
-  &.danger {
-    background: rgba(199, 91, 91, 0.1);
-    color: var(--danger-red);
-
-    &:hover {
-      background: var(--danger-red);
       color: white;
     }
   }

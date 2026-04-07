@@ -1,90 +1,113 @@
 <template>
-  <div class="playlist-detail">
-    <div class="header">
-      <div class="cover">
-        <n-image
-          class="cover-img"
-          :src="resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png'"
-          fallback-src="/images/logo/favicon.png"
-          object-fit="cover"
-          preview-disabled
-          @click="music.setBigPlayerState(true)"
-          style="cursor: pointer;"
-        />
-      </div>
-      <div class="info">
-        <div class="tag">歌单</div>
-        <div class="title">{{ playlist.title }}</div>
-        <div class="creator" v-if="playlist.owner_id">
-          Created by User {{ playlist.owner_id }}
-        </div>
-        <div class="desc" v-if="playlist.description">
-          {{ playlist.description }}
-        </div>
-        <div class="count-info">
-            歌曲数：{{ playlistSongCount }}
-        </div>
-        <div class="actions">
-          <n-button type="primary" round size="large" @click="playAll">
-            <template #icon>
-              <n-icon :component="Play" />
-            </template>
-            播放全部
-          </n-button>
-
-          <n-button 
-            v-if="user.userLogin && playlist.owner_id !== user.userData.userId"
-            round size="large" 
-            style="margin-left: 12px;" 
-            @click="handleSubscribe"
-            :loading="subLoading"
-          >
-            <template #icon>
-              <n-icon :component="Like" :color="isSubscribed ? '#d03050' : undefined" v-if="isSubscribed" />
-              <n-icon :component="Like" v-else />
-            </template>
-            {{ isSubscribed ? '取消收藏' : '收藏' }}
-          </n-button>
-
-          <n-button 
-            v-if="canGenerateIntro"
-            round size="large" 
-            style="margin-left: 12px;" 
-            @click="handleGenerateIntro"
-          >
-            <template #icon>
-              <n-icon :component="Voice" />
-            </template>
-            生成开场白
-          </n-button>
-        </div>
-      </div>
+  <div class="playlist-detail-page">
+    <!-- Background Decoration -->
+    <div class="bg-decoration">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
     </div>
 
-    <n-divider />
-
-    <div class="songs-list">
-      <n-spin :show="loading">
-        <SongList 
-          :songs="playlist.songs || []" 
-          :loading="loading"
-          :page="page"
-          :page-size="limit"
-          :playlist-id="playlist.id"
-          :is-owner="isOwner"
-          @refresh="refreshPlaylist"
-        />
-        <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
-          <Pagination
-            v-if="playlist.songs && playlist.songs.length > 0"
-            :totalCount="playlist.total || 0"
-            :pageNumber="page"
-            :showSizePicker="true"
-            @pageNumberChange="onPageChange"
-            @pageSizeChange="onPageSizeChange"
+    <div class="playlist-content">
+      <!-- Header Section -->
+      <div class="header-section">
+        <div class="cover-wrapper">
+          <n-image
+            class="cover-img"
+            :src="resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png'"
+            fallback-src="/images/logo/favicon.png"
+            object-fit="cover"
+            preview-disabled
+            @click="music.setBigPlayerState(true)"
+            style="cursor: pointer;"
           />
+          <div class="cover-overlay">
+            <n-icon :component="PlayOne" size="48" />
+          </div>
         </div>
-      </n-spin>
+
+        <div class="info-wrapper">
+          <div class="tag-badge">Playlist</div>
+          <h1 class="playlist-title">{{ playlist.title }}</h1>
+          <p class="playlist-desc" v-if="playlist.description">
+            {{ playlist.description }}
+          </p>
+          <div class="meta-info">
+            <div class="creator" v-if="playlist.owner_id">
+              <n-avatar round size="small" :src="userAvatar" fallback-src="/images/logo/favicon.png" />
+              <span>User {{ playlist.owner_id }}</span>
+            </div>
+            <span class="divider" v-if="playlist.owner_id">•</span>
+            <span class="song-count">{{ playlistSongCount }} 首歌曲</span>
+          </div>
+          <div class="actions">
+            <n-button
+              type="primary"
+              round
+              size="large"
+              class="play-btn"
+              :style="{
+                background: `linear-gradient(135deg, ${themeColor} 0%, ${adjustColor(themeColor, -20)} 100%)`,
+                boxShadow: `0 8px 20px ${themeColor}40`
+              }"
+              @click="playAll"
+            >
+              <template #icon>
+                <n-icon :component="Play" />
+              </template>
+              播放全部
+            </n-button>
+
+            <n-button
+              v-if="user.userLogin && playlist.owner_id !== user.userData.userId"
+              round size="large"
+              class="action-btn"
+              @click="handleSubscribe"
+              :loading="subLoading"
+            >
+              <template #icon>
+                <n-icon :component="Like" :color="isSubscribed ? '#d03050' : undefined" v-if="isSubscribed" />
+                <n-icon :component="Like" v-else />
+              </template>
+              {{ isSubscribed ? '取消收藏' : '收藏' }}
+            </n-button>
+
+            <n-button
+              v-if="canGenerateIntro"
+              round size="large"
+              class="action-btn"
+              @click="handleGenerateIntro"
+            >
+              <template #icon>
+                <n-icon :component="Voice" />
+              </template>
+              生成开场白
+            </n-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Songs List Section -->
+      <div class="songs-section glass-panel">
+        <n-spin :show="loading">
+          <SongList
+            :songs="playlist.songs || []"
+            :loading="loading"
+            :page="page"
+            :page-size="limit"
+            :playlist-id="playlist.id"
+            :is-owner="isOwner"
+            @refresh="refreshPlaylist"
+          />
+          <div class="pagination-container" v-if="playlist.songs && playlist.songs.length > 0">
+            <Pagination
+              :totalCount="playlist.total || 0"
+              :pageNumber="page"
+              :showSizePicker="true"
+              @pageNumberChange="onPageChange"
+              @pageSizeChange="onPageSizeChange"
+            />
+          </div>
+        </n-spin>
+      </div>
     </div>
   </div>
 </template>
@@ -92,8 +115,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
-import { 
-  getPublicPlaylistDetail, 
+import {
+  getPublicPlaylistDetail,
   getPrivatePlaylistDetail,
   subscribePlaylist,
   unsubscribePlaylist,
@@ -101,9 +124,9 @@ import {
 } from "@/api/playlist";
 import { generatePlaylistIntros } from "@/api/ai";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NButton, NIcon, NImage, NDivider, NSpin, useDialog } from "naive-ui";
-import { Play, Like, Voice } from "@icon-park/vue-next";
-import { musicStore, userStore } from "@/store";
+import { useMessage, NButton, NIcon, NImage, NSpin, NAvatar, useDialog } from "naive-ui";
+import { Play, Like, Voice, PlayOne } from "@icon-park/vue-next";
+import { musicStore, userStore, settingStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
 import { resolveCoverUrl } from "@/api/song";
@@ -113,31 +136,38 @@ const message = useMessage();
 const dialog = useDialog();
 const music = musicStore();
 const user = userStore();
+const setting = settingStore();
+
+// 主题色
+const themeColor = computed(() => setting.themeColor);
 
 const loading = ref(false);
-const subLoading = ref(false); // 收藏按钮loading
-const isSubscribed = ref(false); // 是否已收藏
+const subLoading = ref(false);
+const isSubscribed = ref(false);
 const playlist = ref<any>({});
 const page = ref(1);
 const limit = ref(30);
 
 const playlistSongCount = computed(() => {
-    const totalSongs = Number(playlist.value.total_songs);
-    if (Number.isFinite(totalSongs) && totalSongs > 0) return totalSongs;
-    const total = Number(playlist.value.total);
-    if (Number.isFinite(total) && total > 0) return total;
-    if (Array.isArray(playlist.value.songs)) return playlist.value.songs.length;
-    return 0;
+  const totalSongs = Number(playlist.value.total_songs);
+  if (Number.isFinite(totalSongs) && totalSongs > 0) return totalSongs;
+  const total = Number(playlist.value.total);
+  if (Number.isFinite(total) && total > 0) return total;
+  if (Array.isArray(playlist.value.songs)) return playlist.value.songs.length;
+  return 0;
 });
 
 const isOwner = computed(() => {
-    if (!user.userLogin || !playlist.value.owner_id) return false;
-    return Number(user.userData.userId) === Number(playlist.value.owner_id);
+  if (!user.userLogin || !playlist.value.owner_id) return false;
+  return Number(user.userData.userId) === Number(playlist.value.owner_id);
 });
 
 const canGenerateIntro = computed(() => {
-    // 只有拥有者或者是管理员才能生成开场白
-    return isOwner.value || user.userData.userGroup === 'admin';
+  return isOwner.value || user.userData.userGroup === 'admin';
+});
+
+const userAvatar = computed(() => {
+  return user.userData.avatarUrl || '/images/logo/favicon.png';
 });
 
 onMounted(() => {
@@ -152,7 +182,6 @@ onMounted(() => {
 const fetchPlaylistDetail = async (id: string) => {
   loading.value = true;
   try {
-    // 尝试获取公开歌单详情
     try {
       const res = await getPublicPlaylistDetail(id, page.value, limit.value);
       if (res.code === ResultCode.SUCCESS) {
@@ -161,16 +190,14 @@ const fetchPlaylistDetail = async (id: string) => {
         return;
       }
     } catch (e) {
-      // 获取公开详情失败（可能是私有歌单），继续尝试获取私有详情
+      // Continue to try private
     }
 
-    // 尝试获取私有歌单详情
     const res = await getPrivatePlaylistDetail(id, page.value, limit.value);
     if (res.code === ResultCode.SUCCESS) {
       playlist.value = res.data;
       checkSubscribedStatus(id);
     } else {
-      // 如果都失败了
       message.error(res.message || "获取歌单详情失败");
     }
   } catch (error) {
@@ -182,68 +209,64 @@ const fetchPlaylistDetail = async (id: string) => {
 
 const checkSubscribedStatus = async (id: string) => {
   if (!user.userLogin) return;
-  // 如果是自己的歌单，不需要检查（也不显示按钮）
-  // 但此时 playlist.value 已经赋值，可以判断。不过 api 调用是异步的，不影响
   try {
-      const res = await checkIsSubscribed(id);
-      if (res.code === ResultCode.SUCCESS) {
-          isSubscribed.value = res.data.is_subscribed;
-      }
+    const res = await checkIsSubscribed(id);
+    if (res.code === ResultCode.SUCCESS) {
+      isSubscribed.value = res.data.is_subscribed;
+    }
   } catch (e) {
-      console.error(e);
+    console.error(e);
   }
-}
+};
 
 const handleSubscribe = async () => {
-    if (!user.userLogin) {
-        message.warning("请先登录");
-        return;
+  if (!user.userLogin) {
+    message.warning("请先登录");
+    return;
+  }
+  const id = playlist.value.id;
+  subLoading.value = true;
+  try {
+    let res;
+    if (isSubscribed.value) {
+      res = await unsubscribePlaylist(id);
+    } else {
+      res = await subscribePlaylist(id);
     }
-    const id = playlist.value.id;
-    subLoading.value = true;
-    try {
-        let res;
-        if (isSubscribed.value) {
-            // 取消收藏
-            res = await unsubscribePlaylist(id);
-        } else {
-            // 收藏
-            res = await subscribePlaylist(id);
-        }
-        
-        if (res.code === ResultCode.SUCCESS) {
-            isSubscribed.value = !isSubscribed.value;
-            message.success(isSubscribed.value ? "收藏成功" : "已取消收藏");
-        } else {
-            message.error(res.message || "操作失败");
-        }
-    } catch (e) {
-        message.error("操作失败");
-    } finally {
-        subLoading.value = false;
+
+    if (res.code === ResultCode.SUCCESS) {
+      isSubscribed.value = !isSubscribed.value;
+      message.success(isSubscribed.value ? "收藏成功" : "已取消收藏");
+    } else {
+      message.error(res.message || "操作失败");
     }
-}
+  } catch (e) {
+    message.error("操作失败");
+  } finally {
+    subLoading.value = false;
+  }
+};
 
 const handleGenerateIntro = () => {
-    dialog.info({
-        title: "生成开场白",
-        content: `确定要为歌单 "${playlist.value.title}" 生成开场白吗？`,
-        positiveText: "生成",
-        negativeText: "取消",
-        onPositiveClick: () => {
-            generatePlaylistIntros(playlist.value.id)
-                .then((res) => {
-                    if (res.code === ResultCode.SUCCESS) {
-                        message.success("已开始生成开场白，请稍后查看");
-                    } else {
-                        message.error(res.message || "生成失败");
-                    }
-                })
-                .catch(() => {
-                    message.error("请求失败");
-                });
-        },
-    });
+  dialog.info({
+    title: "生成开场白",
+    content: `确定要为歌单 "${playlist.value.title}" 生成开场白吗？`,
+    positiveText: "生成",
+    negativeText: "取消",
+    onPositiveClick: () => {
+      generatePlaylistIntros(playlist.value.id)
+        .then((res) => {
+          if (res.code === ResultCode.SUCCESS) {
+            message.success("已开始生成开场白，请稍后查看");
+          } else {
+            message.error(res.message || "生成失败");
+          }
+        })
+        .catch(() => {
+          message.error("请求失败");
+        });
+    },
+  });
 };
 
 const onPageChange = (val: number) => {
@@ -257,181 +280,328 @@ const onPageSizeChange = (val: number) => {
   fetchPlaylistDetail(route.params.id as string);
 };
 
+// 辅助函数：调整颜色亮度
+const adjustColor = (color: string, amount: number): string => {
+  const hex = color.replace('#', '');
+  const r = Math.max(0, Math.min(255, parseInt(hex.slice(0, 2), 16) + amount));
+  const g = Math.max(0, Math.min(255, parseInt(hex.slice(2, 4), 16) + amount));
+  const b = Math.max(0, Math.min(255, parseInt(hex.slice(4, 6), 16) + amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 const refreshPlaylist = () => {
-    fetchPlaylistDetail(route.params.id as string);
+  fetchPlaylistDetail(route.params.id as string);
 };
 
 const playAll = () => {
-    if (playlist.value.songs && playlist.value.songs.length > 0) {
-        // 重构歌曲数据结构以适配 store??
-        // 假设 store 需要标准结构，目前后端返回的字段已经在 Metadata 中包含
-        // 我们可能需要适配一下字段名，例如 song.name -> song.title
-        // 暂时直接传，视 backend 返回的 json 结构而定
-        
-        // 适配 backend song -> frontend song
-        // Backend: title, artist_name, album_title, id, cover_url
-        // Frontend Player usually expects: name, artist (array), album object...
-        // 让我们先按后端其实返回了完整的 Song 对象来处理
-       
-        // 这里做一个简单的映射，防止前端播放器报错，具体视 Player 组件实现而定
-        const tracks = playlist.value.songs.map((song: any) => ({
-            ...song,
-            name: song.title, // 适配 name
-            artist: song.artists && song.artists.length > 0
-              ? song.artists
-              : [{ name: song.artist_name, id: song.artist_id }], // 适配 artist array
-            album: { 
-              name: song.album_title, 
-              id: song.album_id, 
-              picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : resolveCoverUrl(playlist.value.cover_url) 
-            } // 适配 album
-        }));
+  if (playlist.value.songs && playlist.value.songs.length > 0) {
+    const tracks = playlist.value.songs.map((song: any) => ({
+      ...song,
+      name: song.title,
+      artist: song.artists && song.artists.length > 0
+        ? song.artists
+        : [{ name: song.artist_name, id: song.artist_id }],
+      album: {
+        name: song.album_title,
+        id: song.album_id,
+        picUrl: song.cover_url ? resolveCoverUrl(song.cover_url) : resolveCoverUrl(playlist.value.cover_url)
+      }
+    }));
 
-        music.setPlaylists(tracks);
-        music.setPlaySongIndex(0);
-        music.setPlayState(true);
-    }
-}
-
-
-
+    music.setPlaylists(tracks);
+    music.setPlaySongIndex(0);
+    music.setPlayState(true);
+  }
+};
 </script>
 
 <style scoped lang="scss">
-:deep(.n-data-table .n-data-table-td) {
-  background-color: transparent !important;
+.playlist-detail-page {
+  background: #faf8f5;
+  position: relative;
+  min-height: 100vh;
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .bg-decoration {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: blob-float 20s infinite ease-in-out;
+    }
+
+    .blob-1 {
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+      top: -100px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #14b8a6 0%, #5eead4 100%);
+      bottom: -100px;
+      left: -100px;
+      animation-delay: -5s;
+    }
+  }
+
+  @keyframes blob-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -30px) scale(1.05); }
+    50% { transform: translate(-10px, 20px) scale(0.95); }
+    75% { transform: translate(15px, 10px) scale(1.02); }
+  }
 }
-:deep(.n-data-table .n-data-table-tr:hover .n-data-table-td) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+
+.playlist-content {
+  position: relative;
+  z-index: 1;
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-:deep(.n-data-table .n-data-table-th) {
-  background-color: transparent !important;
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.playlist-detail {
-  padding: 24px;
-  
-  .header {
-    display: flex;
-    margin-bottom: 24px;
-    
-    .cover {
-      width: 200px;
-      height: 200px;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-right: 24px;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      
-      .cover-img {
-        width: 100%;
-        height: 100%;
+
+/* Header Section */
+.header-section {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+
+  .cover-wrapper {
+    flex-shrink: 0;
+    width: 240px;
+    height: 240px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+      transform: scale(1.03) rotate(2deg);
+
+      .cover-overlay {
+        opacity: 1;
       }
     }
-    
-    .info {
-      flex: 1;
+
+    .cover-img {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s ease;
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
       display: flex;
-      flex-direction: column;
-      
-      .tag {
-        display: inline-block;
-        border: 1px solid var(--n-color-primary);
-        color: var(--n-color-primary);
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 13px;
-        align-self: flex-start;
-        margin-bottom: 12px;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.3s ease;
+      color: white;
+      backdrop-filter: blur(4px);
+    }
+  }
+
+  .info-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 240px;
+
+    .tag-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: v-bind('`linear-gradient(135deg, ${themeColor} 0%, ${adjustColor(themeColor, 20)} 100%)`');
+      color: white;
+      width: fit-content;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px v-bind('`${themeColor}40`');
+    }
+
+    .playlist-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      margin: 0 0 12px 0;
+      color: var(--n-text-color);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .playlist-desc {
+      font-size: 15px;
+      color: var(--n-text-color-3);
+      line-height: 1.6;
+      margin: 0 0 20px 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .meta-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--n-text-color-3);
+
+      .creator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
-      
-      .title {
+
+      .divider {
+        opacity: 0.5;
+      }
+
+      .song-count {
+        font-weight: 500;
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+
+      .play-btn {
+        border: none;
+        padding: 0 28px;
+        height: 48px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        &:hover {
+          transform: translateY(-2px);
+          filter: brightness(1.1);
+        }
+      }
+
+      .action-btn {
+        padding: 0 24px;
+        height: 48px;
+        font-size: 15px;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.9);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+      }
+    }
+  }
+}
+
+/* Songs Section */
+.songs-section {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .playlist-detail-page {
+    padding: 20px;
+  }
+
+  .header-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px;
+    gap: 24px;
+
+    .cover-wrapper {
+      width: 180px;
+      height: 180px;
+    }
+
+    .info-wrapper {
+      min-height: auto;
+      align-items: center;
+
+      .tag-badge {
+        align-self: center;
+      }
+
+      .playlist-title {
         font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 12px;
-        color: var(--n-text-color);
       }
-      
-      .creator, .desc {
-        color: var(--n-text-color-3);
-        margin-bottom: 8px;
-        font-size: 14px;
-      }
-      
-      .desc {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-      }
-      
-      .count-info {
-        font-size: 12px;
-        color: var(--n-text-color-3);
-        margin-bottom: 8px;
+
+      .meta-info {
+        justify-content: center;
       }
 
       .actions {
-        margin-top: auto;
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   }
+}
 
-  @media (max-width: 768px) {
-    padding: 16px;
-    
-    .header {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      
-      .cover {
-        margin-right: 0;
-        margin-bottom: 16px;
-        width: 160px;
-        height: 160px;
-      }
-      
-      .info {
-        align-items: center;
-        
-        .tag {
-          align-self: center;
-        }
-        
-        .title {
-          font-size: 20px;
-        }
-        
-        .actions {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 12px;
-          margin-top: 16px;
-          
-          .n-button {
-            margin-left: 0 !important;
-            margin-bottom: 8px;
-          }
-        }
-      }
+/* Dark Mode Support */
+:global(.dark) {
+  .playlist-detail-page {
+    .header-section {
+      background: rgba(30, 30, 30, 0.7);
+      border-color: rgba(255, 255, 255, 0.1);
     }
-  }
 
-  .songs-list {
-    margin-top: 20px;
-    
-    :deep(.song-title-link) {
-      color: inherit;
-      cursor: pointer;
-      text-decoration: none;
-      transition: color 0.3s var(--n-bezier);
-      
-      &:hover {
-        color: var(--n-color-primary);
-      }
+    .songs-section {
+      background: rgba(30, 30, 30, 0.6);
+      border-color: rgba(255, 255, 255, 0.08);
     }
   }
 }

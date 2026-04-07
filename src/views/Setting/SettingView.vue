@@ -128,46 +128,7 @@ const {
   musicFrequencyScale,
   particleEffect,
   particleLimit,
-  desktopLyricShow,
-  desktopLyricFontSize,
-  desktopLyricLock,
-  desktopLyricFollowTheme,
-  desktopLyricShowTranslation,
 } = storeToRefs(setting);
-
-// 桌面歌词设置
-const handleDesktopLyricToggle = (val) => {
-  if (window.ipcRenderer) {
-    if (val) {
-      window.ipcRenderer.send("open-desktop-lyric");
-    } else {
-      window.ipcRenderer.send("close-desktop-lyric");
-    }
-  }
-};
-
-const handleDesktopLyricLock = (val) => {
-  if (window.ipcRenderer) {
-    window.ipcRenderer.send("lock-desktop-lyric", val);
-  }
-};
-
-const handleDesktopLyricSettings = () => {
-  if (window.ipcRenderer) {
-    window.ipcRenderer.send("update-desktop-lyric-settings", {
-      fontSize: desktopLyricFontSize.value,
-      followTheme: desktopLyricFollowTheme.value,
-      themeColor: themeColor.value,
-      showTranslation: desktopLyricShowTranslation.value,
-    });
-  }
-};
-
-watch(themeColor, () => {
-  if (desktopLyricFollowTheme.value) {
-    handleDesktopLyricSettings();
-  }
-});
 
 // 歌词滚动位置
 const lyricsBlockOptions = [
@@ -237,23 +198,6 @@ const playerStyleOptions = [
                 <div class="desc">保存并显示最近的搜索记录</div>
               </div>
               <n-switch v-model:value="searchHistory" :round="false" />
-            </div>
-          </n-card>
-
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">服务器地址</div>
-                <div class="desc">配置后端服务接口地址</div>
-              </div>
-              <n-input
-                class="control input-control"
-                v-model:value="serverUrl"
-                placeholder="http://127.0.0.1:12345"
-                @blur="saveServerUrl"
-                @keyup.enter="saveServerUrl"
-                size="small"
-              />
             </div>
           </n-card>
 
@@ -464,70 +408,6 @@ const playerStyleOptions = [
         </div>
       </div>
 
-      <div class="setting-section">
-        <h2 class="section-title">
-          <n-icon :component="Config" /> 桌面歌词
-        </h2>
-        <div class="setting-grid">
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">开启桌面歌词</div>
-                <div class="desc">在屏幕上显示悬浮歌词</div>
-              </div>
-              <n-switch v-model:value="desktopLyricShow" :round="false" @update:value="handleDesktopLyricToggle" />
-            </div>
-          </n-card>
-
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">锁定歌词窗口</div>
-                <div class="desc">锁定后无法拖动和调整大小</div>
-              </div>
-              <n-switch v-model:value="desktopLyricLock" :round="false" @update:value="handleDesktopLyricLock" />
-            </div>
-          </n-card>
-
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">歌词跟随主题</div>
-                <div class="desc">歌词颜色跟随应用主题色</div>
-              </div>
-              <n-switch v-model:value="desktopLyricFollowTheme" :round="false" @update:value="handleDesktopLyricSettings" />
-            </div>
-          </n-card>
-
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">显示双语歌词</div>
-                <div class="desc">在桌面歌词中显示翻译</div>
-              </div>
-              <n-switch v-model:value="desktopLyricShowTranslation" :round="false" @update:value="handleDesktopLyricSettings" />
-            </div>
-          </n-card>
-
-          <n-card class="setting-card full-width" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">歌词字体大小</div>
-                <div class="desc">调整桌面歌词的显示大小: {{ desktopLyricFontSize }}rem</div>
-              </div>
-              <n-slider
-                class="control slider"
-                v-model:value="desktopLyricFontSize"
-                :step="0.1"
-                :min="1.0"
-                :max="5.0"
-                :tooltip="false"
-                @update:value="handleDesktopLyricSettings"
-              />
-            </div>
-          </n-card>
-        </div>
-      </div>
     </div>
 
     <n-modal v-model:show="showPasswordModal" preset="card" title="修改密码" style="width: 400px">

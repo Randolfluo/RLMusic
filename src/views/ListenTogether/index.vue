@@ -602,6 +602,7 @@ onUnmounted(() => {
 
 <style scoped lang="scss">
 .listen-together {
+  background: #faf8f5;
   height: calc(100vh - 100px); // 减去顶部导航和底部播放条的高度
   display: flex;
   gap: 24px;

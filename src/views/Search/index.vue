@@ -338,6 +338,7 @@ const delHistory = () => {
 
 <style lang="scss" scoped>
 .search-page {
+    background: #faf8f5;
     padding: 40px;
     max-width: 1200px;
     margin: 0 auto;

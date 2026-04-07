@@ -2,7 +2,7 @@
   <div class="home">
     <div class="page-header">
       <h1 class="welcome-text">
-        <span class="greeting">Hello,</span> 
+        <span class="greeting">Hello,</span>
         <span class="highlight">{{ userStore.userLogin ? userStore.userData?.nickname : 'Music Lover' }}</span>
       </h1>
       <p class="subtitle">Enjoy your local music journey</p>
@@ -36,9 +36,9 @@
               点击二维码切换网络 ({{ currentIpIndex + 1 }}/{{ urls.length }})
             </p>
           </div>
-          
-          <div 
-            class="modal-qr-wrapper" 
+
+          <div
+            class="modal-qr-wrapper"
             :class="{ clickable: urls.length > 1 }"
             @click="nextIp"
           >
@@ -90,12 +90,12 @@
         </n-button>
       </div>
 
-      <PlaylistGrid 
-        :loading="publicLoading" 
-        :playlists="publicPlaylists" 
-        empty-text="暂无公共歌单" 
-        collapsed 
-        :collapsed-rows="2" 
+      <PlaylistGrid
+        :loading="publicLoading"
+        :playlists="publicPlaylists"
+        empty-text="暂无公共歌单"
+        collapsed
+        :collapsed-rows="2"
         cols="2 s:3 m:4 l:6 xl:6"
         @refresh="getPublicList"
         class="fade-in-section"
@@ -116,13 +116,13 @@
         </n-button>
       </div>
 
-      <PlaylistGrid 
+      <PlaylistGrid
         v-if="userStore.userLogin"
-        :loading="privateLoading" 
-        :playlists="privatePlaylists" 
-        empty-text="暂无私有歌单" 
-        collapsed 
-        :collapsed-rows="2" 
+        :loading="privateLoading"
+        :playlists="privatePlaylists"
+        empty-text="暂无私有歌单"
+        collapsed
+        :collapsed-rows="2"
         cols="2 s:3 m:4 l:6 xl:6"
         @refresh="getPrivateList"
         class="fade-in-section delay-1"
@@ -261,7 +261,7 @@ const fetchLocalIPs = async () => {
 const getPublicList = async () => {
   publicLoading.value = true;
   try {
-    const res = await getPublicPlaylists(1, 12); // 首页加载12个(2行x6列)
+    const res = await getPublicPlaylists(1, 12);
     if (res.code === ResultCode.SUCCESS) {
         if (Array.isArray(res.data)) {
             publicPlaylists.value = res.data;
@@ -279,7 +279,7 @@ const getPublicList = async () => {
 const getPrivateList = async () => {
   privateLoading.value = true;
   try {
-    const res = await getUserPrivatePlaylists(1, 12); // 首页加载12个(2行x6列)
+    const res = await getUserPrivatePlaylists(1, 12);
     if (res.code === ResultCode.SUCCESS) {
         if (Array.isArray(res.data)) {
             privatePlaylists.value = res.data;
@@ -288,7 +288,6 @@ const getPrivateList = async () => {
         }
     }
   } catch (error) {
-    // 可能是未登录或权限问题，这里简单处理
     console.error(error);
   } finally {
     privateLoading.value = false;
@@ -297,12 +296,42 @@ const getPrivateList = async () => {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 .home {
   padding: 32px;
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
-  
+  position: relative;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+
+  /* 温暖米色调背景 */
+  background: #faf8f5;
+
+  /* 动态渐变装饰 */
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(224, 122, 95, 0.15), transparent),
+      radial-gradient(ellipse 80% 50% at 80% 120%, rgba(61, 139, 139, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 90% 20%, rgba(212, 165, 116, 0.1), transparent);
+    animation: bg-shift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes bg-shift {
+    0% { transform: translateX(0) scale(1); }
+    100% { transform: translateX(-20px) scale(1.05); }
+  }
+
   @media (max-width: 768px) {
     padding: 16px;
   }
@@ -312,41 +341,42 @@ const getPrivateList = async () => {
 .page-header {
   margin-bottom: 40px;
   animation: fade-in-down 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-  
+
   @media (max-width: 768px) {
     margin-bottom: 24px;
-    
+
     .welcome-text {
       font-size: 32px;
     }
   }
-  
+
   .welcome-text {
     font-size: 42px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
     margin: 0 0 8px 0;
     letter-spacing: -1px;
-    color: var(--n-text-color);
-    
+    color: #1a1a1a;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+
     .greeting {
-      opacity: 0.6;
+      opacity: 0.5;
       font-weight: 400;
       margin-right: 12px;
     }
-    
+
     .highlight {
-      background: linear-gradient(120deg, var(--n-color-primary) 0%, #a78bfa 100%);
+      background: linear-gradient(120deg, #e07a5f 0%, #d4a574 100%);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       display: inline-block;
     }
   }
-  
+
   .subtitle {
     font-size: 16px;
-    color: var(--n-text-color-3);
+    color: #666666;
     margin: 0;
     font-weight: 500;
     opacity: 0.8;
@@ -360,7 +390,7 @@ const getPrivateList = async () => {
   gap: 24px;
   margin-bottom: 48px;
   animation: fade-in-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s backwards;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -376,16 +406,16 @@ const getPrivateList = async () => {
   justify-content: center;
   color: white;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   position: relative;
   overflow: hidden;
   height: 140px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 
   &:hover {
     transform: translateY(-6px) scale(1.01);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
-    
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+
     .card-bg-deco, .card-bg-deco-listen {
       transform: scale(1.2) rotate(10deg);
       opacity: 0.8;
@@ -432,7 +462,7 @@ const getPrivateList = async () => {
     padding: 16px 20px;
     height: auto;
     min-height: 120px;
-    
+
     .text-info {
       h3 {
         font-size: 20px;
@@ -449,7 +479,7 @@ const getPrivateList = async () => {
     h3 {
       font-size: 24px;
       margin: 0 0 8px 0;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.5px;
       text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -473,7 +503,7 @@ const getPrivateList = async () => {
       font-weight: 500;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.1);
-      
+
       @media (max-width: 768px) {
         font-size: 12px;
         padding: 4px 8px;
@@ -515,43 +545,48 @@ const getPrivateList = async () => {
 
 .access-card {
   cursor: pointer;
-  
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(135deg, #2c3e50 0%, #3d8b8b 100%) !important;
+
   .qr-code-wrapper {
-    background: white;
-    padding: 8px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     margin-left: 24px;
     cursor: zoom-in;
     flex-shrink: 0;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+
     @media (max-width: 768px) {
       margin-left: 12px;
-      padding: 6px;
-      
+      padding: 8px;
+      border-radius: 12px;
+
       .qrcode {
-        width: 60px !important;
-        height: 60px !important;
+        width: 56px !important;
+        height: 56px !important;
       }
     }
-    
+
     &:hover {
-      transform: scale(1.1) rotate(2deg);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+      transform: scale(1.12) rotate(3deg);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     }
-    
+
     .qrcode {
       display: block;
-      border-radius: 4px;
+      border-radius: 8px;
     }
   }
 }
 
 .listen-card {
-  background: linear-gradient(120deg, #845ec2 0%, #d65db1 100%);
+  background: linear-gradient(120deg, #e07a5f 0%, #d4a574 100%);
   position: relative;
-  
+
   &::after {
     content: "";
     position: absolute;
@@ -567,10 +602,10 @@ const getPrivateList = async () => {
 /* Content Sections */
 .content-section {
   margin-bottom: 48px;
-  
+
   &.fade-in-section {
     animation: fade-in-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
-    
+
     &.delay-1 {
       animation-delay: 0.3s;
     }
@@ -583,20 +618,21 @@ const getPrivateList = async () => {
   align-items: center;
   margin-bottom: 24px;
   padding: 0 4px;
-  
+
   .title-group {
     display: flex;
     align-items: center;
     gap: 12px;
-    
+
     h2 {
       font-size: 24px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
       letter-spacing: -0.5px;
-      color: var(--n-text-color);
+      color: #1a1a1a;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    
+
     .badge {
       font-size: 11px;
       font-weight: 700;
@@ -604,12 +640,12 @@ const getPrivateList = async () => {
       letter-spacing: 1px;
       padding: 4px 8px;
       border-radius: 6px;
-      background: rgba(32, 128, 240, 0.1);
-      color: var(--n-color-primary);
-      
+      background: rgba(61, 139, 139, 0.1);
+      color: #3d8b8b;
+
       &.private {
-        background: rgba(240, 160, 32, 0.1);
-        color: #f0a020;
+        background: rgba(224, 122, 95, 0.1);
+        color: #e07a5f;
       }
     }
   }
@@ -617,29 +653,29 @@ const getPrivateList = async () => {
   .more-btn {
     font-size: 14px;
     font-weight: 600;
-    color: var(--n-text-color-3);
+    color: #666666;
     padding: 6px 12px;
     border-radius: 20px;
     transition: all 0.2s;
-    
+
     &:hover {
-      background: var(--n-color-modal);
-      color: var(--n-color-primary);
+      background: #f5f2ed;
+      color: #e07a5f;
     }
   }
 }
 
 /* QR Modal Styles */
 .qr-modal-container {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #faf8f5;
+  border: 1px solid #ebe7e0;
   border-radius: 24px;
   padding: 32px;
   width: 360px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
   animation: modal-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -651,7 +687,7 @@ const getPrivateList = async () => {
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+    background: linear-gradient(90deg, #e07a5f 0%, #d4a574 100%);
   }
 
   .modal-header {
@@ -662,16 +698,14 @@ const getPrivateList = async () => {
       font-size: 20px;
       font-weight: 700;
       margin: 0;
-      background: linear-gradient(45deg, #333 0%, #666 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #1a1a1a;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     .subtitle {
       margin: 6px 0 0 0;
       font-size: 13px;
-      color: #666;
+      color: #666666;
     }
   }
 
@@ -679,22 +713,22 @@ const getPrivateList = async () => {
     background: white;
     padding: 12px;
     border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     position: relative;
     transition: all 0.3s ease;
-    
+
     &.clickable {
       cursor: pointer;
-      
+
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
-        
+        box-shadow: 0 8px 30px rgba(224, 122, 95, 0.2);
+
         .switch-hint {
           opacity: 1;
         }
       }
-      
+
       &:active {
         transform: scale(0.98);
       }
@@ -710,7 +744,7 @@ const getPrivateList = async () => {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(102, 126, 234, 0.8);
+      background: rgba(224, 122, 95, 0.8);
       width: 64px;
       height: 64px;
       border-radius: 50%;
@@ -720,7 +754,7 @@ const getPrivateList = async () => {
       opacity: 0;
       transition: opacity 0.3s ease;
       backdrop-filter: blur(4px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 12px rgba(224, 122, 95, 0.3);
     }
   }
 
@@ -733,28 +767,28 @@ const getPrivateList = async () => {
 
     .url-pill {
       flex: 1;
-      background: linear-gradient(to right, #f5f7fa, #ffffff);
+      background: #f5f2ed;
       padding: 10px 16px;
       border-radius: 12px;
       font-family: 'DM Mono', monospace;
       font-size: 13px;
-      color: #333;
+      color: #1a1a1a;
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      border: 1px solid #eef2f6;
+      border: 1px solid #ebe7e0;
       transition: all 0.2s;
 
       &:hover {
-        border-color: #dbe4ef;
+        border-color: #d4a574;
         background: white;
       }
     }
 
     .copy-btn {
       transition: all 0.2s;
-      
+
       &:hover {
         transform: rotate(15deg) scale(1.1);
       }

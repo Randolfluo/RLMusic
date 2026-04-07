@@ -1,9 +1,24 @@
 // 通过 vite.config.js 全局注入到每个组件
 // 主题色， 可以在其他vue文件直接使用的
-$mainColor: var(--main-primary-color, #009688);
-$mainSecondaryColor: var(--main-secondary-color, #0096881f);
+$mainColor: var(--main-primary-color, #e07a5f);
+$mainSecondaryColor: var(--main-secondary-color, rgba(224, 122, 95, 0.12));
 
-// 响应式布局       
+// 全局背景色 - 温暖米白色主题
+.n-layout {
+    background-color: #faf8f5 !important;
+}
+
+.n-layout-content {
+    background-color: #faf8f5 !important;
+}
+
+// 深色模式适配
+.dark .n-layout,
+.dark .n-layout-content {
+    background-color: #1a1a1a !important;
+}
+
+// 响应式布局
 // 定义一个名为 changeWidth 的 mixin，带默认参数 $padding
 //并根据屏幕尺寸动态调整页面的左右内边距（Padding），从而适配不同设备。
 @mixin changeWidth($padding:10vw) {

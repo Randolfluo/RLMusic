@@ -183,16 +183,6 @@ const routes: any = [
     },
     component: () => import("@/views/State/404.vue"),
   },
-  // 桌面歌词
-  {
-    path: "/desktop-lyric",
-    name: "desktop-lyric",
-    meta: {
-      title: "桌面歌词",
-      hideLayout: true,
-    },
-    component: () => import("@/views/DesktopLyric/index.vue"),
-  },
   // 管理员后台
   {
     path: "/admin",
@@ -222,6 +212,16 @@ const routes: any = [
       needLogin: true,
     },
     component: () => import("@/views/Admin/PlaylistManage.vue"),
+  },
+  // 管理员歌曲管理
+  {
+    path: "/admin/songs",
+    name: "admin-songs",
+    meta: {
+      title: "歌曲管理",
+      needLogin: true,
+    },
+    component: () => import("@/views/Admin/SongManage.vue"),
   },
 
   {

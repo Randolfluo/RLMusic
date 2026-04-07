@@ -73,7 +73,7 @@ const changeTheme = () => {
 
 //自定义主题色配置
 const themeOverrides = computed(() => {
-  const color = setting.getThemeColor || "#009688";
+  const color = setting.getThemeColor || "#e07a5f";
   return {
     common: {
       primaryColor: color,
@@ -89,7 +89,7 @@ const hexToRgba = (hex, alpha) => {
   let r = 0,
     g = 0,
     b = 0;
-  if(!hex) return `rgba(0, 150, 136, ${alpha})`;
+  if(!hex) return `rgba(224, 122, 95, ${alpha})`;
   if (hex.length == 4) {
     r = parseInt("0x" + hex[1] + hex[1]);
     g = parseInt("0x" + hex[2] + hex[2]);
@@ -104,7 +104,7 @@ const hexToRgba = (hex, alpha) => {
 
 // 更新 CSS 变量
 const updateThemeVars = () => {
-  const color = setting.getThemeColor || "#009688";
+  const color = setting.getThemeColor || "#e07a5f";
   const el = document.documentElement;
   el.style.setProperty("--main-primary-color", color);
   el.style.setProperty("--main-secondary-color", hexToRgba(color, 0.12));

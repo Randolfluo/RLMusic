@@ -1,6 +1,6 @@
 <template>
   <div class="user-center">
-    <!-- 背景装饰 -->
+    <!-- 背景装饰 - 温暖米色调 -->
     <div class="bg-decoration">
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
@@ -56,7 +56,7 @@
             <div class="stat-label">累计听歌时长</div>
           </div>
         </div>
-        
+
         <div class="stat-card glass-card-sm">
           <div class="stat-icon-wrapper ip-icon">
             <n-icon :component="Connection" size="24" />
@@ -66,7 +66,7 @@
             <div class="stat-label">当前 IP 地址</div>
           </div>
         </div>
-        
+
         <div class="stat-card glass-card-sm">
            <div class="stat-icon-wrapper like-icon">
             <n-icon :component="Like" size="24" />
@@ -79,12 +79,12 @@
       </div>
 
       <div class="actions-section">
-        <n-button 
-          class="logout-btn" 
-          type="error" 
-          secondary 
-          round 
-          size="large" 
+        <n-button
+          class="logout-btn"
+          type="error"
+          secondary
+          round
+          size="large"
           @click="handleLogout"
         >
           <template #icon>
@@ -102,14 +102,14 @@
 import { userStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useMessage, type UploadCustomRequestOptions } from "naive-ui";
-import { 
-    Camera, 
+import {
+    Camera,
     Time,
     Connection,
     Like,
     Power
 } from "@icon-park/vue-next";
-import axios from "@/utils/request"; 
+import axios from "@/utils/request";
 import { computed, onMounted, ref } from "vue";
 import { getUserInfo, uploadAvatar, resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
@@ -173,6 +173,8 @@ const handleLogout = () => {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 .user-center {
   padding: 40px 20px;
   min-height: 90vh;
@@ -182,6 +184,8 @@ const handleLogout = () => {
   justify-content: center;
   align-items: flex-start;
   padding-top: 80px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #faf8f5;
 
   .bg-decoration {
       position: fixed;
@@ -196,15 +200,15 @@ const handleLogout = () => {
       .blob {
           position: absolute;
           border-radius: 50%;
-          filter: blur(80px);
-          opacity: 0.4;
-          animation: float 20s infinite ease-in-out;
+          filter: blur(100px);
+          opacity: 0.5;
+          animation: float 25s infinite ease-in-out;
       }
 
       .blob-1 {
           width: 600px;
           height: 600px;
-          background: var(--n-primary-color);
+          background: linear-gradient(135deg, rgba(224, 122, 95, 0.25), rgba(212, 165, 116, 0.2));
           top: -200px;
           right: -100px;
           animation-delay: 0s;
@@ -213,10 +217,10 @@ const handleLogout = () => {
       .blob-2 {
           width: 500px;
           height: 500px;
-          background: #4facfe;
+          background: linear-gradient(135deg, rgba(61, 139, 139, 0.2), rgba(91, 141, 184, 0.15));
           bottom: -100px;
           left: -150px;
-          animation-delay: -5s;
+          animation-delay: -8s;
       }
   }
 }
@@ -232,16 +236,19 @@ const handleLogout = () => {
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(20px);
+    background: #f5f2ed;
     border-radius: 32px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+    border: 1px solid #ebe7e0;
+
     @media (prefers-color-scheme: dark) {
-        background: rgba(30, 30, 30, 0.65);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        background: rgba(30, 30, 30, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 10px 40px rgba(0,0,0,0.4),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     }
 }
 
@@ -251,10 +258,10 @@ const handleLogout = () => {
     padding: 40px;
     gap: 40px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    
+
     &:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
     }
 
     @media (max-width: 600px) {
@@ -273,40 +280,43 @@ const handleLogout = () => {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        
+
         .user-main {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 8px;
-            
+
             @media (max-width: 600px) {
                 justify-content: center;
                 flex-wrap: wrap;
             }
-            
+
             .username {
                 margin: 0;
                 font-size: 32px;
-                font-weight: 800;
-                color: var(--n-text-color);
+                font-weight: 700;
+                color: #1a1a1a;
                 line-height: 1.2;
+                font-family: 'Playfair Display', serif;
             }
-            
+
             .id-tag {
                 font-weight: 600;
+                background: rgba(61, 139, 139, 0.1) !important;
+                color: #3d8b8b !important;
             }
         }
-        
+
         .user-email {
-            color: var(--n-text-color-3);
+            color: #666666;
             font-size: 15px;
             margin: 0 0 16px 0;
         }
-        
+
         .user-bio {
             font-size: 16px;
-            color: var(--n-text-color-2);
+            color: #666666;
             line-height: 1.6;
             opacity: 0.8;
             font-style: italic;
@@ -319,22 +329,22 @@ const handleLogout = () => {
     cursor: pointer;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     border: 4px solid rgba(255, 255, 255, 0.8);
-    
+
     @media (prefers-color-scheme: dark) {
         border: 4px solid rgba(255, 255, 255, 0.1);
     }
-    
+
     &:hover {
         transform: scale(1.05) rotate(2deg);
-        box-shadow: 0 12px 32px rgba(var(--n-primary-color-rgb), 0.3);
+        box-shadow: 0 12px 32px rgba(224, 122, 95, 0.3);
     }
 
     .user-avatar {
         display: block;
-        background-color: var(--n-card-color);
+        background-color: #f5f2ed;
     }
 
     .avatar-overlay {
@@ -343,7 +353,7 @@ const handleLogout = () => {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(44, 62, 80, 0.7);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -352,7 +362,7 @@ const handleLogout = () => {
         transition: all 0.3s ease;
         backdrop-filter: blur(4px);
         gap: 8px;
-        
+
         .upload-text {
             color: white;
             font-size: 12px;
@@ -369,11 +379,11 @@ const handleLogout = () => {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
-    
+
     @media (max-width: 600px) {
         grid-template-columns: 1fr;
     }
-    
+
     .stat-card {
         padding: 24px;
         border-radius: 24px;
@@ -382,29 +392,29 @@ const handleLogout = () => {
         gap: 20px;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         cursor: default;
-        
+
         &.glass-card-sm {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(245, 242, 237, 0.7);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+
             @media (prefers-color-scheme: dark) {
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.05);
             }
         }
-        
+
         &:hover {
             transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+
             @media (prefers-color-scheme: dark) {
                 background: rgba(255, 255, 255, 0.1);
             }
         }
-        
+
         .stat-icon-wrapper {
             width: 56px;
             height: 56px;
@@ -414,37 +424,40 @@ const handleLogout = () => {
             justify-content: center;
             color: white;
             font-size: 24px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-            
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
             &.time-icon {
-                background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-                color: #d03050;
+                background: linear-gradient(135deg, #e07a5f 0%, #d4a574 100%);
+                color: white;
+                box-shadow: 0 8px 20px rgba(224, 122, 95, 0.35);
             }
-            
+
             &.ip-icon {
-                background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
-                color: #0052d4;
+                background: linear-gradient(135deg, #3d8b8b 0%, #5b8db8 100%);
+                color: white;
+                box-shadow: 0 8px 20px rgba(61, 139, 139, 0.35);
             }
-            
+
             &.like-icon {
-                background: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-                color: #555;
+                background: linear-gradient(135deg, #7c6fae 0%, #a89bc9 100%);
+                color: white;
+                box-shadow: 0 8px 20px rgba(124, 111, 174, 0.35);
             }
         }
-        
+
         .stat-content {
             .stat-value {
                 font-size: 20px;
-                font-weight: 800;
-                color: var(--n-text-color);
+                font-weight: 700;
+                color: #1a1a1a;
                 line-height: 1.2;
                 margin-bottom: 4px;
-                font-family: 'DM Mono', monospace;
+                font-family: 'Playfair Display', serif;
             }
-            
+
             .stat-label {
                 font-size: 13px;
-                color: var(--n-text-color-3);
+                color: #666666;
                 font-weight: 500;
             }
         }
@@ -455,18 +468,18 @@ const handleLogout = () => {
     display: flex;
     justify-content: center;
     margin-top: 20px;
-    
+
     .logout-btn {
         padding: 0 40px;
         height: 50px;
         font-weight: 600;
         font-size: 16px;
-        box-shadow: 0 4px 15px rgba(208, 48, 80, 0.3);
+        box-shadow: 0 4px 20px rgba(199, 91, 91, 0.3);
         transition: all 0.3s;
-        
+
         &:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(208, 48, 80, 0.4);
+            box-shadow: 0 8px 30px rgba(199, 91, 91, 0.4);
         }
     }
 }

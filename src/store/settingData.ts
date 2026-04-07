@@ -4,7 +4,7 @@ export const useSettingDataStore = defineStore("settingData", {
   state: () => {
     return {
       // 主题色
-      themeColor: "#009688",
+      themeColor: "#e07a5f",
       // 搜索历史
       searchHistory: true,
       // 轮播图显示
@@ -41,12 +41,6 @@ export const useSettingDataStore = defineStore("settingData", {
       lrcMousePause: true,
       // 播客模式
       podcastMode: false,
-      // 桌面歌词
-      desktopLyricShow: false,
-      desktopLyricFontSize: 3.0,
-      desktopLyricLock: false,
-      desktopLyricFollowTheme: true,
-      desktopLyricShowTranslation: true,
     };
   },
   getters: {
@@ -71,26 +65,6 @@ export const useSettingDataStore = defineStore("settingData", {
     // 设置播客模式
     setPodcastMode(value: boolean) {
       this.podcastMode = value;
-    },
-    // 设置桌面歌词显示
-    setDesktopLyricShow(value: boolean) {
-      this.desktopLyricShow = value;
-    },
-    // 设置桌面歌词大小
-    setDesktopLyricFontSize(value: number) {
-      this.desktopLyricFontSize = value;
-    },
-    // 设置桌面歌词锁定
-    setDesktopLyricLock(value: boolean) {
-      this.desktopLyricLock = value;
-    },
-    // 设置桌面歌词跟随主题
-    setDesktopLyricFollowTheme(value: boolean) {
-      this.desktopLyricFollowTheme = value;
-    },
-    // 设置桌面歌词显示翻译
-    setDesktopLyricShowTranslation(value: boolean) {
-      this.desktopLyricShowTranslation = value;
     },
   },
   // 开启数据持久化
