@@ -858,9 +858,14 @@ watch(
         .n-icon {
           font-size: 22px;
           padding: 8px;
+          color: var(--n-text-color-3);
+          transition: all 0.3s;
           &.active {
             background-color: $mainColor;
             color: var(--n-color-embedded);
+          }
+          &:hover {
+            color: $mainColor;
           }
         }
       }

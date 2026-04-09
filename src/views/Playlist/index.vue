@@ -32,8 +32,13 @@
           </p>
           <div class="meta-info">
             <div class="creator" v-if="playlist.owner_id">
-              <n-avatar round size="small" :src="userAvatar" fallback-src="/images/logo/favicon.png" />
-              <span>User {{ playlist.owner_id }}</span>
+              <n-avatar
+                round
+                size="small"
+                :src="playlist.owner?.avatarUrl || playlist.owner?.avatar_url || '/images/logo/favicon.png'"
+                fallback-src="/images/logo/favicon.png"
+              />
+              <span>{{ playlist.owner?.nickname || playlist.owner?.username || `User ${playlist.owner_id}` }}</span>
             </div>
             <span class="divider" v-if="playlist.owner_id">•</span>
             <span class="song-count">{{ playlistSongCount }} 首歌曲</span>
@@ -164,10 +169,6 @@ const isOwner = computed(() => {
 
 const canGenerateIntro = computed(() => {
   return isOwner.value || user.userData.userGroup === 'admin';
-});
-
-const userAvatar = computed(() => {
-  return user.userData.avatarUrl || '/images/logo/favicon.png';
 });
 
 onMounted(() => {

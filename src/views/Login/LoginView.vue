@@ -155,7 +155,7 @@
                 size="large"
               >
                 <template #icon>
-                  <n-icon :component="UserAdd" />
+                  <n-icon :component="PeoplePlus" />
                 </template>
                 注册
               </n-button>
@@ -173,7 +173,7 @@ import { useRouter } from "vue-router";
 import { userStore } from "@/store";
 import { login, register } from "@/api/login";
 import { PersonRound, PasswordRound, EmailRound } from "@vicons/material";
-import { Login as LoginIcon, UserAdd } from "@icon-park/vue-next";
+import { Login as LoginIcon, PeoplePlus } from "@icon-park/vue-next";
 import { useMessage, NIcon } from "naive-ui";
 import { ResultCode } from "@/utils/request";
 import { aesEncrypt, aesDecrypt } from "@/utils/encrypt";
