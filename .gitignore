@@ -87,3 +87,6 @@ android/
 
 .VSCodeCounter/
 .vscode/
+
+# Claude Code
+.claude/
