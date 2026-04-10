@@ -1,0 +1,301 @@
+<mxfile host="65bd71144e">
+    <diagram id="CoOmmgMGk9ZQoWxZv8kB" name="第 1 页">
+        <mxGraphModel dx="1454" dy="555" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <!-- 标题 -->
+                <mxCell id="title" value="B/S 架构概念图 (Browser/Server)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=18;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="250" y="20" width="350" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 客户端层 ========== -->
+                <mxCell id="client-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="50" y="70" width="250" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="client-title" value="客户端层 (Client Tier)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="70" y="80" width="150" height="25" as="geometry"/>
+                </mxCell>
+
+                <!-- 浏览器 -->
+                <mxCell id="browser" value="&lt;b&gt;Web 浏览器&lt;/b&gt;&#xa;(Chrome/Edge/Safari)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11" parent="1" vertex="1">
+                    <mxGeometry x="80" y="115" width="190" height="50" as="geometry"/>
+                </mxCell>
+
+                <!-- 浏览器组件 -->
+                <mxCell id="ui" value="用户界面&#xa;(HTML/CSS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="70" y="180" width="80" height="40" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="js" value="交互逻辑&#xa;(JavaScript)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="170" y="180" width="80" height="40" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="cache" value="本地缓存&#xa;(Cookie/Storage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize="10" parent="1" vertex="1">
+                    <mxGeometry x="115" y="225" width="90" height="35" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 负载均衡层 ========== -->
+                <mxCell id="lb-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3;dashed=1" parent="1" vertex="1">
+                    <mxGeometry x="330" y="60" width="320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="lb-title" value="负载均衡层 (Load Balancer)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="340" y="70" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lb" value="&lt;b&gt;负载均衡器&lt;/b&gt;&#xa;(Nginx/HAProxy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="510" y="67" width="120" height="36" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 服务器层 ========== -->
+                <mxCell id="server-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="330" y="120" width="320" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="server-title" value="服务器层 (Server Tier)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="350" y="130" width="150" height="25" as="geometry"/>
+                </mxCell>
+
+                <!-- Web 服务器 -->
+                <mxCell id="web-server" value="&lt;b&gt;Web 服务器&lt;/b&gt;&#xa;(静态资源/反向代理)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="350" y="160" width="100" height="45" as="geometry"/>
+                </mxCell>
+
+                <!-- 应用服务器集群 -->
+                <mxCell id="app-server1" value="&lt;b&gt;应用服务器 1&lt;/b&gt;&#xa;(业务逻辑)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="470" y="160" width="80" height="45" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="app-server2" value="&lt;b&gt;应用服务器 2&lt;/b&gt;&#xa;(业务逻辑)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="560" y="160" width="80" height="45" as="geometry"/>
+                </mxCell>
+
+                <!-- 服务器组件 -->
+                <mxCell id="auth" value="认证模块&#xa;(JWT/Session)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="350" y="220" width="70" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="business" value="业务逻辑&#xa;(Controller)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="430" y="220" width="70" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="session" value="会话管理&#xa;(Redis)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="510" y="220" width="60" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="message" value="消息队列&#xa;(MQ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="580" y="220" width="60" height="35" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 缓存层 ========== -->
+                <mxCell id="cache-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="330" y="310" width="140" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="cache-title" value="缓存层" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="340" y="318" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="Redis&#xa;(热点数据)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="355" y="340" width="50" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="cdn" value="CDN&#xa;(静态加速)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="410" y="340" width="50" height="32" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 数据层 ========== -->
+                <mxCell id="data-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="510" y="280" width="140" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="data-title" value="数据层 (Data Tier)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="525" y="290" width="130" height="25" as="geometry"/>
+                </mxCell>
+
+                <!-- 数据库集群 -->
+                <mxCell id="db-master" value="&lt;b&gt;主数据库&lt;/b&gt;&#xa;(写操作)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="525" y="320" width="50" height="50" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="db-slave" value="&lt;b&gt;从数据库&lt;/b&gt;&#xa;(读操作)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="590" y="320" width="50" height="50" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="storage" value="文件存储&#xa;(OSS/NAS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="530" y="385" width="55" height="32" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="backup" value="备份/日志&#xa;(冷备)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="595" y="385" width="45" height="32" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 安全/监控层 ========== -->
+                <mxCell id="security-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="50" y="280" width="250" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="security-title" value="安全与监控层" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="70" y="290" width="100" height="20" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="firewall" value="防火墙&#xa;(WAF)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="70" y="320" width="60" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="https" value="HTTPS&#xa;(SSL/TLS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="145" y="320" width="60" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="monitor" value="监控告警&#xa;(Prometheus)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="215" y="320" width="70" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="log" value="日志收集&#xa;(ELK)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="105" y="370" width="60" height="35" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="gateway" value="API网关&#xa;(限流/熔断)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="180" y="370" width="70" height="35" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 层间连接线 ========== -->
+
+                <!-- 请求流程 -->
+                <mxCell id="req-arrow" value="&lt;b&gt;HTTP/HTTPS&lt;/b&gt;" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;" parent="1" source="client-bg" target="lb-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="300" y="140" as="sourcePoint"/>
+                        <mxPoint x="330" y="85" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="lb-to-server" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;dashed=1;" parent="1" source="lb-bg" target="server-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="490" y="110" as="sourcePoint"/>
+                        <mxPoint x="490" y="120" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="server-to-cache" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;" parent="1" source="server-bg" target="cache-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="400" y="300" as="sourcePoint"/>
+                        <mxPoint x="400" y="310" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="cache-to-db" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;" parent="1" source="cache-bg" target="data-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="470" y="345" as="sourcePoint"/>
+                        <mxPoint x="510" y="345" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 响应箭头 -->
+                <mxCell id="resp-arrow" value="&lt;b&gt;HTTP 响应&lt;/b&gt;" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;dashed=1;" parent="1" source="server-bg" target="client-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="330" y="240" as="sourcePoint"/>
+                        <mxPoint x="300" y="240" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 内部连接 -->
+                <mxCell id="web-to-lb" style="strokeColor=#000000;endArrow=classic;endFill=1;" parent="1" source="lb" target="web-server" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="490" y="110"/>
+                            <mxPoint x="400" y="110"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="lb-to-app1" style="strokeColor=#000000;endArrow=classic;endFill=1;" parent="1" source="lb" target="app-server1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="510" y="103" as="sourcePoint"/>
+                        <mxPoint x="510" y="160" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="lb-to-app2" style="strokeColor=#000000;endArrow=classic;endFill=1;" parent="1" source="lb" target="app-server2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="570" y="103" as="sourcePoint"/>
+                        <mxPoint x="600" y="160" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="app-to-db" style="strokeColor=#000000;endArrow=classic;endFill=1;" parent="1" source="app-server1" target="db-master" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="510" y="260"/>
+                            <mxPoint x="550" y="260"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="app2-to-db" style="strokeColor=#000000;endArrow=classic;endFill=1;" parent="1" source="app-server2" target="db-slave" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="600" y="260"/>
+                            <mxPoint x="615" y="260"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="db-sync" value="主从同步" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;fontSize=8" parent="1" source="db-master" target="db-slave" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="575" y="345" as="sourcePoint"/>
+                        <mxPoint x="590" y="345" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 安全层连接 -->
+                <mxCell id="sec-to-client" style="strokeColor=#000000;endArrow=none;endFill=0;strokeWidth=1;dashed=1;" parent="1" source="security-bg" target="client-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="175" y="280" as="sourcePoint"/>
+                        <mxPoint x="175" y="270" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="gateway-to-lb" style="strokeColor=#000000;endArrow=none;endFill=0;strokeWidth=1;dashed=1;" parent="1" source="gateway" target="lb-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="215" y="355"/>
+                            <mxPoint x="300" y="355"/>
+                            <mxPoint x="300" y="85"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 组件间连接 -->
+                <mxCell id="auth-conn" style="strokeColor=#000000;endArrow=none;endFill=0;strokeWidth=1;" parent="1" source="web-server" target="auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="biz-conn" style="strokeColor=#000000;endArrow=none;endFill=0;strokeWidth=1;" parent="1" source="app-server1" target="business" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="session-conn" style="strokeColor=#000000;endArrow=none;endFill=0;strokeWidth=1;" parent="1" source="app-server2" target="session" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- ========== 协议标注 ========== -->
+                <mxCell id="protocol-legend" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="50" y="430" width="600" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend-title" value="通信协议:" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="60" y="440" width="70" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="proto1" value="HTTP/HTTPS - 超文本传输协议" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="130" y="440" width="150" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="proto2" value="SQL - 数据库查询语言" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="290" y="440" width="120" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="proto3" value="TCP/IP - 网络传输协议" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="420" y="440" width="120" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="proto4" value="WebSocket - 全双工通信" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="130" y="455" width="140" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="proto5" value="Redis协议 - 缓存通信" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="290" y="455" width="120" height="20" as="geometry"/>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
