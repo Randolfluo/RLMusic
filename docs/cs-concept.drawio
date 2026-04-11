@@ -1,0 +1,214 @@
+<mxfile host="65bd71144e">
+    <diagram id="CsArchitecture" name="C/S 架构">
+        <mxGraphModel dx="711" dy="653" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <!-- 标题 -->
+                <mxCell id="title" value="C/S 架构工作原理图" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="264" y="20" width="300" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- 客户端层 -->
+                <mxCell id="client-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="40" y="70" width="200" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="client-title" value="客户端层 (Client)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="60" y="80" width="160" height="20" as="geometry"/>
+                </mxCell>
+
+                <!-- Electron 客户端 -->
+                <mxCell id="electron-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;arcSize=2" parent="1" vertex="1">
+                    <mxGeometry x="55" y="110" width="170" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="electron-title" value="Electron 桌面端" style="text;html=1;strokeColor=none;fillColor=none;fontSize:11;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="65" y="115" width="150" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="electron-render" value="渲染进程" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="65" y="140" width="70" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="electron-main" value="主进程" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="145" y="140" width="70" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="electron-local" value="本地存储" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="65" y="185" width="150" height="35" as="geometry"/>
+                </mxCell>
+
+                <!-- Android 客户端 -->
+                <mxCell id="android-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;arcSize=2" parent="1" vertex="1">
+                    <mxGeometry x="55" y="240" width="170" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="android-title" value="Android 移动端" style="text;html=1;strokeColor=none;fillColor=none;fontSize:11;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="65" y="245" width="150" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="android-webview" value="WebView 容器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="65" y="270" width="150" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="android-native" value="原生能力" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="65" y="315" width="70" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="android-cap" value="Capacitor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="145" y="315" width="70" height="50" as="geometry"/>
+                </mxCell>
+
+                <!-- 通信层 -->
+                <mxCell id="comm-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="270" y="70" width="120" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="comm-title" value="通信层" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="275" y="80" width="110" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="http" value="HTTP 请求" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="285" y="120" width="90" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="websocket" value="WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="285" y="175" width="90" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="ipc" value="IPC 通信" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="285" y="230" width="90" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="rest" value="RESTful API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="285" y="280" width="90" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="json" value="JSON 数据" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="285" y="330" width="90" height="45" as="geometry"/>
+                </mxCell>
+
+                <!-- 服务器层 -->
+                <mxCell id="server-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=3" parent="1" vertex="1">
+                    <mxGeometry x="420" y="70" width="240" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="server-title" value="服务器层 (Server)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="450" y="80" width="180" height="20" as="geometry"/>
+                </mxCell>
+
+                <!-- Web 服务器 -->
+                <mxCell id="nginx" value="Nginx/反向代理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="440" y="110" width="200" height="40" as="geometry"/>
+                </mxCell>
+
+                <!-- 应用服务器层 -->
+                <mxCell id="app-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;arcSize=2" parent="1" vertex="1">
+                    <mxGeometry x="440" y="160" width="200" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="app-title" value="应用服务器 (Go Gin)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="445" y="165" width="120" height="15" as="geometry"/>
+                </mxCell>
+
+                <!-- 业务逻辑 -->
+                <mxCell id="step1" value="1. 接收请求" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="450" y="185" width="85" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="step2" value="2. 业务处理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="545" y="185" width="85" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="step3" value="3. 数据查询" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="450" y="230" width="85" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="step4" value="4. 返回响应" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;strokeWidth=1.5" parent="1" vertex="1">
+                    <mxGeometry x="545" y="230" width="85" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth" value="JWT 鉴权" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="450" y="275" width="85" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ws-server" value="WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=9" parent="1" vertex="1">
+                    <mxGeometry x="545" y="275" width="85" height="20" as="geometry"/>
+                </mxCell>
+
+                <!-- 数据层 -->
+                <mxCell id="data-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;arcSize=2" parent="1" vertex="1">
+                    <mxGeometry x="440" y="310" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="data-title" value="数据层" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="445" y="315" width="40" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="db" value="数据库" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=6;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="455" y="335" width="70" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="fs" value="文件存储" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10" parent="1" vertex="1">
+                    <mxGeometry x="545" y="335" width="80" height="35" as="geometry"/>
+                </mxCell>
+
+                <!-- 连接箭头 -->
+                <!-- 客户端到通信层 -->
+                <mxCell id="c-to-http" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;fontSize=9" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="240" y="160" as="sourcePoint"/>
+                        <mxPoint x="285" y="140" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="c-to-ws" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;fontSize=9" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="240" y="290" as="sourcePoint"/>
+                        <mxPoint x="285" y="195" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 通信层到服务器 -->
+                <mxCell id="comm-to-server" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;fontSize=9" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="375" y="140" as="sourcePoint"/>
+                        <mxPoint x="440" y="130" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ws-to-server" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;fontSize=9" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="375" y="195" as="sourcePoint"/>
+                        <mxPoint x="440" y="160" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 服务器内部连接 -->
+                <mxCell id="v1" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="492" y="150" as="sourcePoint"/>
+                        <mxPoint x="492" y="185" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="v2" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="587" y="220" as="sourcePoint"/>
+                        <mxPoint x="587" y="230" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h1" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="535" y="202" as="sourcePoint"/>
+                        <mxPoint x="545" y="202" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h2" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="535" y="247" as="sourcePoint"/>
+                        <mxPoint x="545" y="247" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="to-data" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="492" y="265" as="sourcePoint"/>
+                        <mxPoint x="490" y="310" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="to-fs" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="587" y="265" as="sourcePoint"/>
+                        <mxPoint x="585" y="310" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- 响应返回 -->
+                <mxCell id="resp" value="响应数据" style="strokeColor=#000000;endArrow=classic;endFill=1;strokeWidth=1.5;fontSize=9;dashed=1" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="440" y="355" as="sourcePoint"/>
+                        <mxPoint x="240" y="355" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="340" y="355"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

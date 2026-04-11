@@ -5,449 +5,346 @@
 
     <!-- ========== 第1行：用户表、歌曲表、歌单表 ========== -->
 
-    <!-- 实体：用户表 -->
+    <!-- 实体：用户表 (10个属性: 3左+3右+4下) -->
     <mxCell id="entity-user" value="用户表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="100" y="150" width="120" height="50" as="geometry"/>
+      <mxGeometry x="100" y="100" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 用户表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-user-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="115" y="90" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性3个 -->
+    <mxCell id="attr-user-1" value="创建时间" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="10" y="85" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-user-id" edge="1" parent="1" source="attr-user-id" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-user-1" edge="1" parent="1" source="attr-user-1" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-2" value="更新时间" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="10" y="115" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-2" edge="1" parent="1" source="attr-user-2" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-3" value="用户名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="10" y="145" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-3" edge="1" parent="1" source="attr-user-3" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 右侧属性3个 -->
+    <mxCell id="attr-user-4" value="密码" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="85" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-4" edge="1" parent="1" source="attr-user-4" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-5" value="邮箱" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="115" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-5" edge="1" parent="1" source="attr-user-5" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-6" value="用户组" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="145" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-6" edge="1" parent="1" source="attr-user-6" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 下方属性4个(含主键) -->
+    <mxCell id="attr-user-7" value="头像" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-7" edge="1" parent="1" source="attr-user-7" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-8" value="听歌时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="115" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-8" edge="1" parent="1" source="attr-user-8" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-9" value="总时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="170" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-9" edge="1" parent="1" source="attr-user-9" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-user-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="115" y="225" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-user-pk" edge="1" parent="1" source="attr-user-pk" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
-    <!-- 左侧 -->
-    <mxCell id="attr-user-username" value="用户名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="10" y="130" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-username" edge="1" parent="1" source="attr-user-username" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-password" value="密码" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="10" y="170" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-password" edge="1" parent="1" source="attr-user-password" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-email" value="邮箱" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="10" y="210" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-email" edge="1" parent="1" source="attr-user-email" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-user-group" value="用户组" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="230" y="130" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-group" edge="1" parent="1" source="attr-user-group" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-avatar" value="头像" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="230" y="170" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-avatar" edge="1" parent="1" source="attr-user-avatar" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-time" value="时间" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="230" y="210" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-time" edge="1" parent="1" source="attr-user-time" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-user-duration" value="听歌时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="50" y="230" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-duration" edge="1" parent="1" source="attr-user-duration" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-total" value="总时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="120" y="240" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-total" edge="1" parent="1" source="attr-user-total" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-user-ip" value="IP地址" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="190" y="230" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-user-ip" edge="1" parent="1" source="attr-user-ip" target="entity-user" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 实体：歌曲表 -->
+    <!-- 歌曲表 (10个属性: 3左+3右+4下) -->
     <mxCell id="entity-song" value="歌曲表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="450" y="150" width="120" height="50" as="geometry"/>
+      <mxGeometry x="450" y="100" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 歌曲表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-song-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="465" y="90" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性3个 -->
+    <mxCell id="attr-song-1" value="标题" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="85" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-song-id" edge="1" parent="1" source="attr-song-id" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-song-1" edge="1" parent="1" source="attr-song-1" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-2" value="歌手名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="115" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-2" edge="1" parent="1" source="attr-song-2" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-3" value="专辑名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="145" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-3" edge="1" parent="1" source="attr-song-3" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 右侧属性3个 -->
+    <mxCell id="attr-song-4" value="轨道号" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="85" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-4" edge="1" parent="1" source="attr-song-4" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-5" value="碟号" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="115" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-5" edge="1" parent="1" source="attr-song-5" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-6" value="年份" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="145" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-6" edge="1" parent="1" source="attr-song-6" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 下方属性4个(含主键) -->
+    <mxCell id="attr-song-7" value="文件路径" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="410" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-7" edge="1" parent="1" source="attr-song-7" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-8" value="音频格式" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="465" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-8" edge="1" parent="1" source="attr-song-8" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-9" value="时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="520" y="180" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-9" edge="1" parent="1" source="attr-song-9" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-song-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="465" y="225" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-song-pk" edge="1" parent="1" source="attr-song-pk" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
-    <!-- 左侧 -->
-    <mxCell id="attr-song-title" value="标题" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="360" y="120" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-title" edge="1" parent="1" source="attr-song-title" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-artist" value="歌手" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="350" y="160" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-artist" edge="1" parent="1" source="attr-song-artist" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-album" value="专辑" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="360" y="200" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-album" edge="1" parent="1" source="attr-song-album" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-song-path" value="文件路径" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="580" y="120" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-path" edge="1" parent="1" source="attr-song-path" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-format" value="音频格式" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="590" y="160" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-format" edge="1" parent="1" source="attr-song-format" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-duration" value="时长" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="580" y="200" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-duration" edge="1" parent="1" source="attr-song-duration" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-song-year" value="年份" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="380" y="230" width="70" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-year" edge="1" parent="1" source="attr-song-year" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-track" value="轨道号" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="455" y="240" width="70" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-track" edge="1" parent="1" source="attr-song-track" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-disc" value="碟号" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="530" y="240" width="70" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-disc" edge="1" parent="1" source="attr-song-disc" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-song-count" value="播放次数" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="600" y="230" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-song-count" edge="1" parent="1" source="attr-song-count" target="entity-song" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 实体：歌单表 -->
+    <!-- 歌单表 (7个属性: 2左+2右+3下) -->
     <mxCell id="entity-playlist" value="歌单表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="800" y="150" width="120" height="50" as="geometry"/>
+      <mxGeometry x="800" y="100" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 歌单表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-playlist-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="815" y="90" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性2个 -->
+    <mxCell id="attr-playlist-1" value="标题" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="710" y="90" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-id" edge="1" parent="1" source="attr-playlist-id" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-1" edge="1" parent="1" source="attr-playlist-1" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 左侧 -->
-    <mxCell id="attr-playlist-title" value="标题" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="710" y="130" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-playlist-2" value="描述" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="710" y="130" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-title" edge="1" parent="1" source="attr-playlist-title" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-2" edge="1" parent="1" source="attr-playlist-2" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <mxCell id="attr-playlist-desc" value="描述" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="700" y="170" width="80" height="35" as="geometry"/>
+    <!-- 右侧属性2个 -->
+    <mxCell id="attr-playlist-3" value="是否公开" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="920" y="90" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-desc" edge="1" parent="1" source="attr-playlist-desc" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-3" edge="1" parent="1" source="attr-playlist-3" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-playlist-public" value="是否公开" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="930" y="130" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-playlist-4" value="播放次数" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="920" y="130" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-public" edge="1" parent="1" source="attr-playlist-public" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-4" edge="1" parent="1" source="attr-playlist-4" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <mxCell id="attr-playlist-cover" value="封面" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="940" y="170" width="80" height="35" as="geometry"/>
+    <!-- 下方属性3个(含主键) -->
+    <mxCell id="attr-playlist-5" value="歌曲总数" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="765" y="180" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-cover" edge="1" parent="1" source="attr-playlist-cover" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-5" edge="1" parent="1" source="attr-playlist-5" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-playlist-owner" value="创建者" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="750" y="230" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-playlist-6" value="封面" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="865" y="180" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-owner" edge="1" parent="1" source="attr-playlist-owner" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-6" edge="1" parent="1" source="attr-playlist-6" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <mxCell id="attr-playlist-count" value="歌曲数" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="840" y="240" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-playlist-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="815" y="225" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-playlist-count" edge="1" parent="1" source="attr-playlist-count" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-playlist-play" value="播放次数" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="930" y="230" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-playlist-play" edge="1" parent="1" source="attr-playlist-play" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-playlist-pk" edge="1" parent="1" source="attr-playlist-pk" target="entity-playlist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
     <!-- ========== 第2行：歌手表、专辑表、封面表 ========== -->
 
-    <!-- 实体：歌手表 -->
+    <!-- 歌手表 (3个属性: 1左+1右+1下) -->
     <mxCell id="entity-artist" value="歌手表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="100" y="450" width="120" height="50" as="geometry"/>
+      <mxGeometry x="100" y="400" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 歌手表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-artist-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="115" y="390" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性1个 -->
+    <mxCell id="attr-artist-1" value="歌手名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="10" y="415" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-artist-id" edge="1" parent="1" source="attr-artist-id" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-artist-1" edge="1" parent="1" source="attr-artist-1" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 右侧属性1个 -->
+    <mxCell id="attr-artist-2" value="简介" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="220" y="415" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-artist-2" edge="1" parent="1" source="attr-artist-2" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 下方属性1个(主键) -->
+    <mxCell id="attr-artist-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="115" y="480" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-artist-pk" edge="1" parent="1" source="attr-artist-pk" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
-    <!-- 左侧 -->
-    <mxCell id="attr-artist-name" value="歌手名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="10" y="430" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-artist-name" edge="1" parent="1" source="attr-artist-name" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-artist-cover" value="封面" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="230" y="430" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-artist-cover" edge="1" parent="1" source="attr-artist-cover" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-artist-desc" value="简介" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="120" y="540" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-artist-desc" edge="1" parent="1" source="attr-artist-desc" target="entity-artist" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 实体：专辑表 -->
+    <!-- 专辑表 (5个属性: 2左+2右+1下) -->
     <mxCell id="entity-album" value="专辑表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="450" y="450" width="120" height="50" as="geometry"/>
+      <mxGeometry x="450" y="400" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 专辑表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-album-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="465" y="390" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性2个 -->
+    <mxCell id="attr-album-1" value="专辑标题" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="390" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-album-id" edge="1" parent="1" source="attr-album-id" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-album-1" edge="1" parent="1" source="attr-album-1" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-album-2" value="专辑简介" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="360" y="430" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-album-2" edge="1" parent="1" source="attr-album-2" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 右侧属性2个 -->
+    <mxCell id="attr-album-3" value="发行日期" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="390" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-album-3" edge="1" parent="1" source="attr-album-3" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="attr-album-4" value="封面" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="570" y="430" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-album-4" edge="1" parent="1" source="attr-album-4" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 下方属性1个(主键) -->
+    <mxCell id="attr-album-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="465" y="480" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-album-pk" edge="1" parent="1" source="attr-album-pk" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
-    <!-- 左侧 -->
-    <mxCell id="attr-album-title" value="专辑名" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="360" y="430" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-album-title" edge="1" parent="1" source="attr-album-title" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-album-date" value="发行日期" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="350" y="470" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-album-date" edge="1" parent="1" source="attr-album-date" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-album-cover" value="封面" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="580" y="430" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-album-cover" edge="1" parent="1" source="attr-album-cover" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-album-desc" value="简介" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="400" y="540" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-album-desc" edge="1" parent="1" source="attr-album-desc" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-album-artist" value="歌手ID" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="490" y="550" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-album-artist" edge="1" parent="1" source="attr-album-artist" target="entity-album" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 实体：封面表 -->
+    <!-- 封面表 (6个属性: 2左+2右+2下) -->
     <mxCell id="entity-cover" value="封面表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
-      <mxGeometry x="800" y="450" width="120" height="50" as="geometry"/>
+      <mxGeometry x="800" y="400" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 封面表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-cover-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="815" y="390" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性2个 -->
+    <mxCell id="attr-cover-1" value="图片哈希" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="710" y="390" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-id" edge="1" parent="1" source="attr-cover-id" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-1" edge="1" parent="1" source="attr-cover-1" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 左侧 -->
-    <mxCell id="attr-cover-hash" value="图片哈希" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="710" y="430" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-cover-2" value="存储路径" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="710" y="430" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-hash" edge="1" parent="1" source="attr-cover-hash" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-2" edge="1" parent="1" source="attr-cover-2" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <mxCell id="attr-cover-path" value="存储路径" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="700" y="470" width="80" height="35" as="geometry"/>
+    <!-- 右侧属性2个 -->
+    <mxCell id="attr-cover-3" value="图片格式" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="920" y="390" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-path" edge="1" parent="1" source="attr-cover-path" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-3" edge="1" parent="1" source="attr-cover-3" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-cover-format" value="图片格式" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="930" y="430" width="80" height="35" as="geometry"/>
+    <mxCell id="attr-cover-4" value="尺寸" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="920" y="430" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-format" edge="1" parent="1" source="attr-cover-format" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-4" edge="1" parent="1" source="attr-cover-4" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <mxCell id="attr-cover-size" value="文件大小" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="940" y="470" width="80" height="35" as="geometry"/>
+    <!-- 下方属性2个(含主键) -->
+    <mxCell id="attr-cover-5" value="宽高" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="790" y="480" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-size" edge="1" parent="1" source="attr-cover-size" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-5" edge="1" parent="1" source="attr-cover-5" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-cover-width" value="宽度" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="780" y="540" width="70" height="35" as="geometry"/>
+    <mxCell id="attr-cover-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="865" y="480" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-cover-width" edge="1" parent="1" source="attr-cover-width" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <mxCell id="attr-cover-height" value="高度" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="870" y="540" width="70" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-cover-height" edge="1" parent="1" source="attr-cover-height" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-cover-pk" edge="1" parent="1" source="attr-cover-pk" target="entity-cover" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
     <!-- ========== 第3行：播放历史表、系统信息表 ========== -->
 
-    <!-- 实体：播放历史表 -->
+    <!-- 播放历史表 (3个属性: 1左+1右+1下) -->
     <mxCell id="entity-history" value="播放历史表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
       <mxGeometry x="275" y="700" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 播放历史表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-history-id" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="290" y="640" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性1个 -->
+    <mxCell id="attr-history-1" value="用户ID" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="185" y="715" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-history-id" edge="1" parent="1" source="attr-history-id" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-history-1" edge="1" parent="1" source="attr-history-1" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 右侧属性1个 -->
+    <mxCell id="attr-history-2" value="歌曲ID" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="395" y="715" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-history-2" edge="1" parent="1" source="attr-history-2" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <!-- 下方属性1个(主键) -->
+    <mxCell id="attr-history-pk" value="&lt;u&gt;主键ID&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="290" y="780" width="90" height="35" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge-history-pk" edge="1" parent="1" source="attr-history-pk" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
-    <!-- 左侧 -->
-    <mxCell id="attr-history-user" value="用户ID" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="185" y="680" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-history-user" edge="1" parent="1" source="attr-history-user" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 右侧 -->
-    <mxCell id="attr-history-song" value="歌曲ID" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="405" y="680" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-history-song" edge="1" parent="1" source="attr-history-song" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-history-time" value="时间" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="295" y="790" width="80" height="35" as="geometry"/>
-    </mxCell>
-    <mxCell id="edge-history-time" edge="1" parent="1" source="attr-history-time" target="entity-history" style="strokeColor=#000000;endArrow=none;endFill=0;">
-      <mxGeometry relative="1" as="geometry"/>
-    </mxCell>
-
-    <!-- 实体：系统信息表 -->
+    <!-- 系统信息表 (2个属性: 1左+1下) -->
     <mxCell id="entity-system" value="系统信息表" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;fontStyle=1" vertex="1" parent="1">
       <mxGeometry x="625" y="700" width="120" height="50" as="geometry"/>
     </mxCell>
-
-    <!-- 系统信息表属性 -->
-    <!-- 上方：主键 -->
-    <mxCell id="attr-system-key" value="&lt;u&gt;键名&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="640" y="640" width="90" height="35" as="geometry"/>
+    <!-- 左侧属性1个(主键) -->
+    <mxCell id="attr-system-pk" value="&lt;u&gt;键名&lt;/u&gt;" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="535" y="715" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-system-key" edge="1" parent="1" source="attr-system-key" target="entity-system" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-system-pk" edge="1" parent="1" source="attr-system-pk" target="entity-system" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
-
-    <!-- 下方：优先级最高 -->
-    <mxCell id="attr-system-value" value="键值" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
-      <mxGeometry x="645" y="790" width="80" height="35" as="geometry"/>
+    <!-- 下方属性1个 -->
+    <mxCell id="attr-system-1" value="键值" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="640" y="780" width="90" height="35" as="geometry"/>
     </mxCell>
-    <mxCell id="edge-system-value" edge="1" parent="1" source="attr-system-value" target="entity-system" style="strokeColor=#000000;endArrow=none;endFill=0;">
+    <mxCell id="edge-system-1" edge="1" parent="1" source="attr-system-1" target="entity-system" style="strokeColor=#000000;endArrow=none;endFill=0;">
       <mxGeometry relative="1" as="geometry"/>
     </mxCell>
 
