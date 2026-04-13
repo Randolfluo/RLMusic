@@ -85,7 +85,7 @@ import { ref, onMounted, h } from "vue";
 import { getHistoryList, clearHistory, getSongCover, resolveCoverUrl } from "@/api/song";
 import { resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NImage, NTime, NTag, NAvatar, NIcon } from "naive-ui";
+import { useMessage, NImage, NTime, NAvatar, NIcon } from "naive-ui";
 import { useMusicDataStore } from "@/store/musicData";
 import { Delete, Play, History, Music } from "@icon-park/vue-next";
 import { useUserDataStore } from "@/store/userData";

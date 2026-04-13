@@ -56,6 +56,7 @@ func registerBaseHandler(r *gin.Engine) {
 	{
 		file.POST("/initFolder", fileAuthAPI.InitFolder)
 		file.GET("/avatar/:filename", userAuthAPI.GetAvatar)
+		file.GET("/playlist_cover/:filename", songAuthAPI.GetPlaylistCover) // 获取歌单封面
 	}
 
 	// 歌曲相关(无需认证)
@@ -141,6 +142,7 @@ func registerAuthHandler(r *gin.Engine) {
 		song.POST("/playlist/add-songs", songAuthAPI.AddSongsToPlaylist)         // 批量添加歌曲到歌单
 		song.POST("/playlist/remove-songs", songAuthAPI.RemoveSongsFromPlaylist) // 批量移除歌曲从歌单
 		song.PUT("/playlist/:id", songAuthAPI.UpdatePlaylist)                    // 更新歌单信息
+		song.POST("/playlist/:id/cover", songAuthAPI.UploadPlaylistCover)        // 上传歌单封面
 		song.DELETE("/playlist/:id", songAuthAPI.DeletePrivatePlaylist)          // 删除私有歌单
 		song.DELETE("/playlist/public/:id", songAuthAPI.DeletePublicPlaylist)    // 删除公共歌单 (Admin)
 		// song.GET("/playlists/private", songAuthAPI.GetPrivatePlaylists) // Legacy (removed)

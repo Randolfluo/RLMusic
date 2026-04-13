@@ -1,0 +1,91 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9">
+  <diagram name="系统架构图" id="architecture-diagram">
+    <mxGraphModel dx="1295" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="6tyQJUSIf9Ux9uE5Mz75-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="100" width="360" x="280" y="62.5" as="geometry" />
+        </mxCell>
+        <mxCell id="layer_box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=1;dashed=1;dashPattern=5 5;" value="" vertex="1">
+          <mxGeometry height="200" width="870" x="80" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="view" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=2.5;fontSize=12;fontColor=#000000;shadow=0;arcSize=8;" value="&lt;b&gt;表现层（前端）&lt;/b&gt;&#xa;Vue 3 + TypeScript&#xa;界面渲染 / 用户交互&#xa;Pinia 状态管理" vertex="1">
+          <mxGeometry height="120" width="200" x="120" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;strokeWidth=2.5;fontSize=12;fontColor=#000000;shadow=0;arcSize=8;" value="&lt;b&gt;控制层（后端）&lt;/b&gt;&#xa;Go + Gin&#xa;RESTful API / JWT 鉴权&#xa;参数校验 / 业务逻辑" vertex="1">
+          <mxGeometry height="120" width="200" x="420" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="model" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=2.5;fontSize=12;fontColor=#FFFFFF;shadow=0;arcSize=8;" value="&lt;b&gt;数据层&lt;/b&gt;&#xa;SQLite / MySQL&#xa;Redis 缓存&#xa;本地文件系统" vertex="1">
+          <mxGeometry height="120" width="200" x="720" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="web" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;fontColor=#000000;arcSize=6;" value="Web 浏览器" vertex="1">
+          <mxGeometry height="45" width="100" x="300" y="92.5" as="geometry" />
+        </mxCell>
+        <mxCell id="electron" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;fontColor=#000000;arcSize=6;" value="Electron 桌面" vertex="1">
+          <mxGeometry height="45" width="100" x="410" y="92.5" as="geometry" />
+        </mxCell>
+        <mxCell id="android" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=11;fontColor=#000000;arcSize=6;" value="Android 移动端" vertex="1">
+          <mxGeometry height="45" width="100" x="520" y="92.5" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;fontColor=#000000;strokeColor=#000000;strokeWidth=2;fillColor=#FFFFFF;" value="用户" vertex="1">
+          <mxGeometry height="102.5" width="75" x="110" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="platform_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;fontStyle=2" value="多端统一接入" vertex="1">
+          <mxGeometry height="20" width="100" x="410" y="62.5" as="geometry" />
+        </mxCell>
+        <mxCell id="web_conn" edge="1" parent="1" source="web" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.333;entryY=0;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;endArrow=none;endFill=0;dashed=1;dashPattern=3 3;" target="view">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="electron_conn" edge="1" parent="1" source="electron" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;endArrow=none;endFill=0;dashed=1;dashPattern=3 3;" target="view">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="android_conn" edge="1" parent="1" source="android" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.667;entryY=0;entryDx=0;entryDy=0;strokeColor=#666666;strokeWidth=1;endArrow=none;endFill=0;dashed=1;dashPattern=3 3;" target="view">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" edge="1" parent="1" source="view" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.333;exitDx=0;exitDy=0;entryX=0;entryY=0.333;entryDx=0;entryDy=0;fontSize=10;fontColor=#000000;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="controller" value="(1) HTTP/WebSocket">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" edge="1" parent="1" source="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.333;exitDx=0;exitDy=0;entryX=0;entryY=0.333;entryDx=0;entryDy=0;fontSize=10;fontColor=#000000;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;" target="model" value="(2) GORM/Redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4" edge="1" parent="1" source="model" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.667;exitDx=0;exitDy=0;entryX=1;entryY=0.667;entryDx=0;entryDy=0;fontSize=10;fontColor=#000000;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=5 5;" target="controller" value="(3) 返回数据">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5" edge="1" parent="1" source="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.667;exitDx=0;exitDy=0;entryX=1;entryY=0.667;entryDx=0;entryDy=0;fontSize=10;fontColor=#000000;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=5 5;" target="view" value="(4) JSON 响应">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;arcSize=4;" value="" vertex="1">
+          <mxGeometry height="110" width="120" x="810" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#000000;" value="&lt;b&gt;图例&lt;/b&gt;" vertex="1">
+          <mxGeometry height="20" width="120" x="810" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_dot1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.5;" value="" vertex="1">
+          <mxGeometry height="12" width="16" x="820" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_text1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#000000;" value="表现层" vertex="1">
+          <mxGeometry height="20" width="80" x="840" y="76" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_dot2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#000000;strokeWidth=1.5;" value="" vertex="1">
+          <mxGeometry height="12" width="16" x="820" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_text2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#000000;" value="控制层" vertex="1">
+          <mxGeometry height="20" width="80" x="840" y="96" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_dot3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1.5;" value="" vertex="1">
+          <mxGeometry height="12" width="16" x="820" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_text3" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#000000;" value="数据层" vertex="1">
+          <mxGeometry height="20" width="80" x="840" y="116" as="geometry" />
+        </mxCell>
+        <mxCell id="iRvwruY-jzk1i3-d6UXl-2" edge="1" parent="1" source="user" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;width=13.6;startSize=10.04;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.3333333333333333;exitDx=0;exitDy=0;exitPerimeter=0;endSize=7.456;" target="6tyQJUSIf9Ux9uE5Mz75-4" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="180" y="122.5" as="sourcePoint" />
+            <mxPoint x="280" y="22.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

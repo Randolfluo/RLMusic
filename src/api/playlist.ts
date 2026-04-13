@@ -192,4 +192,20 @@ export const deletePublicPlaylist = (id: string | number) => {
     });
 };
 
+/**
+ * 上传歌单封面
+ * @param {string|number} id - 歌单ID
+ * @param {FormData} formData - 包含文件的FormData
+ */
+export const uploadPlaylistCover = (id: string | number, formData: FormData) => {
+    return axios({
+        method: "POST",
+        url: `/song/playlist/${id}/cover`,
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+};
+
 

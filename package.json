@@ -16,7 +16,7 @@
     "build:client": "cross-env VITE_APP_MODE=client vue-tsc -b && cross-env VITE_APP_MODE=client vite build && electron-builder --config electron-builder.client.json",
     "build:web": "vue-tsc -b && vite build",
     "build:android": "vue-tsc -b && vite build && pnpm exec cap sync android && pnpm exec cap open android",
-    "build:all": "npm run build:server && npm run build:client && pnpm build:web && pnpm build:android",
+    "build:all": "npm run build:server && npm run build:client && npm run build:web && npm run build:android",
     "preview": "vite preview"
   },
   "dependencies": {

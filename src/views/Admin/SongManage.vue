@@ -159,7 +159,7 @@
                     class="action-btn secondary"
                     @click.stop="viewDetail(song)"
                   >
-                    <n-icon :component="Detail" />
+                    <n-icon :component="DocDetail" />
                     详情
                   </button>
                 </div>
@@ -188,9 +188,9 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useMessage, NDataTable, NPagination, NIcon, NTag, type DataTableColumns } from 'naive-ui';
-import { Left, Search, Music, Play, Disk, Time, PlayOne, Detail, List, GridFour } from '@icon-park/vue-next';
-import { searchSong } from '@/api/search';
+import { useMessage, NDataTable, NPagination, NIcon, type DataTableColumns } from 'naive-ui';
+import { Left, Search, Music, Play, Disk, Time, PlayOne, DocDetail, List, GridFour } from '@icon-park/vue-next';
+import { getSearchSongs } from '@/api/search';
 import { getSongCover, resolveCoverUrl } from '@/api/song';
 import { ResultCode } from "@/utils/request";
 import { useMusicDataStore } from '@/store/musicData';
@@ -274,11 +274,11 @@ const handlePageSizeChange = (pageSize: number) => {
 const fetchSongs = async () => {
   loading.value = true;
   try {
-    const res: any = await searchSong({
-      keywords: searchText.value || 'a',
-      limit: pagination.pageSize,
-      offset: (pagination.page - 1) * pagination.pageSize,
-    });
+    const res: any = await getSearchSongs(
+      searchText.value || 'a',
+      pagination.pageSize,
+      (pagination.page - 1) * pagination.pageSize
+    );
     if (res.code === ResultCode.SUCCESS) {
       songList.value = res.data?.songs || res.data?.result?.songs || [];
       pagination.itemCount = res.data?.total || res.data?.result?.songCount || 0;
@@ -363,7 +363,7 @@ const columns: DataTableColumns<Song> = [
           class: 'table-btn detail',
           onClick: () => viewDetail(row),
           title: '查看详情'
-        }, h(NIcon, { component: Detail, size: 16 }))
+        }, h(NIcon, { component: DocDetail, size: 16 }))
       ]);
     }
   }

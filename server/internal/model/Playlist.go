@@ -225,7 +225,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		return nil, err
 	}
 
-	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
+	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "/api/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
 		playlist.CoverUrl = "/covers/" + playlist.CoverUrl
 	}
 
@@ -314,7 +314,7 @@ func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*Play
 		return nil, err
 	}
 
-	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
+	if playlist.CoverUrl != "" && !strings.HasPrefix(playlist.CoverUrl, "/covers/") && !strings.HasPrefix(playlist.CoverUrl, "/api/") && !strings.HasPrefix(playlist.CoverUrl, "http") {
 		playlist.CoverUrl = "/covers/" + playlist.CoverUrl
 	}
 
@@ -371,7 +371,7 @@ func convertToResponse(playlists []Playlist) []PlaylistResponse {
 		var songs []SimpleSongResponse = nil // Explicitly nil
 
 		coverUrl := p.CoverUrl
-		if coverUrl != "" && !strings.HasPrefix(coverUrl, "/covers/") && !strings.HasPrefix(coverUrl, "http") {
+		if coverUrl != "" && !strings.HasPrefix(coverUrl, "/covers/") && !strings.HasPrefix(coverUrl, "/api/") && !strings.HasPrefix(coverUrl, "http") {
 			coverUrl = "/covers/" + coverUrl
 		}
 
@@ -403,6 +403,11 @@ func DeletePlaylist(db *gorm.DB, playlistID int) error {
 	// 如果使用软删除，关联表记录可能保留。如果物理删除，需清理关联。
 	// 这里假设直接删除歌单记录。由于 Many2Many 关系，GORM 默认会删除关联表中的记录。
 	return db.Delete(&Playlist{}, playlistID).Error
+}
+
+// UpdatePlaylistCover 更新歌单封面
+func UpdatePlaylistCover(db *gorm.DB, playlistID uint, coverPath string) error {
+	return db.Model(&Playlist{}).Where("id = ?", playlistID).Update("cover_url", coverPath).Error
 }
 
 // GetUserPlaylists 获取用户可见的歌单 (Legacy)

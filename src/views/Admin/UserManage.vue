@@ -177,7 +177,7 @@
 import { ref, reactive, h, onMounted, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMessage, NPopconfirm, NDataTable, NPagination, NIcon, type DataTableColumns } from 'naive-ui';
-import { Left, Search, User, Mail, Time, Permissions, Delete, List, GridFour } from '@icon-park/vue-next';
+import { Left, Search, Mail, Time, Permissions, Delete, List, GridFour } from '@icon-park/vue-next';
 import { adminGetAllUsers, adminUpdateUserRole, adminDeleteUser, type UserInfo } from '@/api/user';
 import { ResultCode } from "@/utils/request";
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	g "server/internal/global"
@@ -13,6 +14,7 @@ import (
 	"server/internal/utils/imgtool"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dhowden/tag"
 	"github.com/gin-gonic/gin"
@@ -2855,4 +2857,115 @@ func (*SongAuth) DeletePublicPlaylist(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, "删除成功")
+}
+
+// UploadPlaylistCover 上传歌单封面
+func (*SongAuth) UploadPlaylistCover(c *gin.Context) {
+	// 获取当前用户
+	currentUser := GetCurrentUser(c)
+	if currentUser == nil {
+		ReturnError(c, g.ErrTokenEmpty, nil)
+		return
+	}
+
+	// 获取歌单ID
+	playlistIDStr := c.Param("id")
+	playlistID, err := strconv.ParseUint(playlistIDStr, 10, 64)
+	if err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	db := GetDB(c)
+
+	// 查询歌单信息
+	var playlist model.Playlist
+	if err := db.First(&playlist, playlistID).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "歌单不存在")
+		return
+	}
+
+	// 权限检查：私有歌单只允许所有者修改，公共歌单允许管理员修改
+	if !playlist.IsPublic {
+		// 私有歌单：只有所有者可以修改
+		if playlist.OwnerID != currentUser.ID {
+			ReturnError(c, g.ErrPermission, "只有歌单所有者可以修改封面")
+			return
+		}
+	} else {
+		// 公共歌单：管理员可以修改
+		if currentUser.UserGroup != "admin" {
+			ReturnError(c, g.ErrPermission, "只有管理员可以修改公共歌单封面")
+			return
+		}
+	}
+
+	// 获取上传的文件
+	file, err := c.FormFile("file")
+	if err != nil {
+		ReturnError(c, g.ErrRequest, err)
+		return
+	}
+
+	// 验证文件扩展名
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
+	if !allowExts[ext] {
+		ReturnError(c, g.ErrRequest, "不支持的文件类型，仅支持jpg/jpeg/png/gif/webp")
+		return
+	}
+
+	// 准备存储目录
+	conf := g.GetConfig().BasicPath
+	baseDir := filepath.Join(conf.FilePath, conf.FileName, "playlist_covers")
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 生成文件名: playlist_id_timestamp.ext
+	filename := fmt.Sprintf("playlist_%d_%d%s", playlistID, time.Now().Unix(), ext)
+	savePath := filepath.Join(baseDir, filename)
+
+	// 保存文件
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		ReturnError(c, g.Err, err)
+		return
+	}
+
+	// 相对web路径
+	webPath := "/api/file/playlist_cover/" + filename
+
+	// 更新数据库
+	if err := model.UpdatePlaylistCover(db, uint(playlistID), webPath); err != nil {
+		ReturnError(c, g.ErrDbOp, err)
+		return
+	}
+
+	ReturnSuccess(c, webPath)
+}
+
+// GetPlaylistCover 获取歌单封面
+func (*SongAuth) GetPlaylistCover(c *gin.Context) {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	// 安全检查
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	conf := g.GetConfig().BasicPath
+	filePath := filepath.Join(conf.FilePath, conf.FileName, "playlist_covers", filename)
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.File(filePath)
 }
