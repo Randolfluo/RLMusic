@@ -17,8 +17,6 @@ export const useSettingDataStore = defineStore("settingData", {
       playerStyle: "cover",
       // 播放器背景模糊
       playerBgBlur: true,
-      // 底栏歌词显示
-      bottomLyricShow: true,
       // 是否显示歌词翻译
       showTransl: true,
       // 歌曲音质

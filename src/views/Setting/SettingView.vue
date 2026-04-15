@@ -116,7 +116,6 @@ const user = userStore();
 const {
   themeColor,
   searchHistory,
-  bottomLyricShow,
   podcastMode,
   lrcMousePause,
   playerStyle,
@@ -210,16 +209,6 @@ const playerStyleOptions = [
               <n-button type="error" secondary size="small" @click="handleClearData">
                 清除所有数据
               </n-button>
-            </div>
-          </n-card>
-
-          <n-card class="setting-card" :bordered="false">
-            <div class="card-inner">
-              <div class="info">
-                <div class="name">底栏歌词</div>
-                <div class="desc">播放时在底部显示歌词</div>
-              </div>
-              <n-switch v-model:value="bottomLyricShow" :round="false" />
             </div>
           </n-card>
 

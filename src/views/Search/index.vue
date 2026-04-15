@@ -164,7 +164,12 @@
                         @click="router.push(`/artist?id=${artist.id}`)"
                      >
                          <div class="artist-avatar">
-                             <n-avatar round :size="120" :src="artist.picUrl || artist.img1v1Url" fallback-src="/images/logo/logo.png" object-fit="cover" />
+                             <n-image
+                                :src="artist.picUrl || artist.img1v1Url"
+                                preview-disabled
+                                object-fit="cover"
+                                fallback-src="/images/logo/logo.png"
+                             />
                          </div>
                          <div class="card-title">{{ artist.name }}</div>
                      </div>
@@ -189,13 +194,13 @@
                         @click="router.push(`/album?id=${album.id}`)"
                       >
                          <div class="card-cover">
-                             <n-image 
-                                :src="album.picUrl" 
-                                preview-disabled 
+                             <div class="album-bg"></div>
+                             <n-image
+                                :src="resolveCoverUrl(album.picUrl)"
+                                preview-disabled
                                 object-fit="cover"
                                 fallback-src="/images/logo/logo.png"
                              />
-                             <div class="album-bg"></div>
                          </div>
                          <div class="card-info">
                              <div class="card-title">{{ album.name }}</div>
@@ -221,6 +226,7 @@ import {
     Search, DeleteFour, History, Fire, PlayOne, Record,
 } from "@icon-park/vue-next";
 import { getSearchHot, getSearchSuggest } from "@/api/search";
+import { resolveCoverUrl } from "@/api/song";
 import { useMusicDataStore } from "@/store/musicData";
 import { useSettingDataStore } from "@/store/settingData";
 import debounce from "@/utils/debounce";
@@ -616,7 +622,7 @@ const delHistory = () => {
             }
             
             .result-container {
-                margin-top: 24px;
+                margin-top: 64px;
             }
             
             .loading-container, .empty-state {
@@ -626,26 +632,26 @@ const delHistory = () => {
             
             .grid-container {
                 display: grid;
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 24px;
                 margin-top: 24px;
-                
+
                 @media (min-width: 640px) {
-                    grid-template-columns: repeat(3, 1fr);
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
                 }
                 @media (min-width: 1024px) {
-                    grid-template-columns: repeat(4, 1fr);
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
                 }
                 @media (min-width: 1280px) {
-                    grid-template-columns: repeat(5, 1fr);
+                    grid-template-columns: repeat(5, minmax(0, 1fr));
                 }
-                
+
                 &.artist-grid {
                     @media (min-width: 640px) {
-                        grid-template-columns: repeat(4, 1fr);
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
                     }
                     @media (min-width: 1024px) {
-                        grid-template-columns: repeat(6, 1fr);
+                        grid-template-columns: repeat(6, minmax(0, 1fr));
                     }
                 }
                 
@@ -664,6 +670,7 @@ const delHistory = () => {
                     
                     .card-cover {
                         position: relative;
+                        z-index: 0;
                         aspect-ratio: 1;
                         border-radius: 16px;
                         overflow: hidden;
@@ -671,10 +678,12 @@ const delHistory = () => {
                         margin-bottom: 12px;
                         
                         .n-image {
+                            position: relative;
+                            z-index: 1;
                             width: 100%;
                             height: 100%;
                             display: block;
-                            
+
                             :deep(img) {
                                 width: 100%;
                                 height: 100%;
@@ -721,7 +730,6 @@ const delHistory = () => {
                             height: 100%;
                             background: #1a1a1a;
                             border-radius: 50%;
-                            z-index: -1;
                             transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
                             box-shadow: 2px 0 10px rgba(0,0,0,0.3);
                             
@@ -759,17 +767,26 @@ const delHistory = () => {
                         .artist-avatar {
                             margin-bottom: 16px;
                             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-                            border-radius: 50%;
+                            border-radius: 16px;
                             overflow: hidden;
                             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-                            
-                            :deep(.n-avatar) {
+                            aspect-ratio: 1;
+
+                            :deep(.n-image) {
+                                width: 100%;
+                                height: 100%;
                                 display: block;
                             }
+
+                            :deep(img) {
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                            }
                         }
-                        
+
                         &:hover .artist-avatar {
-                            transform: scale(1.08) rotate(3deg);
+                            transform: scale(1.05);
                             box-shadow: 0 15px 30px rgba(0,0,0,0.15);
                         }
                     }

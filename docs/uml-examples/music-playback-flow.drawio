@@ -1,251 +1,123 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9">
   <diagram id="music-playback-flow" name="音乐播放控制流程">
-    <mxGraphModel dx="1295" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="888" dy="522" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="600" pageHeight="450" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-
-        <!-- 开始 -->
-        <mxCell id="start" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=50;fontStyle=1" value="开始播放" vertex="1">
-          <mxGeometry height="40" width="100" x="520" y="40" as="geometry" />
+        <mxCell id="start" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="开始" vertex="1">
+          <mxGeometry height="32" width="64" x="105" y="51" as="geometry" />
         </mxCell>
-
-        <!-- 获取歌曲数据 -->
-        <mxCell id="get-data" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="获取歌曲数据&#xa;(ID/歌名/艺人)" vertex="1">
-          <mxGeometry height="50" width="140" x="500" y="110" as="geometry" />
+        <mxCell id="load" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize:12;" value="加载资源" vertex="1">
+          <mxGeometry height="36" width="88" x="209" y="49" as="geometry" />
         </mxCell>
-
-        <!-- 检查可用性 -->
-        <mxCell id="check-available" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="检查歌曲&#xa;是否可用?" vertex="1">
-          <mxGeometry height="60" width="100" x="520" y="190" as="geometry" />
-        </mxCell>
-
-        <!-- 不可用处理 -->
-        <mxCell id="unavailable" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8e8e8;strokeColor=#000000;fontSize=12;" value="提示无法播放&#xa;自动下一首" vertex="1">
-          <mxGeometry height="50" width="110" x="350" y="195" as="geometry" />
-        </mxCell>
-
-        <!-- 播客模式判断 -->
-        <mxCell id="check-podcast" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="播客模式且&#xa;有开场白?" vertex="1">
-          <mxGeometry height="60" width="100" x="520" y="290" as="geometry" />
-        </mxCell>
-
-        <!-- 播放开场白 -->
-        <mxCell id="play-intro" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontSize=12;" value="播放AI开场白&#xa;(FLAC音频)" vertex="1">
-          <mxGeometry height="50" width="120" x="350" y="295" as="geometry" />
-        </mxCell>
-
-        <!-- 获取音乐URL -->
-        <mxCell id="get-url" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="获取音乐URL&#xa;(getMusicUrl API)" vertex="1">
-          <mxGeometry height="50" width="130" x="505" y="390" as="geometry" />
-        </mxCell>
-
-        <!-- 获取歌词 -->
-        <mxCell id="get-lyric" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="获取歌词&#xa;(getMusicLyric API)" vertex="1">
-          <mxGeometry height="50" width="130" x="505" y="470" as="geometry" />
-        </mxCell>
-
-        <!-- 音频元素播放 -->
-        <mxCell id="audio-play" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontSize=12;" value="Audio元素播放&#xa;(audio.play())" vertex="1">
-          <mxGeometry height="50" width="130" x="505" y="550" as="geometry" />
-        </mxCell>
-
-        <!-- 更新状态 -->
-        <mxCell id="update-state" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="更新播放状态&#xa;(Pinia store)" vertex="1">
-          <mxGeometry height="50" width="120" x="510" y="630" as="geometry" />
-        </mxCell>
-
-        <!-- 监听进度 -->
-        <mxCell id="progress-update" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="监听播放进度&#xa;(timeupdate事件)" vertex="1">
-          <mxGeometry height="50" width="130" x="505" y="710" as="geometry" />
-        </mxCell>
-
-        <!-- 播放结束 -->
-        <mxCell id="ended" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="播放结束?&#xa;(ended事件)" vertex="1">
-          <mxGeometry height="60" width="100" x="520" y="800" as="geometry" />
-        </mxCell>
-
-        <!-- 开场白结束 -->
-        <mxCell id="intro-ended" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="开场白&#xa;结束?" vertex="1">
-          <mxGeometry height="60" width="100" x="350" y="550" as="geometry" />
-        </mxCell>
-
-        <!-- 继续播放正文 -->
-        <mxCell id="play-main" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontSize=12;" value="延迟1秒后&#xa;播放正文" vertex="1">
-          <mxGeometry height="50" width="100" x="350" y="630" as="geometry" />
-        </mxCell>
-
-        <!-- 下一首 -->
-        <mxCell id="next-song" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="播放下一首&#xa;(按播放模式)" vertex="1">
-          <mxGeometry height="50" width="120" x="700" y="805" as="geometry" />
-        </mxCell>
-
-        <!-- 结束 -->
-        <mxCell id="end" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;arcSize=50;fontStyle=1" value="结束" vertex="1">
-          <mxGeometry height="40" width="100" x="520" y="920" as="geometry" />
-        </mxCell>
-
-        <!-- 连接线 -->
-        <mxCell id="edge1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;" target="get-data">
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-9" edge="1" parent="1" source="check" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="sxiWCMYcTNVX3BTTq8Ty-1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <mxCell id="edge2" edge="1" parent="1" source="get-data" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;" target="check-available">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="check" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="可播放?" vertex="1">
+          <mxGeometry height="44" width="72" x="217" y="109" as="geometry" />
         </mxCell>
-
-        <!-- 可用判断 -->
-        <mxCell id="edge-avail-no" edge="1" parent="1" source="check-available" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="unavailable">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="monitor" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="前端监听进度" vertex="1">
+          <mxGeometry height="36" width="88" x="209" y="186" as="geometry" />
         </mxCell>
-
-        <mxCell id="label-avail-no" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="否" vertex="1">
-          <mxGeometry height="20" width="30" x="480" y="205" as="geometry" />
+        <mxCell id="endcheck" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="结束?" vertex="1">
+          <mxGeometry height="44" width="72" x="217" y="239" as="geometry" />
         </mxCell>
-
-        <mxCell id="edge-avail-yes" edge="1" parent="1" source="check-available" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="check-podcast">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="end" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ffffff;strokeColor=#000000;fontSize=12;" value="结束" vertex="1">
+          <mxGeometry height="32" width="64" x="221" y="319" as="geometry" />
         </mxCell>
-
-        <mxCell id="label-avail-yes" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="是" vertex="1">
-          <mxGeometry height="20" width="30" x="535" y="265" as="geometry" />
+        <mxCell id="fail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="加载失败" vertex="1">
+          <mxGeometry height="36" width="72" x="101" y="113" as="geometry" />
         </mxCell>
-
-        <!-- 播客判断 -->
-        <mxCell id="edge-podcast-yes" edge="1" parent="1" source="check-podcast" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="play-intro">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <mxCell id="label-podcast-yes" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="是" vertex="1">
-          <mxGeometry height="20" width="30" x="480" y="305" as="geometry" />
-        </mxCell>
-
-        <mxCell id="edge-podcast-no" edge="1" parent="1" source="check-podcast" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="get-url">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <mxCell id="label-podcast-no" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="否" vertex="1">
-          <mxGeometry height="20" width="30" x="535" y="360" as="geometry" />
-        </mxCell>
-
-        <!-- 开场白到播放 -->
-        <mxCell id="edge-intro-play" edge="1" parent="1" source="play-intro" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" target="intro-ended">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- 开场白结束判断 -->
-        <mxCell id="edge-intro-ended-no" edge="1" parent="1" source="intro-ended" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" target="play-intro">
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-12" edge="1" parent="1" source="intro" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="sxiWCMYcTNVX3BTTq8Ty-6">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="300" y="580" />
-              <mxPoint x="300" y="320" />
+              <mxPoint x="479" y="204" />
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <mxCell id="label-intro-no" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="否(播放中)" vertex="1">
-          <mxGeometry height="20" width="60" x="270" y="440" as="geometry" />
+        <mxCell id="intro" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="播放开场白" vertex="1">
+          <mxGeometry height="36" width="72" x="443" y="113" as="geometry" />
         </mxCell>
-
-        <mxCell id="edge-intro-ended-yes" edge="1" parent="1" source="intro-ended" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="play-main">
+        <mxCell id="next" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="下一首" vertex="1">
+          <mxGeometry height="36" width="72" x="333" y="243" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;" target="load">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <mxCell id="label-intro-yes" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="是" vertex="1">
-          <mxGeometry height="20" width="30" x="480" y="565" as="geometry" />
+        <mxCell id="e2" edge="1" parent="1" source="load" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;" target="check">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- 正文到获取URL -->
-        <mxCell id="edge-main-url" edge="1" parent="1" source="play-main" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="get-url">
+        <mxCell id="e5" edge="1" parent="1" source="monitor" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;" target="endcheck">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="endcheck" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fail" edge="1" parent="1" source="check" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="fail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fail-end" edge="1" parent="1" source="fail" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" target="end">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="450" y="655" />
-              <mxPoint x="450" y="415" />
+              <mxPoint x="137" y="335" />
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <!-- 获取URL到歌词 -->
-        <mxCell id="edge-url-lyric" edge="1" parent="1" source="get-url" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="get-lyric">
+        <mxCell id="e-next" edge="1" parent="1" source="endcheck" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="next">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- 歌词到音频播放 -->
-        <mxCell id="edge-lyric-audio" edge="1" parent="1" source="get-lyric" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="audio-play">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- 音频播放到更新状态 -->
-        <mxCell id="edge-audio-state" edge="1" parent="1" source="audio-play" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="update-state">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- 更新状态到监听进度 -->
-        <mxCell id="edge-state-progress" edge="1" parent="1" source="update-state" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="progress-update">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- 监听进度到结束判断 -->
-        <mxCell id="edge-progress-ended" edge="1" parent="1" source="progress-update" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="ended">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- 结束判断 -->
-        <mxCell id="edge-ended-no" edge="1" parent="1" source="ended" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" target="progress-update">
+        <mxCell id="e-next-loop" edge="1" parent="1" source="next" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" target="load">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="420" y="830" />
-              <mxPoint x="420" y="735" />
+              <mxPoint x="405" y="259" />
+              <mxPoint x="543" y="259" />
+              <mxPoint x="543" y="67" />
             </Array>
           </mxGeometry>
         </mxCell>
-
-        <mxCell id="label-ended-no" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="否(继续)" vertex="1">
-          <mxGeometry height="20" width="50" x="425" y="770" as="geometry" />
+        <mxCell id="e-next-end" edge="1" parent="1" source="next" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" target="end">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="369" y="335" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-
-        <mxCell id="edge-ended-yes" edge="1" parent="1" source="ended" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="next-song">
+        <mxCell id="l-no1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;" value="否" vertex="1">
+          <mxGeometry height="16" width="16" x="187" y="113" as="geometry" />
+        </mxCell>
+        <mxCell id="l-yes1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize:10;" value="是" vertex="1">
+          <mxGeometry height="16" width="16" x="297" y="113" as="geometry" />
+        </mxCell>
+        <mxCell id="l-yes2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;" value="是" vertex="1">
+          <mxGeometry height="16" width="16" x="297" y="243" as="geometry" />
+        </mxCell>
+        <mxCell id="l-no2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;" value="否" vertex="1">
+          <mxGeometry height="16" width="16" x="253" y="283" as="geometry" />
+        </mxCell>
+        <mxCell id="l-stop" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=9;" value="停止" vertex="1">
+          <mxGeometry height="14" width="24" x="369" y="297" as="geometry" />
+        </mxCell>
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-4" edge="1" parent="1" source="sxiWCMYcTNVX3BTTq8Ty-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="intro" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <mxCell id="label-ended-yes" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="是" vertex="1">
-          <mxGeometry height="20" width="30" x="665" y="815" as="geometry" />
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-13" edge="1" parent="1" source="sxiWCMYcTNVX3BTTq8Ty-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="sxiWCMYcTNVX3BTTq8Ty-6" value="">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- 下一首循环 -->
-        <mxCell id="edge-next-loop" edge="1" parent="1" source="next-song" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" target="get-data">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="840" y="830" />
-              <mxPoint x="840" y="135" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="有开场白？" vertex="1">
+          <mxGeometry height="44" width="72" x="329" y="109" as="geometry" />
         </mxCell>
-
-        <!-- 不可用到结束 -->
-        <mxCell id="edge-unavailable-end" edge="1" parent="1" source="unavailable" style="edgeStyle=orthogonalEdgeStyle;endArrow=classic;html=1;strokeColor=#000000;strokeWidth=1.5;rounded=0;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" target="end">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="405" y="940" />
-              <mxPoint x="520" y="940" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-5" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize:10;" value="是" vertex="1">
+          <mxGeometry height="16" width="16" x="413" y="113" as="geometry" />
         </mxCell>
-
-        <!-- 图例 -->
-        <mxCell id="legend" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=10;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" value="&lt;b&gt;图例说明&lt;/b&gt;&#xa;⬭ 开始/结束&#xa;▭ 处理步骤&#xa;◊ 判断节点&#xa;▭ 音频/API调用(灰底)&#xa;▭ 错误处理(深灰底)" vertex="1">
-          <mxGeometry height="130" width="140" x="50" y="40" as="geometry" />
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-15" edge="1" parent="1" source="sxiWCMYcTNVX3BTTq8Ty-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="monitor" value="">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
-        <!-- 注释 -->
-        <mxCell id="note1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=10;dashed=1;" value="注: 播客模式&#xa;AI生成的开场白&#xa;先播放后正文" vertex="1">
-          <mxGeometry height="60" width="100" x="50" y="290" as="geometry" />
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;" value="播放歌曲" vertex="1">
+          <mxGeometry height="36" width="72" x="329" y="186" as="geometry" />
         </mxCell>
-
-        <mxCell id="note2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=10;dashed=1;" value="注: 播放模式&#xa;顺序/随机/单曲循环" vertex="1">
-          <mxGeometry height="50" width="100" x="850" y="805" as="geometry" />
+        <mxCell id="sxiWCMYcTNVX3BTTq8Ty-14" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=10;" value="否" vertex="1">
+          <mxGeometry height="16" width="16" x="373" y="159" as="geometry" />
         </mxCell>
-
       </root>
     </mxGraphModel>
   </diagram>

@@ -36,41 +36,33 @@
             }}
           </div>
           <div class="artisrOrLrc" v-if="music.getPlaySongData">
-            <template v-if="setting.bottomLyricShow">
-              <Transition mode="out-in">
-                <AllArtists
-                  v-if="!music.getPlayState || !music.getPlaySongLyric[0]"
-                  class="text-hidden"
-                  :artistsData="music.getPlaySongData.artist"
-                />
-                <n-text
-                  v-else-if="
-                    music.getPlaySongLyric[0] &&
-                    music.getPlaySongLyricIndex != -1
-                  "
-                  class="lrc text-hidden"
-                  :depth="3"
-                  v-html="
-                    music.getPlaySongLyric[music.getPlaySongLyricIndex].lyric
-                      ? music.getPlaySongLyric[music.getPlaySongLyricIndex]
-                          .lyric
-                      : '暂无歌词'
-                  "
-                />
-                <!-- 防止 Transition 内部为空导致渲染错误 -->
-                <AllArtists
-                  v-else
-                  class="text-hidden"
-                  :artistsData="music.getPlaySongData.artist"
-                />
-              </Transition>
-            </template>
-            <template v-else>
+            <Transition mode="out-in">
               <AllArtists
+                v-if="!music.getPlayState || !music.getPlaySongLyric[0]"
                 class="text-hidden"
                 :artistsData="music.getPlaySongData.artist"
               />
-            </template>
+              <n-text
+                v-else-if="
+                  music.getPlaySongLyric[0] &&
+                  music.getPlaySongLyricIndex != -1
+                "
+                class="lrc text-hidden"
+                :depth="3"
+                v-html="
+                  music.getPlaySongLyric[music.getPlaySongLyricIndex].lyric
+                    ? music.getPlaySongLyric[music.getPlaySongLyricIndex]
+                        .lyric
+                    : '暂无歌词'
+                "
+              />
+              <!-- 防止 Transition 内部为空导致渲染错误 -->
+              <AllArtists
+                v-else
+                class="text-hidden"
+                :artistsData="music.getPlaySongData.artist"
+              />
+            </Transition>
           </div>
         </div>
       </div>

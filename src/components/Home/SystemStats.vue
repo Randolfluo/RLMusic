@@ -111,6 +111,65 @@
         </div>
       </div>
 
+      <!-- 系统性能 -->
+      <div class="stats-card glass-card cpu-theme">
+        <div class="card-icon">
+          <n-icon :component="Cpu" />
+        </div>
+        <div class="card-content">
+          <n-statistic label="CPU 使用率">
+            <n-number-animation :from="prevStats.cpu_usage || 0" :to="stats.cpu_usage || 0" :precision="1" />
+            <template #suffix>%</template>
+          </n-statistic>
+        </div>
+      </div>
+
+      <div class="stats-card glass-card mem-theme">
+        <div class="card-icon">
+          <n-icon :component="HardDisk" />
+        </div>
+        <div class="card-content">
+          <n-statistic label="内存使用率">
+            <n-number-animation :from="prevStats.mem_usage || 0" :to="stats.mem_usage || 0" :precision="1" />
+            <template #suffix>%</template>
+          </n-statistic>
+        </div>
+      </div>
+
+      <div class="stats-card glass-card api-theme">
+        <div class="card-icon">
+          <n-icon :component="Api" />
+        </div>
+        <div class="card-content">
+          <n-statistic label="API 调用次数">
+            <n-number-animation :from="prevStats.api_call_count || 0" :to="stats.api_call_count || 0" />
+            <template #suffix>次</template>
+          </n-statistic>
+        </div>
+      </div>
+
+      <div class="stats-card glass-card scan-theme interactive" @click="toggleUnit('scan')">
+        <div class="card-icon">
+          <n-icon :component="Scan" />
+        </div>
+        <div class="card-content">
+          <n-statistic label="扫描时长">
+            <n-number-animation :from="calcTime(prevStats.user_scanned_duration || 0, units.scan)" :to="calcTime(stats.user_scanned_duration || 0, units.scan)" />
+            <template #suffix>{{ getUnitText(units.scan) }}</template>
+          </n-statistic>
+        </div>
+      </div>
+
+      <div class="stats-card glass-card volume-theme">
+        <div class="card-icon">
+          <n-icon :component="CloudStorage" />
+        </div>
+        <div class="card-content">
+          <n-statistic label="音乐库容量">
+            <span class="statistic-text">{{ formatBytes(stats.song_volume || 0) }}</span>
+          </n-statistic>
+        </div>
+      </div>
 
     </div>
     <n-divider class="divider" />
@@ -123,7 +182,8 @@ import { getSystemStats, type SystemStats } from "@/api/system";
 import { ResultCode } from "@/utils/request";
 import {
   Refresh, Music, RecordDisc, People, MusicList,
-  Time, Customer, Headset, User, ChartGraph
+  Time, Customer, Headset, User, ChartGraph,
+  Cpu, HardDisk, Api, Scan, CloudStorage
 } from "@icon-park/vue-next";
 
 const loading = ref(false);
@@ -139,7 +199,8 @@ const stats = ref<SystemStats>({
   user_scanned_duration: 0,
   cpu_usage: 0,
   mem_usage: 0,
-  api_call_count: 0
+  api_call_count: 0,
+  song_volume: 0
 });
 
 const prevStats = ref<SystemStats>({
@@ -154,13 +215,15 @@ const prevStats = ref<SystemStats>({
   user_scanned_duration: 0,
   cpu_usage: 0,
   mem_usage: 0,
-  api_call_count: 0
+  api_call_count: 0,
+  song_volume: 0
 });
 
 const units = reactive({
   uptime: 'h',
   music: 'm',
-  listen: 'm'
+  listen: 'm',
+  scan: 'm'
 });
 
 const toggleUnit = (key: keyof typeof units) => {
@@ -180,6 +243,14 @@ const getUnitText = (unit: string) => {
     const map: Record<string, string> = { 's': '秒', 'm': '分钟', 'h': '小时' };
     return map[unit] || unit;
 }
+
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const getStats = async () => {
     loading.value = true;
@@ -245,12 +316,12 @@ onMounted(() => {
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     width: 100%;
 
     @media (min-width: 640px) {
-      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
     }
 
     @media (min-width: 1024px) {
@@ -334,6 +405,43 @@ onMounted(() => {
       }
     }
 
+    @media (max-width: 640px) {
+      padding: 12px;
+      border-radius: 14px;
+      min-height: 72px;
+
+      .card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 18px;
+        margin-right: 10px;
+      }
+
+      .card-content {
+        :deep(.n-statistic) {
+          .n-statistic__label {
+            font-size: 11px;
+            margin-bottom: 2px;
+          }
+          .n-statistic-value__content {
+            font-size: 16px;
+          }
+          .n-statistic-value__suffix {
+            font-size: 10px;
+            margin-left: 2px;
+          }
+        }
+
+        .statistic-text {
+          font-weight: 700;
+          font-size: 16px;
+          color: #1a1a1a;
+          font-family: 'Playfair Display', serif;
+        }
+      }
+    }
+
     // Color Themes - 温暖米色调配色
     &.coral-theme { .card-icon { background: linear-gradient(135deg, #e07a5f 0%, #d4a574 100%); color: white; } }
     &.teal-theme { .card-icon { background: linear-gradient(135deg, #3d8b8b 0%, #5b8db8 100%); color: white; } }
@@ -343,6 +451,11 @@ onMounted(() => {
     &.green-theme { .card-icon { background: linear-gradient(135deg, #11998e 0%, #38d39f 100%); color: white; } }
     &.ink-theme { .card-icon { background: linear-gradient(135deg, #2c3e50 0%, #3d8b8b 100%); color: white; } }
     &.user-theme { .card-icon { background: linear-gradient(135deg, #3d8b8b 0%, #7c6fae 100%); color: white; } }
+    &.cpu-theme { .card-icon { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); color: white; } }
+    &.mem-theme { .card-icon { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; } }
+    &.api-theme { .card-icon { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%); color: white; } }
+    &.scan-theme { .card-icon { background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: white; } }
+    &.volume-theme { .card-icon { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); color: white; } }
   }
 
   .divider {
@@ -380,6 +493,10 @@ onMounted(() => {
     }
 
     :deep(.n-statistic-value__content) {
+      color: #ffffff !important;
+    }
+
+    .statistic-text {
       color: #ffffff !important;
     }
   }

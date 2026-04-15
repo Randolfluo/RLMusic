@@ -247,7 +247,14 @@ const playAll = () => {
     .cover-img {
       width: 100%;
       height: 100%;
+      display: block;
       transition: transform 0.6s ease;
+
+      :deep(img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
     }
 
     .cover-overlay {

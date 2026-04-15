@@ -56,10 +56,13 @@
                 <span class="value" v-else>{{ song.album_name || '未知专辑' }}</span>
               </div>
 
-              <div class="meta-item" v-if="song.description">
+              <div class="meta-item desc-item" v-if="song.description">
                 <n-icon :component="BookOne" class="icon" />
                 <span class="label">简介：</span>
-                <span class="value desc-text">{{ song.description }}</span>
+                <span class="value desc-text" :class="{ expanded: descExpanded }">{{ song.description }}</span>
+                <span class="desc-toggle" @click="descExpanded = !descExpanded">
+                  {{ descExpanded ? '收起' : '展开' }}
+                </span>
               </div>
             </div>
 
@@ -170,6 +173,47 @@
            </div>
         </div>
 
+        <!-- AI 开场白 -->
+        <div v-if="song.opening_file" class="ai-section glass-panel">
+          <div class="section-header">
+            <div class="section-icon">
+              <n-icon :component="VolumeNotice" />
+            </div>
+            <div class="section-title">AI 智能开场白</div>
+          </div>
+          <audio :src="openingAudioUrl" controls class="audio-player"></audio>
+        </div>
+
+        <!-- 歌词展示 -->
+        <div v-if="lyrics.length > 0" class="lyrics-section glass-panel">
+          <div class="section-header">
+            <div class="section-icon">
+              <n-icon :component="BookOne" />
+            </div>
+            <div class="section-title">歌词</div>
+            <n-button quaternary size="small" class="toggle-btn" @click="showLyrics = !showLyrics">
+              {{ showLyrics ? '收起' : '展开' }}
+            </n-button>
+          </div>
+          <n-collapse-transition :show="showLyrics">
+            <div class="lyrics-content">
+              <p v-for="(line, index) in lyrics" :key="index" class="lyric-line">
+                <span v-if="line.lyric" class="lyric-text">{{ line.lyric }}</span>
+                <span v-if="line.lyricFy" class="lyric-trans">{{ line.lyricFy }}</span>
+              </p>
+            </div>
+          </n-collapse-transition>
+        </div>
+        <div v-else-if="!lyricsLoading" class="lyrics-section glass-panel empty">
+          <div class="section-header">
+            <div class="section-icon">
+              <n-icon :component="BookOne" />
+            </div>
+            <div class="section-title">歌词</div>
+          </div>
+          <div class="empty-tip">暂无歌词</div>
+        </div>
+
         <!-- File Detail Modal -->
         <n-modal v-model:show="showFileInfo">
             <n-card
@@ -221,14 +265,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMessage } from "naive-ui";
-import { 
-  User, RecordDisc, PlayOne, Like, FileCodeOne, Time, 
-  Voice, DatabaseNetwork, Calendar, Play, FolderCode, BookOne
+import {
+  User, RecordDisc, PlayOne, Like, FileCodeOne, Time,
+  Voice, DatabaseNetwork, Calendar, Play, FolderCode, BookOne,
+  VolumeNotice
 } from "@icon-park/vue-next";
-import { getSongDetail, getSongCover, toggleLike } from "@/api/song";
+import { getSongDetail, getSongCover, toggleLike, getMusicLyric } from "@/api/song";
 import { useMusicDataStore } from "@/store/musicData";
 
 const route = useRoute();
@@ -242,9 +287,22 @@ const showFileInfo = ref(false); // Controls file info modal
 // Use loose type with specific array definition for artists to ensure v-for index is number
 const song = ref<{ artists?: any[]; [key: string]: any } | null>(null);
 
+// Lyrics
+const lyrics = ref<any[]>([]);
+const lyricsLoading = ref(false);
+const showLyrics = ref(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
+
+// Mobile description expand
+const descExpanded = ref(false);
+
 const coverUrl = computed(() => {
     if (!songId) return '';
     return getSongCover(songId);
+});
+
+const openingAudioUrl = computed(() => {
+    if (!song.value?.opening_file) return '';
+    return `/api/song/opening/${song.value.id}`;
 });
 
 const loadData = async () => {
@@ -252,7 +310,7 @@ const loadData = async () => {
     try {
         const res: any = await getSongDetail(songId);
         // Server returns code 1000 for success
-        if (res.code === 1000 && res.data) { 
+        if (res.code === 1000 && res.data) {
              song.value = res.data;
         } else if (res.id) {
             // Fallback if structure is different
@@ -265,6 +323,18 @@ const loadData = async () => {
         message.error("加载歌曲信息失败");
     } finally {
         loading.value = false;
+    }
+}
+
+const loadLyrics = async () => {
+    lyricsLoading.value = true;
+    try {
+        const data = await getMusicLyric(songId);
+        lyrics.value = data || [];
+    } catch (e) {
+        console.error(e);
+    } finally {
+        lyricsLoading.value = false;
     }
 }
 
@@ -305,6 +375,7 @@ const formatTime = (seconds: number) => {
 
 onMounted(() => {
     loadData();
+    loadLyrics();
 })
 </script>
 
@@ -345,6 +416,10 @@ onMounted(() => {
     padding: 40px;
     max-width: 1200px;
     margin: 0 auto;
+
+    @media (max-width: 768px) {
+      padding: 16px;
+    }
   }
 }
 
@@ -428,31 +503,87 @@ onMounted(() => {
 
   @media (max-width: 768px) {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 24px;
-    
+    align-items: stretch;
+    text-align: left;
+    gap: 16px;
+    padding: 16px;
+
     .cover-wrapper {
-      width: 200px;
-      height: 200px;
+      width: 140px;
+      height: 140px;
       margin: 0 auto;
     }
-    
+
     .info-wrapper {
       width: 100%;
-      align-items: center;
-      
+      align-items: flex-start;
+
       .song-title {
-        font-size: 28px;
-        margin-bottom: 12px;
+        font-size: 22px;
+        margin-bottom: 10px;
+        text-align: left;
+        width: 100%;
       }
-      
+
       .meta-row {
-        align-items: center;
+        align-items: flex-start;
+        width: 100%;
+        margin-bottom: 16px;
+        gap: 8px;
+
+        .meta-item {
+          font-size: 13px;
+          flex-wrap: wrap;
+          line-height: 1.4;
+
+          &.desc-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+
+            .icon, .label {
+              margin-bottom: 0;
+            }
+
+            .desc-text {
+              width: 100%;
+              -webkit-line-clamp: 5;
+              display: -webkit-box;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              font-size: 12px;
+              line-height: 1.6;
+              color: var(--n-text-color-2);
+
+              &.expanded {
+                -webkit-line-clamp: unset;
+                display: block;
+              }
+            }
+
+            .desc-toggle {
+              font-size: 11px;
+              color: var(--n-primary-color);
+              cursor: pointer;
+              font-weight: 600;
+              margin-top: 2px;
+            }
+          }
+        }
       }
 
       .actions {
-        justify-content: center;
+        justify-content: flex-start;
+        width: 100%;
+        gap: 10px;
+
+        .action-btn {
+          height: 40px;
+          font-size: 14px;
+          padding: 0 16px;
+          flex: 1;
+          max-width: none;
+        }
       }
     }
   }
@@ -485,7 +616,7 @@ onMounted(() => {
         .value {
           font-weight: 600;
           color: var(--n-text-color-1);
-          
+
           &.desc-text {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -494,8 +625,13 @@ onMounted(() => {
             font-size: 14px;
             font-weight: normal;
             line-height: 1.6;
+
+            &.expanded {
+              -webkit-line-clamp: unset;
+              display: block;
+            }
           }
-          
+
           &.link {
             cursor: pointer;
             transition: color 0.2s;
@@ -503,6 +639,35 @@ onMounted(() => {
               color: var(--n-primary-color);
               text-decoration: underline;
             }
+          }
+        }
+
+        .desc-toggle {
+          font-size: 12px;
+          color: var(--n-primary-color);
+          cursor: pointer;
+          font-weight: 600;
+          margin-left: 8px;
+          flex-shrink: 0;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+
+        &.desc-item {
+          align-items: flex-start;
+          flex-wrap: wrap;
+          row-gap: 4px;
+
+          .desc-text {
+            flex: 1 1 100%;
+            margin-top: 4px;
+          }
+
+          .desc-toggle {
+            margin-left: 0;
+            margin-top: 4px;
           }
         }
         
@@ -546,15 +711,17 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  
+
   @media (max-width: 1024px) {
     grid-template-columns: repeat(3, 1fr);
   }
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
   @media (max-width: 480px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
   
   .detail-card {
@@ -627,11 +794,10 @@ onMounted(() => {
         font-size: 16px;
         font-weight: 700;
         color: var(--n-text-color);
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         margin-bottom: 2px;
-        
+
         &.file-name {
           font-size: 14px;
         }
@@ -640,6 +806,185 @@ onMounted(() => {
       .card-tag {
         font-size: 12px;
         color: var(--n-text-color-3);
+      }
+    }
+
+    @media (max-width: 768px) {
+      padding: 12px;
+      gap: 8px;
+      border-radius: 12px;
+
+      .card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+
+      .card-content {
+        .card-label {
+          font-size: 10px;
+          margin-bottom: 2px;
+        }
+        .card-value {
+          font-size: 12px;
+          margin-bottom: 0;
+        }
+        .card-tag {
+          font-size: 10px;
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      padding: 10px;
+      gap: 6px;
+      border-radius: 10px;
+
+      .card-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .card-content {
+        .card-label {
+          font-size: 9px;
+          margin-bottom: 1px;
+        }
+        .card-value {
+          font-size: 11px;
+        }
+        .card-tag {
+          font-size: 9px;
+        }
+      }
+    }
+  }
+}
+
+.ai-section {
+  margin-top: 16px;
+  padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    margin-top: 10px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(var(--n-primary-color-rgb), 0.1);
+      color: var(--n-primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--n-text-color);
+    }
+  }
+
+  .audio-player {
+    width: 100%;
+    height: 40px;
+    border-radius: 8px;
+  }
+}
+
+.lyrics-section {
+  margin-top: 16px;
+  padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 14px;
+    margin-top: 10px;
+  }
+
+  &.empty {
+    .empty-tip {
+      text-align: center;
+      color: var(--n-text-color-3);
+      font-size: 14px;
+      padding: 20px 0;
+    }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(var(--n-primary-color-rgb), 0.1);
+      color: var(--n-primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+    }
+
+    .section-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--n-text-color);
+    }
+
+    .toggle-btn {
+      margin-left: auto;
+    }
+  }
+
+  .lyrics-content {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 8px;
+    line-height: 1.8;
+    font-size: 15px;
+    color: var(--n-text-color-1);
+    mask: linear-gradient(180deg, transparent 0, #fff 5%, #fff 95%, transparent 100%);
+    -webkit-mask: linear-gradient(180deg, transparent 0, #fff 5%, #fff 95%, transparent 100%);
+
+    @media (max-width: 768px) {
+      font-size: 14px;
+      max-height: 45vh;
+    }
+
+    .lyric-line {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .lyric-text {
+        color: var(--n-text-color-1);
+      }
+
+      .lyric-trans {
+        font-size: 13px;
+        color: var(--n-text-color-3);
+
+        @media (max-width: 768px) {
+          font-size: 12px;
+        }
       }
     }
   }

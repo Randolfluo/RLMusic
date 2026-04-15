@@ -1,4 +1,5 @@
 import axios from "@/utils/request";
+import { getSongCover, resolveCoverUrl } from "@/api/song";
 
 /**
  * 搜索部分 API (Updated)
@@ -48,13 +49,40 @@ export const getSearchSuggest = async (keywords: string) => {
         ...song,
         id: song.ID || song.id,
         album_title: song.album_name || song.album_title,
+        cover_url: song.cover_url || (song.id ? getSongCover(song.id) : undefined),
+    }));
+
+    // Process artists: backend returns 'cover', frontend expects 'picUrl'
+    const rawArtists = (artists as any).data?.result?.artists || [];
+    const processedArtists = rawArtists.map((artist: any) => ({
+        ...artist,
+        id: artist.ID || artist.id,
+        picUrl: artist.picUrl || artist.img1v1Url || resolveCoverUrl(artist.cover),
+    }));
+
+    // Process albums: backend returns 'cover' and 'title', frontend expects 'picUrl' and 'name'
+    const rawAlbums = (albums as any).data?.result?.albums || [];
+    const processedAlbums = rawAlbums.map((album: any) => ({
+        ...album,
+        id: album.ID || album.id,
+        name: album.name || album.title,
+        picUrl: album.picUrl || resolveCoverUrl(album.cover),
+    }));
+
+    // Process playlists: backend returns 'cover_url' and 'title', frontend expects 'coverImgUrl' and 'name'
+    const rawPlaylists = (playlists as any).data?.result?.playlists || [];
+    const processedPlaylists = rawPlaylists.map((playlist: any) => ({
+        ...playlist,
+        id: playlist.ID || playlist.id,
+        name: playlist.name || playlist.title,
+        coverImgUrl: playlist.coverImgUrl || playlist.picUrl || resolveCoverUrl(playlist.cover_url),
     }));
 
     return {
         songs: processedSongs,
-        artists: (artists as any).data?.result?.artists || [],
-        albums: (albums as any).data?.result?.albums || [],
-        playlists: (playlists as any).data?.result?.playlists || []
+        artists: processedArtists,
+        albums: processedAlbums,
+        playlists: processedPlaylists
     };
 }
 

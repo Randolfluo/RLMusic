@@ -144,7 +144,14 @@ export function resolveCoverUrl(url?: string) {
   if (url.startsWith("/api/") || url.startsWith("api/")) {
     return resolveServerUrl(url.startsWith("/") ? url : `/${url}`);
   }
-  return resolveServerUrl(url);
+  if (/^https?:\/\//.test(url)) {
+    return url;
+  }
+  if (url.startsWith("/")) {
+    return resolveServerUrl(url);
+  }
+  // 处理数据库中存储的裸文件名，补全为 /covers/ 路径
+  return resolveServerUrl(`/covers/${url}`);
 }
 
 /**
