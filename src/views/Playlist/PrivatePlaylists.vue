@@ -25,6 +25,12 @@
         <div class="desc">
             共 {{ total }} 个歌单
         </div>
+        <n-button type="primary" @click="showCreateModal = true">
+          <template #icon>
+            <n-icon :component="Plus" />
+          </template>
+          创建歌单
+        </n-button>
       </div>
     </div>
 
@@ -49,19 +55,38 @@
         @pageSizeChange="onPageSizeChange"
       />
     </div>
+
+    <!-- 创建私有歌单弹窗 -->
+    <n-modal v-model:show="showCreateModal" title="创建私有歌单" preset="card" style="width: 420px; max-width: 90vw;" :mask-closable="false">
+      <n-form :model="createForm" label-placement="left" label-width="80">
+        <n-form-item label="歌单名称" required>
+          <n-input v-model:value="createForm.title" placeholder="输入歌单名称" maxlength="50" show-count clearable />
+        </n-form-item>
+        <n-form-item label="歌单描述">
+          <n-input v-model:value="createForm.description" type="textarea" :rows="3" placeholder="输入歌单描述（可选）" maxlength="200" show-count clearable />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <n-button @click="showCreateModal = false">取消</n-button>
+          <n-button type="primary" :loading="creating" :disabled="!createForm.title.trim()" @click="handleCreatePlaylist">创建</n-button>
+        </div>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getUserPrivatePlaylists } from "@/api/playlist";
+import { getUserPrivatePlaylists, createPrivatePlaylist } from "@/api/playlist";
 import { generatePlaylistIntros } from "@/api/ai";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NImage, NDivider, NAvatar, useDialog } from "naive-ui";
+import { useMessage, NImage, NDivider, NAvatar, useDialog, NButton, NIcon, NModal, NForm, NFormItem, NInput } from "naive-ui";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { useUserDataStore } from "@/store/userData";
 import { resolveAvatarUrl } from "@/api/user";
+import { Plus } from "@icon-park/vue-next";
 
 const message = useMessage();
 const dialog = useDialog();
@@ -71,6 +96,9 @@ const playlists = ref<any[]>([]);
 const page = ref(1);
 const limit = ref(20);
 const total = ref(0);
+const showCreateModal = ref(false);
+const createForm = ref({ title: "", description: "" });
+const creating = ref(false);
 
 onMounted(() => {
   getPlaylists();
@@ -127,6 +155,33 @@ const handleGenerateIntro = (playlist: any) => {
         });
     },
   });
+};
+
+const handleCreatePlaylist = async () => {
+  const title = createForm.value.title.trim();
+  if (!title) {
+    message.warning("歌单名称不能为空");
+    return;
+  }
+  creating.value = true;
+  try {
+    const res = await createPrivatePlaylist({
+      title,
+      description: createForm.value.description.trim(),
+    });
+    if (res.code === ResultCode.SUCCESS) {
+      message.success("创建成功");
+      createForm.value = { title: "", description: "" };
+      showCreateModal.value = false;
+      getPlaylists();
+    } else {
+      message.error(res.message || "创建失败");
+    }
+  } catch (error) {
+    message.error("创建失败");
+  } finally {
+    creating.value = false;
+  }
 };
 </script>
 

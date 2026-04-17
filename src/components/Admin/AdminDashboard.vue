@@ -34,79 +34,6 @@
       <div class="dashboard-section" v-if="realtimeStats">
         <div class="section-label">实时监控</div>
         <div class="realtime-monitor-grid">
-          <!-- CPU Card -->
-          <div class="monitor-card glass-panel span-2 gray-theme">
-            <div class="monitor-main">
-              <div class="monitor-icon gray">
-                <n-icon :component="Cpu" />
-              </div>
-              <div class="monitor-info">
-                <div class="monitor-label">CPU 使用率</div>
-                <div class="progress-container">
-                  <n-progress
-                    type="circle"
-                    :percentage="realtimeStats?.cpu_usage || 0"
-                    :color="'#64748b'"
-                    :rail-color="'rgba(100, 116, 139, 0.1)'"
-                    :indicator-placement="'inside'"
-                    :stroke-width="10"
-                    style="width: 50px; height: 50px;"
-                  >
-                    <span class="progress-text">
-                        <n-number-animation :from="prevCpuUsage" :to="realtimeStats?.cpu_usage || 0" :precision="0" />%
-                    </span>
-                  </n-progress>
-                </div>
-              </div>
-            </div>
-            <div class="monitor-chart">
-              <v-chart class="mini-chart" :option="cpuChartOption" autoresize />
-            </div>
-          </div>
-
-          <!-- Memory Card -->
-          <div class="monitor-card glass-panel span-2 gray-theme">
-            <div class="monitor-main">
-              <div class="monitor-icon gray">
-                <n-icon :component="HardDisk" />
-              </div>
-              <div class="monitor-info">
-                <div class="monitor-label">内存占用</div>
-                <div class="progress-container">
-                  <n-progress
-                    type="circle"
-                    :percentage="realtimeStats?.mem_usage || 0"
-                    :color="'#64748b'"
-                    :rail-color="'rgba(100, 116, 139, 0.1)'"
-                    :indicator-placement="'inside'"
-                    :stroke-width="10"
-                    style="width: 50px; height: 50px;"
-                  >
-                    <span class="progress-text">
-                        <n-number-animation :from="prevMemUsage" :to="realtimeStats?.mem_usage || 0" :precision="0" />%
-                    </span>
-                  </n-progress>
-                </div>
-              </div>
-            </div>
-            <div class="monitor-chart">
-              <v-chart class="mini-chart" :option="memChartOption" autoresize />
-            </div>
-          </div>
-
-          <!-- API Call Card -->
-          <div class="monitor-card glass-panel gray-theme">
-            <div class="monitor-icon gray">
-              <n-icon :component="Api" />
-            </div>
-            <div class="monitor-content">
-              <div class="monitor-label">API 调用</div>
-              <div class="monitor-value">
-                <n-number-animation :from="prevApiCallCount" :to="realtimeStats?.api_call_count || 0" />
-              </div>
-            </div>
-          </div>
-
           <!-- QPS Card -->
           <div class="monitor-card glass-panel gray-theme">
             <div class="monitor-icon gray">
@@ -129,19 +56,6 @@
               <div class="monitor-label">Go 协程</div>
               <div class="monitor-value">
                 <n-number-animation :from="prevGoRoutines" :to="realtimeStats?.go_routines || 0" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Volume Card -->
-          <div class="monitor-card glass-panel gray-theme">
-            <div class="monitor-icon gray">
-              <n-icon :component="CloudStorage" />
-            </div>
-            <div class="monitor-content">
-              <div class="monitor-label">歌曲占用空间</div>
-              <div class="monitor-value text-sm">
-                {{ formatBytes(realtimeStats?.total_volume || 0) }}
               </div>
             </div>
           </div>
@@ -343,13 +257,13 @@
 
 <script setup lang="ts">
 // Force update
-import { ref, onMounted, onUnmounted, reactive, computed, provide } from "vue";
+import { ref, onMounted, onUnmounted, reactive } from "vue";
 import { useRouter } from "vue-router";
-import { 
-  Permissions, MusicList, People, RecordDisc, 
+import {
+  Permissions, MusicList, People, RecordDisc,
   Scan, FileExcel, Music, User, CheckOne,
   TrendingUp, Lightning, Play, Download,
-  DocDetail, Link, Cpu, Api, HardDisk, CloudStorage, Connection, Voice
+  DocDetail, Link, Connection, Voice
 } from "@icon-park/vue-next";
 import { useMessage, NIcon, NButton, NNumberAnimation, NProgress } from "naive-ui";
 import { 
@@ -364,34 +278,15 @@ import {
 import { getSystemStats, getSystemStatus, type SystemStats, type SystemStatus } from "@/api/system";
 import { ResultCode, apiBaseURL } from "@/utils/request";
 
-// ECharts
-import VChart, { THEME_KEY } from "vue-echarts";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { LineChart } from "echarts/charts";
-import { GridComponent, TooltipComponent } from "echarts/components";
-
-use([CanvasRenderer, LineChart, GridComponent, TooltipComponent]);
-
 const router = useRouter();
 const message = useMessage();
-
-// Provide ECharts theme
-provide(THEME_KEY, "light");
 
 // State
 const stats = ref<SystemStats | null>(null);
 const realtimeStats = ref<SystemStatus | null>(null);
-const prevApiCallCount = ref(0);
-const prevCpuUsage = ref(0);
-const prevMemUsage = ref(0);
 const prevGoRoutines = ref(0);
 const qps = ref(0);
 const intervalId = ref<number | null>(null);
-
-// History data for charts
-const cpuHistory = ref<number[]>(new Array(300).fill(0));
-const memHistory = ref<number[]>(new Array(300).fill(0));
 
 const loading = reactive({
   playlist: false,
@@ -401,66 +296,20 @@ const loading = reactive({
   intro: false
 });
 
-// Chart Options
-const getChartOption = (data: number[], color: string) => {
-  return {
-    animation: false,
-    grid: { left: 0, right: 0, top: 5, bottom: 0 },
-    xAxis: { type: 'category', show: false, boundaryGap: false },
-    yAxis: { type: 'value', show: false, min: 0, max: 100 },
-    series: [
-      {
-        data: data,
-        type: 'line',
-        smooth: true,
-        showSymbol: false,
-        lineStyle: { width: 2, color: color },
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [{ offset: 0, color: color }, { offset: 1, color: 'rgba(255, 255, 255, 0)' }],
-            global: false
-          },
-          opacity: 0.3
-        }
-      }
-    ],
-    tooltip: { 
-      trigger: 'axis', 
-      formatter: '{c}%',
-      position: function (point: any) { return [point[0], '10%']; }
-    }
-  };
-};
-
-const cpuChartOption = computed(() => getChartOption(cpuHistory.value, '#64748b'));
-const memChartOption = computed(() => getChartOption(memHistory.value, '#64748b'));
-
 // API Calls
 const fetchRealtimeStats = async () => {
   try {
     const res = await getSystemStatus();
     if (res.code === ResultCode.SUCCESS) {
       if (realtimeStats.value) {
-        prevApiCallCount.value = realtimeStats.value.api_call_count;
-        prevCpuUsage.value = realtimeStats.value.cpu_usage;
-        prevMemUsage.value = realtimeStats.value.mem_usage;
         prevGoRoutines.value = realtimeStats.value.go_routines;
 
         // Calculate QPS (approximate)
         // Interval is 500ms, so multiply diff by 2
-        const diff = res.data.api_call_count - prevApiCallCount.value;
+        const diff = res.data.api_call_count - realtimeStats.value.api_call_count;
         qps.value = diff > 0 ? diff * 2 : 0;
       }
       realtimeStats.value = res.data;
-      
-      // Update history
-      cpuHistory.value.push(res.data.cpu_usage);
-      if (cpuHistory.value.length > 300) cpuHistory.value.shift();
-      
-      memHistory.value.push(res.data.mem_usage);
-      if (memHistory.value.length > 300) memHistory.value.shift();
     }
   } catch (error) {
     console.error("Failed to fetch realtime stats", error);
@@ -476,14 +325,6 @@ const fetchStats = async () => {
   } catch (error) {
     console.error("Failed to fetch system stats", error);
   }
-};
-
-const formatBytes = (bytes: number) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 const handleGeneratePlaylistDesc = async () => {
@@ -721,6 +562,9 @@ onUnmounted(() => {
   overflow-x: hidden;
   box-sizing: border-box;
 
+  @media (max-width: 768px) { padding: 20px; }
+  @media (max-width: 480px) { padding: 16px; }
+
   :global(.dark) & {
     background: #0f1115;
     color: #fff;
@@ -808,16 +652,26 @@ onUnmounted(() => {
 .header-section {
   margin-bottom: 48px;
 
+  @media (max-width: 768px) { margin-bottom: 28px; }
+
   .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
   }
 
   .title-wrapper {
     display: flex;
     align-items: center;
     gap: 24px;
+
+    @media (max-width: 768px) { gap: 16px; }
 
     .icon-box {
       width: 64px;
@@ -833,11 +687,18 @@ onUnmounted(() => {
       backdrop-filter: blur(10px);
       transition: transform 0.3s ease;
 
+      @media (max-width: 768px) {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+        border-radius: 14px;
+      }
+
       :global(.dark) & {
         background: rgba(30, 41, 59, 0.8);
         border-color: rgba(255, 255, 255, 0.1);
       }
-      
+
       &:hover {
         transform: scale(1.05) rotate(5deg);
       }
@@ -854,7 +715,10 @@ onUnmounted(() => {
       letter-spacing: -0.03em;
       line-height: 1.1;
 
-      :global(.dark) & { 
+      @media (max-width: 768px) { font-size: 26px; }
+      @media (max-width: 480px) { font-size: 22px; }
+
+      :global(.dark) & {
         background: linear-gradient(135deg, #f9fafb 0%, #9ca3af 100%);
         -webkit-background-clip: text;
         background-clip: text;
@@ -868,6 +732,8 @@ onUnmounted(() => {
         color: #64748b;
         margin: 6px 0 0;
         letter-spacing: 0.01em;
+
+        @media (max-width: 768px) { font-size: 13px; }
 
         :global(.dark) & { color: #94a3b8; }
       }
@@ -909,6 +775,8 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
 
+  @media (max-width: 768px) { margin-bottom: 32px; }
+
   .section-label {
     font-size: 12px;
     text-transform: uppercase;
@@ -921,6 +789,11 @@ onUnmounted(() => {
     line-height: 1;
     border-color: #cbd5e1;
     opacity: 0.8;
+
+    @media (max-width: 768px) {
+      margin-bottom: 16px;
+      font-size: 11px;
+    }
 
     :global(.dark) & { color: #9ca3af; border-color: #475569; }
     
@@ -952,19 +825,12 @@ onUnmounted(() => {
 /* Realtime Monitor Grid */
 .realtime-monitor-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
-  
-  .span-2 { grid-column: span 2; }
 
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(2, 1fr);
-    .span-2 { grid-column: span 1; }
-  }
-
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    .span-2 { grid-column: span 1; }
+    gap: 12px;
   }
 }
 
@@ -978,6 +844,12 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
 
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+
   &.gray-theme {
     .monitor-icon.gray { background: rgba(241, 245, 249, 0.8); color: #64748b; }
   }
@@ -985,18 +857,22 @@ onUnmounted(() => {
   &:hover {
     transform: translateY(-4px);
     background: rgba(255, 255, 255, 0.85);
-    box-shadow: 
+    box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.05),
       0 8px 10px -6px rgba(0, 0, 0, 0.01);
-    
+
     .monitor-icon.gray {
       background: rgba(226, 232, 240, 0.8);
       transform: scale(1.05);
       color: #334155;
     }
   }
-  
-  &.span-2 { justify-content: space-between; padding-right: 0; }
+
+  &.span-2 {
+    justify-content: space-between;
+    padding-right: 0;
+    @media (max-width: 480px) { padding-right: 16px; }
+  }
 
   .monitor-main {
     display: flex;
@@ -1004,8 +880,10 @@ onUnmounted(() => {
     gap: 20px;
     position: relative;
     z-index: 2;
+
+    @media (max-width: 768px) { gap: 12px; }
   }
-  
+
   .monitor-chart {
     flex: 1;
     height: 100%;
@@ -1019,10 +897,12 @@ onUnmounted(() => {
     mask-image: linear-gradient(to right, transparent, black 40%);
     -webkit-mask-image: linear-gradient(to right, transparent, black 40%);
     transition: opacity 0.4s ease;
+
+    @media (max-width: 480px) { display: none; }
   }
-  
+
   &:hover .monitor-chart { opacity: 1; }
-  
+
   .mini-chart { width: 100%; height: 100%; min-height: 80px; }
 
   .monitor-icon {
@@ -1035,13 +915,20 @@ onUnmounted(() => {
     font-size: 26px;
     flex-shrink: 0;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    @media (max-width: 768px) {
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      border-radius: 12px;
+    }
   }
 
   .monitor-content, .monitor-info {
     display: flex;
     flex-direction: column;
     z-index: 2;
-    
+
     .monitor-label {
       font-size: 13px;
       font-weight: 600;
@@ -1049,6 +936,11 @@ onUnmounted(() => {
       letter-spacing: 0.02em;
       color: #94a3b8;
       margin-bottom: 6px;
+
+      @media (max-width: 768px) {
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
     }
 
     .monitor-value {
@@ -1061,11 +953,22 @@ onUnmounted(() => {
       letter-spacing: -0.02em;
 
       &.text-sm { font-size: 20px; }
+
+      @media (max-width: 768px) {
+        font-size: 22px;
+        &.text-sm { font-size: 16px; }
+      }
     }
   }
-  
+
   .progress-container { margin-top: 4px; }
-  .progress-text { font-size: 13px; font-weight: 700; color: #334155; }
+  .progress-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+
+    @media (max-width: 768px) { font-size: 11px; }
+  }
 }
 
 /* Stats Grid */
@@ -1076,7 +979,11 @@ onUnmounted(() => {
   margin-bottom: 32px;
 
   @media (max-width: 1200px) { grid-template-columns: 1fr 1fr; }
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
 }
 
 .stat-card {
@@ -1086,6 +993,11 @@ onUnmounted(() => {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 28px;
+
+  @media (max-width: 768px) {
+    padding: 20px;
+    border-radius: 18px;
+  }
 
   &:hover {
     transform: translateY(-6px);
@@ -1103,24 +1015,31 @@ onUnmounted(() => {
     animation: gradientFlow 8s ease infinite;
     box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.4);
 
-    .stat-label { 
+    .stat-label {
       font-size: 14px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.9); 
+      color: rgba(255, 255, 255, 0.9);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+
+      @media (max-width: 768px) { font-size: 12px; }
     }
-    
-    .stat-value { 
-      color: white; 
-      font-size: 56px; 
+
+    .stat-value {
+      color: white;
+      font-size: 56px;
       font-weight: 800;
       letter-spacing: -0.03em;
       text-shadow: 0 2px 10px rgba(0,0,0,0.1);
       margin: 16px 0;
+
+      @media (max-width: 768px) {
+        font-size: 36px;
+        margin: 10px 0;
+      }
     }
-    
-    .stat-trend { 
+
+    .stat-trend {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -1131,8 +1050,13 @@ onUnmounted(() => {
       font-size: 13px;
       font-weight: 600;
       backdrop-filter: blur(4px);
+
+      @media (max-width: 768px) {
+        font-size: 11px;
+        padding: 4px 10px;
+      }
     }
-    
+
     .stat-chart-decoration {
       position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; opacity: 0.25;
       svg { width: 100%; height: 100%; }
@@ -1143,6 +1067,12 @@ onUnmounted(() => {
       position: absolute; right: -30px; top: -30px; font-size: 220px; opacity: 0.1;
       transform: rotate(-15deg);
       transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      @media (max-width: 768px) {
+        font-size: 140px;
+        right: -20px;
+        top: -20px;
+      }
     }
 
     &:hover {
@@ -1156,13 +1086,25 @@ onUnmounted(() => {
     flex-direction: column;
     justify-content: center;
     cursor: pointer;
-    
-    .stat-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+
+    .stat-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+      @media (max-width: 768px) {
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+    }
 
     .stat-icon-small {
       width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;
       transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       &.purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+      @media (max-width: 768px) {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        border-radius: 10px;
+      }
     }
 
     &:hover .stat-icon-small {
@@ -1171,16 +1113,23 @@ onUnmounted(() => {
       box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.3);
     }
 
-    .stat-value-small { 
-      font-size: 36px; 
-      font-weight: 800; 
-      color: #1e293b; 
-      line-height: 1; 
-      margin-bottom: 8px; 
+    .stat-value-small {
+      font-size: 36px;
+      font-weight: 800;
+      color: #1e293b;
+      line-height: 1;
+      margin-bottom: 8px;
       letter-spacing: -0.02em;
+
+      @media (max-width: 768px) {
+        font-size: 26px;
+        margin-bottom: 4px;
+      }
     }
-    
-    .stat-footer { font-size: 14px; color: #94a3b8; font-weight: 500; }
+
+    .stat-footer { font-size: 14px; color: #94a3b8; font-weight: 500;
+      @media (max-width: 768px) { font-size: 12px; }
+    }
   }
 }
 
@@ -1191,12 +1140,19 @@ onUnmounted(() => {
 }
 
 /* Tools Integration */
-.tools-integration { margin-top: 32px; }
+.tools-integration { margin-top: 32px;
+  @media (max-width: 768px) { margin-top: 20px; }
+}
 
 .ops-grid-compact {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .op-card-compact {
@@ -1207,30 +1163,42 @@ onUnmounted(() => {
   padding: 24px 28px;
   border-radius: 20px;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  
-  &.white-theme { 
-    background: #ffffff;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); 
+
+  @media (max-width: 768px) {
+    padding: 16px 18px;
+    border-radius: 14px;
   }
-  
+
+  &.white-theme {
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  }
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.06);
     border-color: rgba(59, 130, 246, 0.3);
-    
+
     .compact-icon { transform: scale(1.1) rotate(10deg); }
   }
 
   .compact-icon {
     width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    
+
+    @media (max-width: 768px) {
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      border-radius: 12px;
+    }
+
     &.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
     &.teal { background: rgba(20, 184, 166, 0.1); color: #14b8a6; }
     &.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
     &.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
   }
-  
+
   &:hover .compact-icon.green { background: rgba(16, 185, 129, 0.2); box-shadow: 0 8px 16px -4px rgba(16, 185, 129, 0.2); }
   &:hover .compact-icon.teal { background: rgba(20, 184, 166, 0.2); box-shadow: 0 8px 16px -4px rgba(20, 184, 166, 0.2); }
   &:hover .compact-icon.blue { background: rgba(59, 130, 246, 0.2); box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.2); }
@@ -1238,29 +1206,39 @@ onUnmounted(() => {
 
   .compact-info {
     flex-grow: 1; margin: 0 20px;
-    h3 { font-size: 16px; font-weight: 700; color: #1f2937; margin: 0 0 4px 0; letter-spacing: -0.01em; }
-    p { font-size: 13px; color: #6b7280; margin: 0; }
+    h3 { font-size: 16px; font-weight: 700; color: #1f2937; margin: 0 0 4px 0; letter-spacing: -0.01em;
+      @media (max-width: 768px) { font-size: 14px; }
+    }
+    p { font-size: 13px; color: #6b7280; margin: 0;
+      @media (max-width: 768px) { font-size: 12px; }
+    }
   }
-  
+
   &:hover .compact-info h3 { color: #111827; }
 
   &.danger-zone {
     border: 1px solid rgba(239, 68, 68, 0.15);
     background: linear-gradient(145deg, #fffafa, #fef2f2);
-    &:hover { 
+    &:hover {
       background: #fef2f2;
-      border-color: rgba(239, 68, 68, 0.4); 
+      border-color: rgba(239, 68, 68, 0.4);
       transform: translateY(-4px);
       box-shadow: 0 15px 30px -5px rgba(239, 68, 68, 0.1);
     }
   }
 }
 
-.action-circle-btn { 
+.action-circle-btn {
   width: 44px; height: 44px; flex-shrink: 0;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-size: 18px;
-  
+
+  @media (max-width: 768px) {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
@@ -1284,8 +1262,15 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .ops-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ops-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 12px;
   }
 }
 
@@ -1304,31 +1289,46 @@ onUnmounted(() => {
   cursor: pointer;
   background: linear-gradient(160deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
 
+  @media (max-width: 768px) {
+    min-height: auto;
+    padding: 20px 18px;
+    border-radius: 18px;
+  }
+
   &:hover {
     transform: translateY(-10px) scale(1.01);
     background: linear-gradient(160deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
-    box-shadow: 
-      0 30px 60px -15px rgba(0, 0, 0, 0.1), 
+    box-shadow:
+      0 30px 60px -15px rgba(0, 0, 0, 0.1),
       inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-    
+
     .op-icon-large { transform: scale(1.15) rotate(8deg); }
     .op-info h3 { color: #000; }
   }
-  
+
   &:active { transform: translateY(-4px) scale(0.99); }
 
   .op-card-glow {
     position: absolute; top: -60px; right: -60px; width: 240px; height: 240px;
     filter: blur(70px); opacity: 0.12; border-radius: 50%;
     transition: all 0.6s ease-out;
+
+    @media (max-width: 768px) {
+      width: 120px;
+      height: 120px;
+      top: -30px;
+      right: -30px;
+      filter: blur(40px);
+    }
+
     &.blue { background: #3b82f6; }
     &.purple { background: #a855f7; }
     &.orange { background: #f97316; }
     &.teal { background: #14b8a6; }
   }
-  
-  &:hover .op-card-glow { 
-    opacity: 0.25; 
+
+  &:hover .op-card-glow {
+    opacity: 0.25;
     transform: scale(1.3) translate(-20px, 20px);
   }
 
@@ -1338,13 +1338,21 @@ onUnmounted(() => {
     font-size: 36px; margin-bottom: 32px;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05);
-    
+
+    @media (max-width: 768px) {
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+
     &.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
     &.purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
     &.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
     &.teal { background: rgba(20, 184, 166, 0.1); color: #14b8a6; }
   }
-  
+
   &:hover .op-icon-large.blue { background: rgba(59, 130, 246, 0.2); box-shadow: 0 15px 30px -5px rgba(59, 130, 246, 0.25); }
   &:hover .op-icon-large.purple { background: rgba(168, 85, 247, 0.2); box-shadow: 0 15px 30px -5px rgba(168, 85, 247, 0.25); }
   &:hover .op-icon-large.orange { background: rgba(249, 115, 22, 0.2); box-shadow: 0 15px 30px -5px rgba(249, 115, 22, 0.25); }
@@ -1352,10 +1360,16 @@ onUnmounted(() => {
 
   .op-info {
     margin-bottom: 32px; flex-grow: 1;
-    h3 { font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 12px 0; transition: color 0.3s; letter-spacing: -0.02em; }
-    p { font-size: 15px; color: #64748b; line-height: 1.6; margin: 0; font-weight: 500; }
+    h3 { font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 12px 0; transition: color 0.3s; letter-spacing: -0.02em;
+      @media (max-width: 768px) { font-size: 16px; margin-bottom: 6px; }
+    }
+    p { font-size: 15px; color: #64748b; line-height: 1.6; margin: 0; font-weight: 500;
+      @media (max-width: 768px) { font-size: 13px; line-height: 1.5; }
+    }
+
+    @media (max-width: 768px) { margin-bottom: 16px; }
   }
-  
+
   .op-action {
     width: 100%;
   }
@@ -1371,15 +1385,21 @@ onUnmounted(() => {
   height: auto;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   color: #4b5563;
-  
-  &:hover { 
-    background: white; 
-    transform: translateY(-2px); 
+
+  @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+
+  &:hover {
+    background: white;
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-color: rgba(0,0,0,0.08);
     color: #111827;
   }
-  
+
   &:active { transform: translateY(0); }
 }
 </style>

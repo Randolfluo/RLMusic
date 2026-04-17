@@ -14,7 +14,7 @@
           System
         </div>
         <h1 class="page-title">系统信息</h1>
-        <p class="page-subtitle">实时监控服务器状态与资源统计</p>
+        <p class="page-subtitle">平台音乐与用户数据概览</p>
       </div>
 
       <div class="stats-wrapper glass-panel">
@@ -41,6 +41,7 @@ import { NIcon } from "naive-ui";
   justify-content: center;
   position: relative;
   overflow: hidden;
+  overflow-x: hidden;
   background: #faf8f5;
   font-family: 'Plus Jakarta Sans', sans-serif;
 
@@ -53,7 +54,7 @@ import { NIcon } from "naive-ui";
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     z-index: -1;
     pointer-events: none;
@@ -92,6 +93,7 @@ import { NIcon } from "naive-ui";
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      animation: blob-float-center 20s infinite ease-in-out;
       animation-delay: -10s;
       opacity: 0.3;
     }
@@ -103,11 +105,19 @@ import { NIcon } from "naive-ui";
     50% { transform: translate(-20px, 20px) scale(0.95); }
     75% { transform: translate(15px, 15px) scale(1.02); }
   }
+
+  @keyframes blob-float-center {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    25% { transform: translate(calc(-50% + 30px), calc(-50% - 30px)) scale(1.05); }
+    50% { transform: translate(calc(-50% - 20px), calc(-50% + 20px)) scale(0.95); }
+    75% { transform: translate(calc(-50% + 15px), calc(-50% + 15px)) scale(1.02); }
+  }
 }
 
 .container {
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
   position: relative;
   z-index: 1;
   animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);

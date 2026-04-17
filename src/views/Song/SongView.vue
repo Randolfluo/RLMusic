@@ -447,7 +447,12 @@ onMounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   padding: 30px;
-  
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
   @media (prefers-color-scheme: dark) {
     background: rgba(30, 30, 30, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -505,8 +510,9 @@ onMounted(() => {
     flex-direction: column;
     align-items: stretch;
     text-align: left;
-    gap: 16px;
+    gap: 12px;
     padding: 16px;
+    margin-bottom: 16px;
 
     .cover-wrapper {
       width: 140px;

@@ -19,9 +19,25 @@
             @click="music.setBigPlayerState(true)"
             style="cursor: pointer;"
           />
-          <div class="cover-overlay">
+          <div class="cover-overlay" @click="music.setBigPlayerState(true)">
             <n-icon :component="PlayOne" size="48" />
           </div>
+          <div
+            v-if="canUploadCover"
+            class="cover-upload-btn"
+            :class="{ loading: coverUploadLoading }"
+            @click.stop="triggerCoverUpload"
+          >
+            <n-icon :component="Camera" size="18" />
+            <span v-if="coverUploadLoading">上传中...</span>
+          </div>
+          <input
+            ref="coverInputRef"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="handleCoverChange"
+          />
         </div>
 
         <div class="info-wrapper">
@@ -86,6 +102,18 @@
               </template>
               生成开场白
             </n-button>
+
+            <n-button
+              v-if="canEditPlaylist"
+              round size="large"
+              class="action-btn"
+              @click="openEditModal"
+            >
+              <template #icon>
+                <n-icon :component="Edit" />
+              </template>
+              编辑歌单
+            </n-button>
           </div>
         </div>
       </div>
@@ -100,6 +128,7 @@
             :page-size="limit"
             :playlist-id="playlist.id"
             :is-owner="isOwner"
+            :is-public="!!playlist.is_public"
             @refresh="refreshPlaylist"
           />
           <div class="pagination-container" v-if="playlist.songs && playlist.songs.length > 0">
@@ -114,6 +143,24 @@
         </n-spin>
       </div>
     </div>
+
+    <!-- 编辑歌单弹窗 -->
+    <n-modal v-model:show="showEditModal" title="编辑歌单" preset="card" style="width: 90%; max-width: 480px;">
+      <n-form :model="editForm" label-placement="left" :label-width="80">
+        <n-form-item label="歌单名称">
+          <n-input v-model:value="editForm.title" placeholder="请输入歌单名称" maxlength="50" />
+        </n-form-item>
+        <n-form-item label="歌单描述">
+          <n-input v-model:value="editForm.description" placeholder="请输入歌单描述" type="textarea" :autosize="{ minRows: 3, maxRows: 5 }" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showEditModal = false">取消</n-button>
+          <n-button type="primary" @click="submitEdit" :loading="editLoading">保存</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -125,16 +172,21 @@ import {
   getPrivatePlaylistDetail,
   subscribePlaylist,
   unsubscribePlaylist,
-  checkIsSubscribed
+  checkIsSubscribed,
+  updatePlaylist
 } from "@/api/playlist";
 import { generatePlaylistIntros } from "@/api/ai";
 import { ResultCode } from "@/utils/request";
-import { useMessage, NButton, NIcon, NImage, NSpin, NAvatar, useDialog } from "naive-ui";
-import { Play, Like, Voice, PlayOne } from "@icon-park/vue-next";
+import {
+  useMessage, NButton, NIcon, NImage, NSpin, NAvatar, useDialog,
+  NModal, NForm, NFormItem, NInput, NSpace
+} from "naive-ui";
+import { Play, Like, Voice, PlayOne, Edit, Camera } from "@icon-park/vue-next";
 import { musicStore, userStore, settingStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
 import { resolveCoverUrl } from "@/api/song";
+import { uploadPlaylistCover } from "@/api/playlist";
 
 const route = useRoute();
 const message = useMessage();
@@ -162,14 +214,102 @@ const playlistSongCount = computed(() => {
   return 0;
 });
 
+// 编辑歌单弹窗
+const showEditModal = ref(false);
+const editForm = ref({ title: '', description: '' });
+const editLoading = ref(false);
+
+const openEditModal = () => {
+  editForm.value = {
+    title: playlist.value.title || '',
+    description: playlist.value.description || ''
+  };
+  showEditModal.value = true;
+};
+
+const submitEdit = async () => {
+  if (!editForm.value.title.trim()) {
+    message.warning("歌单名称不能为空");
+    return;
+  }
+  editLoading.value = true;
+  try {
+    const res = await updatePlaylist(playlist.value.id, {
+      title: editForm.value.title.trim(),
+      description: editForm.value.description.trim(),
+      is_public: !!playlist.value.is_public
+    });
+    if (res.code === ResultCode.SUCCESS) {
+      message.success("编辑成功");
+      playlist.value.title = editForm.value.title.trim();
+      playlist.value.description = editForm.value.description.trim();
+      showEditModal.value = false;
+    } else {
+      message.error(res.message || "编辑失败");
+    }
+  } catch (error) {
+    message.error("编辑失败");
+  } finally {
+    editLoading.value = false;
+  }
+};
+
 const isOwner = computed(() => {
   if (!user.userLogin || !playlist.value.owner_id) return false;
   return Number(user.userData.userId) === Number(playlist.value.owner_id);
 });
 
-const canGenerateIntro = computed(() => {
-  return isOwner.value || user.userData.userGroup === 'admin';
+const isAdmin = computed(() => {
+  return user.userLogin && user.userData.userGroup === 'admin';
 });
+
+const canGenerateIntro = computed(() => {
+  return isOwner.value || isAdmin.value;
+});
+
+const canEditPlaylist = computed(() => {
+  return isOwner.value || isAdmin.value;
+});
+
+const canUploadCover = computed(() => {
+  // 公共歌单仅管理员可上传，私有歌单仅所有者可上传
+  if (!playlist.value.id) return false;
+  if (!!playlist.value.is_public) {
+    return isAdmin.value;
+  }
+  return isOwner.value;
+});
+
+const coverInputRef = ref<HTMLInputElement | null>(null);
+const coverUploadLoading = ref(false);
+
+const triggerCoverUpload = () => {
+  coverInputRef.value?.click();
+};
+
+const handleCoverChange = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file || !playlist.value.id) return;
+
+  coverUploadLoading.value = true;
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res: any = await uploadPlaylistCover(playlist.value.id, formData);
+    if (res.code === ResultCode.SUCCESS) {
+      message.success("封面上传成功");
+      refreshPlaylist();
+    } else {
+      message.error(res.message || "上传失败");
+    }
+  } catch (error) {
+    message.error("上传失败");
+  } finally {
+    coverUploadLoading.value = false;
+    target.value = "";
+  }
+};
 
 onMounted(() => {
   const id = route.params.id as string;
@@ -429,6 +569,38 @@ const playAll = () => {
       color: white;
       backdrop-filter: blur(4px);
     }
+
+    .cover-upload-btn {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+
+      &:hover:not(.loading) {
+        background: rgba(0, 0, 0, 0.8);
+        transform: scale(1.05);
+      }
+
+      &.loading {
+        opacity: 1;
+        cursor: default;
+      }
+    }
+
+    &:hover .cover-upload-btn {
+      opacity: 1;
+    }
   }
 
   .info-wrapper {
@@ -553,19 +725,29 @@ const playAll = () => {
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .playlist-detail-page {
-    padding: 20px;
+    padding: 12px;
   }
 
   .header-section {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 24px;
-    gap: 24px;
+    padding: 16px;
+    gap: 16px;
+    margin-bottom: 16px;
 
     .cover-wrapper {
-      width: 180px;
-      height: 180px;
+      width: 120px;
+      height: 120px;
+      border-radius: 16px;
+
+      .cover-upload-btn {
+        opacity: 1;
+        right: 6px;
+        bottom: 6px;
+        padding: 4px 8px;
+        font-size: 10px;
+      }
     }
 
     .info-wrapper {
@@ -574,20 +756,60 @@ const playAll = () => {
 
       .tag-badge {
         align-self: center;
+        margin-bottom: 8px;
+        padding: 4px 10px;
+        font-size: 10px;
       }
 
       .playlist-title {
-        font-size: 24px;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .playlist-desc {
+        font-size: 13px;
+        margin-bottom: 10px;
+        -webkit-line-clamp: 1;
       }
 
       .meta-info {
         justify-content: center;
+        margin-bottom: 12px;
+        font-size: 13px;
+        gap: 8px;
+
+        .n-avatar {
+          width: 20px;
+          height: 20px;
+        }
       }
 
       .actions {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 8px;
+
+        .play-btn {
+          height: 40px;
+          padding: 0 20px;
+          font-size: 14px;
+        }
+
+        .action-btn {
+          height: 40px;
+          padding: 0 16px;
+          font-size: 13px;
+        }
       }
+    }
+  }
+
+  .songs-section {
+    padding: 12px;
+    border-radius: 16px;
+
+    .pagination-container {
+      margin-top: 16px;
     }
   }
 }

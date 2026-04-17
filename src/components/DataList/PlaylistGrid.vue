@@ -7,12 +7,15 @@
       
       <!-- Mobile List View -->
       <div v-else-if="isMobile" class="mobile-list">
-        <div 
-          v-for="item in (playlists || [])" 
-          :key="item.id" 
+        <div
+          v-for="item in (playlists || [])"
+          :key="item.id"
           class="list-item"
           @click="onPlaylistClick(item.id)"
           @contextmenu.prevent="handleContextMenu($event, item)"
+          @touchstart.passive="handleTouchStart($event, item)"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
         >
           <div class="cover-wrapper">
             <n-image
@@ -69,6 +72,14 @@
                 <n-icon :component="Play" size="12" />
                 <span>{{ formatCount(item.play_count) }}</span>
               </div>
+              <div
+                v-if="userStore.userLogin && userStore.userData.userId !== item.owner_id"
+                class="like-btn"
+                :class="{ liked: isSubscribedMap[item.id] }"
+                @click.stop="handleLike(item)"
+              >
+                <n-icon :component="Like" size="18" />
+              </div>
             </div>
             <div class="info">
               <div class="title">{{ item.title }}</div>
@@ -94,11 +105,11 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, h, onMounted, onUnmounted } from "vue";
-import { Play, Like, Delete, More, PlayOne, Voice } from "@icon-park/vue-next";
+import { Play, Like, More, PlayOne, Voice, Delete } from "@icon-park/vue-next";
 import { useRouter } from "vue-router";
-import { NDropdown, NIcon, NImage, useMessage, useDialog } from "naive-ui";
+import { NDropdown, NIcon, NImage, useMessage, useDialog, NPopconfirm } from "naive-ui";
 import { useUserDataStore } from "@/store/userData";
-import { deletePrivatePlaylist, subscribePlaylist, unsubscribePlaylist, checkIsSubscribed } from "@/api/playlist";
+import { subscribePlaylist, unsubscribePlaylist, checkIsSubscribed, deletePublicPlaylist } from "@/api/playlist";
 import { resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
 
@@ -106,6 +117,8 @@ const router = useRouter();
 const userStore = useUserDataStore();
 const message = useMessage();
 const dialog = useDialog();
+
+const isAdmin = computed(() => userStore.userLogin && userStore.userData.userGroup === 'admin');
 
 const props = defineProps({
   playlists: {
@@ -165,6 +178,67 @@ const dropdownY = ref(0);
 const currentPlaylist = ref<any>(null);
 const isSubscribed = ref(false);
 const isSubscribedMap = ref<Record<number, boolean>>({});
+
+// 移动端长按菜单
+const longPressTimer = ref<number | null>(null);
+const longPressStartPos = ref<{ x: number; y: number } | null>(null);
+const isLongPress = ref(false);
+const LONG_PRESS_DURATION = 600;
+const LONG_PRESS_MOVE_THRESHOLD = 10;
+
+const handleTouchStart = (e: TouchEvent, item: any) => {
+  if (e.touches.length !== 1) return;
+  isLongPress.value = false;
+  const touch = e.touches[0];
+  longPressStartPos.value = { x: touch.clientX, y: touch.clientY };
+  longPressTimer.value = window.setTimeout(() => {
+    longPressTimer.value = null;
+    longPressStartPos.value = null;
+    isLongPress.value = true;
+    currentPlaylist.value = item;
+
+    if (userStore.userLogin && userStore.userData.userId !== item.owner_id) {
+      checkIsSubscribed(item.id)
+        .then((res: any) => {
+          if (res.code === ResultCode.SUCCESS) {
+            isSubscribed.value = res.data.is_subscribed;
+          }
+        })
+        .catch(() => {});
+    }
+
+    nextTick(() => {
+      showDropdown.value = true;
+      dropdownX.value = touch.clientX;
+      dropdownY.value = touch.clientY;
+    });
+  }, LONG_PRESS_DURATION);
+};
+
+const handleTouchMove = (e: TouchEvent) => {
+  if (!longPressStartPos.value || longPressTimer.value === null) return;
+  const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - longPressStartPos.value.x);
+  const dy = Math.abs(touch.clientY - longPressStartPos.value.y);
+  if (dx > LONG_PRESS_MOVE_THRESHOLD || dy > LONG_PRESS_MOVE_THRESHOLD) {
+    clearTimeout(longPressTimer.value);
+    longPressTimer.value = null;
+    longPressStartPos.value = null;
+  }
+};
+
+const handleTouchEnd = () => {
+  if (longPressTimer.value !== null) {
+    clearTimeout(longPressTimer.value);
+    longPressTimer.value = null;
+  }
+  if (isLongPress.value) {
+    setTimeout(() => {
+      isLongPress.value = false;
+    }, 50);
+  }
+  longPressStartPos.value = null;
+};
 
 const handleLike = async (item: any) => {
     if (!userStore.userLogin) {
@@ -265,19 +339,6 @@ const menuOptions = computed(() => {
         });
     }
 
-    // 如果是拥有者，可以删除
-    if (isOwner) {
-        options.push({
-            type: 'divider',
-            key: 'd1'
-        });
-        options.push({
-            label: '删除歌单',
-            key: 'delete',
-            icon: renderIcon(Delete)
-        });
-    }
-
     // AI 生成开场白 (受 props 控制)
     if (props.enableAiIntro) {
         options.push({
@@ -288,6 +349,19 @@ const menuOptions = computed(() => {
             label: '生成开场白 (AI)',
             key: 'generate-intro',
             icon: renderIcon(Voice)
+        });
+    }
+
+    // 管理员可删除歌单
+    if (isAdmin.value) {
+        options.push({
+            type: 'divider',
+            key: 'd3'
+        });
+        options.push({
+            label: '删除歌单',
+            key: 'delete',
+            icon: renderIcon(Delete)
         });
     }
 
@@ -336,13 +410,36 @@ const handleSelect = (key: string) => {
         case 'subscribe':
             handleSubscribe(playlist);
             break;
-        case 'delete':
-            handleDelete(playlist);
-            break;
         case 'generate-intro':
             emit('generate-intro', playlist);
             break;
+        case 'delete':
+            handleDelete(playlist);
+            break;
     }
+};
+
+const handleDelete = async (playlist: any) => {
+    if (!isAdmin.value) return;
+    dialog.warning({
+        title: '删除歌单',
+        content: `确定要删除歌单 "${playlist.title}" 吗？此操作不可逆！`,
+        positiveText: '确认删除',
+        negativeText: '取消',
+        onPositiveClick: async () => {
+            try {
+                const res = await deletePublicPlaylist(playlist.id);
+                if (res.code === ResultCode.SUCCESS) {
+                    message.success('删除成功');
+                    emit('refresh');
+                } else {
+                    message.error(res.message || '删除失败');
+                }
+            } catch (e) {
+                message.error('删除失败');
+            }
+        }
+    });
 };
 
 const handleSubscribe = async (playlist: any) => {
@@ -364,29 +461,11 @@ const handleSubscribe = async (playlist: any) => {
     }
 };
 
-const handleDelete = (playlist: any) => {
-    dialog.warning({
-        title: "删除歌单",
-        content: `确定要删除歌单 "${playlist.title}" 吗？此操作不可恢复。`,
-        positiveText: "删除",
-        negativeText: "取消",
-        onPositiveClick: () => {
-            deletePrivatePlaylist(playlist.id)
-                .then(() => {
-                    message.success("删除成功");
-                    // 触发刷新事件，通知父组件重新获取列表
-                    emit('refresh');
-                    // 如果是在公共列表页删除了私有歌单（理论上不会，但如果混合显示），或者在私有列表页
-                    // 父组件需要监听 refresh 事件
-                })
-                .catch((err) => {
-                    message.error(err.message || "删除失败");
-                });
-        }
-    });
-};
-
 const onPlaylistClick = (id: number) => {
+  if (isLongPress.value) {
+    isLongPress.value = false;
+    return;
+  }
   router.push(`/playlist/${id}`);
 };
 
@@ -413,7 +492,10 @@ const formatCount = (count: number) => {
       align-items: center;
       padding: 8px 0;
       cursor: pointer;
-      
+      -webkit-touch-callout: none;
+      user-select: none;
+      -webkit-user-select: none;
+
       &:active {
         background-color: rgba(0, 0, 0, 0.03);
       }
@@ -593,7 +675,7 @@ const formatCount = (count: number) => {
         z-index: 3;
         border: 1px solid rgba(255, 255, 255, 0.15);
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        
+
         @media (max-width: 640px) {
            right: 4px;
            top: 4px;
@@ -601,6 +683,51 @@ const formatCount = (count: number) => {
            font-size: 9px;
         }
       }
+
+      .like-btn {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        z-index: 4;
+        cursor: pointer;
+        color: #999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+
+        &:hover {
+          background: #fff;
+          transform: translateY(0) scale(1.1);
+        }
+
+        &.liked {
+          opacity: 1;
+          transform: translateY(0);
+          color: #d03050;
+          background: rgba(255, 255, 255, 0.95);
+        }
+
+        @media (max-width: 640px) {
+          right: 6px;
+          bottom: 6px;
+          width: 28px;
+          height: 28px;
+        }
+      }
+    }
+
+    &:hover .like-btn:not(.liked) {
+      opacity: 1;
+      transform: translateY(0);
     }
     
     .info {

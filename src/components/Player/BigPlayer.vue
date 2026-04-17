@@ -106,6 +106,13 @@
           </div>
           
           <div class="mobile-controls">
+              <div class="mobile-like" v-if="music.getPlaySongData">
+                <n-icon
+                  size="28"
+                  :component="music.getSongIsLike(music.getPlaySongData.id) ? FavoriteRound : FavoriteBorderRound"
+                  @click="music.getSongIsLike(music.getPlaySongData.id) ? music.changeLikeList(music.getPlaySongData.id, false) : music.changeLikeList(music.getPlaySongData.id, true)"
+                />
+              </div>
               <PlayerControl :show-volume="false" />
           </div>
       </div>
@@ -313,6 +320,8 @@ import {
   DiscFullOutlined,
   ImageOutlined,
   SlowMotionVideoRound,
+  FavoriteRound,
+  FavoriteBorderRound,
 } from "@vicons/material";
 import { musicStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";
@@ -747,7 +756,34 @@ watch(
      height: auto;
      width: 100%;
      margin-top: 20px;
-     
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     gap: 12px;
+
+     .mobile-like {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.2s ease;
+        padding: 8px;
+        border-radius: 50%;
+
+        &:hover {
+          color: #fff;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+        &:active {
+          transform: scale(0.9);
+        }
+
+        :deep(.n-icon) {
+          transition: all 0.2s ease;
+        }
+     }
+
      :deep(.player-control) {
         .info-section {
            width: 100%;

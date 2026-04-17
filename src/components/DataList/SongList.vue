@@ -32,7 +32,7 @@
             </template>
             下载
           </n-button>
-          <n-button @click="handleBatchDelete">
+          <n-button v-if="playlistId > 0 && (isOwner || isAdmin)" @click="handleBatchDelete">
             <template #icon>
               <n-icon :component="Delete" />
             </template>
@@ -126,7 +126,7 @@ import { ref, computed, h, nextTick, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage, useDialog } from "naive-ui";
 import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, PauseOne, Download, FolderPlus, Copy, CheckOne, More, Delete, VolumeNotice } from "@icon-park/vue-next";
-import { musicStore, settingStore } from "@/store";
+import { musicStore, settingStore, userStore } from "@/store";
 import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
 import { removeSongsFromPlaylist } from "@/api/playlist";
 import { getSongCover, resolveCoverUrl } from "@/api/song";
@@ -159,6 +159,11 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // 是否为公共歌单（公共歌单不支持删除歌曲）
+  isPublic: {
+    type: Boolean,
+    default: false
+  },
   // 空状态描述
   emptyDescription: {
     type: String,
@@ -171,6 +176,8 @@ const emit = defineEmits(['refresh']);
 const router = useRouter();
 const music = musicStore();
 const setting = settingStore();
+const user = userStore();
+const isAdmin = computed(() => user.userLogin && user.userData.userGroup === 'admin');
 const viewMode = ref<'thumbnail' | 'concise'>('thumbnail');
 const message = useMessage();
 const dialog = useDialog();
@@ -263,9 +270,9 @@ const handleBatchDownload = () => {
 
 const handleBatchDelete = () => {
     if (selectedRowKeys.value.length === 0) return;
-    
-    if (!props.playlistId || !props.isOwner) {
-        message.warning("只有歌单所有者可以删除歌曲");
+
+    if (!props.playlistId || (!props.isOwner && !isAdmin.value)) {
+        message.warning("只有歌单所有者或管理员可以删除歌曲");
         return;
     }
 
@@ -462,7 +469,7 @@ const menuOptions = computed(() => {
         }
     ];
 
-    if (props.playlistId > 0 && props.isOwner) {
+    if (props.playlistId > 0 && (props.isOwner || isAdmin.value)) {
         options.push(
             {
                 type: 'divider',
@@ -542,8 +549,8 @@ const handleSelect = (key: string) => {
             });
             break;
         case 'delete-from-playlist':
-            if (!props.playlistId || !props.isOwner) {
-                message.warning("只有歌单所有者可以删除歌曲");
+            if (!props.playlistId || (!props.isOwner && !isAdmin.value)) {
+                message.warning("只有歌单所有者或管理员可以删除歌曲");
                 return;
             }
             dialog.warning({
@@ -756,12 +763,13 @@ const columns = computed(() => {
         const isCurrent = currentPlayingSong.value?.id === row.id;
         
         // 封面容器 (含播放遮罩)
+        const coverSize = isMobile.value ? '48px' : '56px';
         const coverNode = h('div', {
             class: 'cover-container',
-            style: { 
-                position: 'relative', 
-                width: '56px', 
-                height: '56px',
+            style: {
+                position: 'relative',
+                width: coverSize,
+                height: coverSize,
                 borderRadius: '8px',
                 overflow: 'hidden',
                 boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
@@ -783,25 +791,25 @@ const columns = computed(() => {
             h(NImage, {
                 src: getCoverSrc(row.cover_url, row.id, row.album, row.picUrl),
                 fallbackSrc: '/images/logo/favicon.png',
-                width: 56, 
-                height: 56,
-                lazy: true, 
+                width: isMobile.value ? 48 : 56,
+                height: isMobile.value ? 48 : 56,
+                lazy: true,
                 objectFit: 'cover',
                 previewDisabled: true,
                 style: { width: '100%', height: '100%', display: 'block' }
             }),
             // 播放遮罩
             h('div', { class: 'cover-overlay' }, [
-                h(NIcon, { component: PlayOne, size: 24, color: '#fff' })
+                h(NIcon, { component: PlayOne, size: isMobile.value ? 20 : 24, color: '#fff' })
             ])
         ]);
 
         // 标题
         const titleNode = h('span', {
-          style: { 
-              cursor: 'pointer', 
-              transition: 'all 0.3s', 
-              fontSize: '16px', 
+          style: {
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+              fontSize: isMobile.value ? '14px' : '16px',
               fontWeight: isCurrent ? 'bold' : '600',
               color: isCurrent ? setting.themeColor : 'var(--n-text-color)',
               marginRight: '8px',
@@ -836,7 +844,7 @@ const columns = computed(() => {
                     textOverflow: 'ellipsis',
                     maxWidth: '100%',
                     display: 'inline-block',
-                    fontSize: '14px',
+                    fontSize: isMobile.value ? '12px' : '14px',
                     fontWeight: '400',
                     color: 'var(--n-text-color)'
                  }
@@ -874,10 +882,10 @@ const columns = computed(() => {
              
              artistNode = h('span', {
                 class: 'artist-link',
-                style: { 
-                    cursor: 'pointer', 
-                    transition: 'color 0.3s', 
-                    fontSize: '14px', 
+                style: {
+                    cursor: 'pointer',
+                    transition: 'color 0.3s',
+                    fontSize: isMobile.value ? '12px' : '14px',
                     opacity: 0.6,
                     fontWeight: '400',
                     whiteSpace: 'nowrap',
@@ -971,7 +979,7 @@ const columns = computed(() => {
 
 
         return h('div', {
-            style: { display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }
+            style: { display: 'flex', alignItems: 'center', gap: isMobile.value ? '12px' : '16px', width: '100%' }
         }, [coverNode, textContainer, renderActionButtons(row)]);
       }
     });
@@ -1227,11 +1235,11 @@ const isPlaying = computed(() => music.getPlayState);
     }
 
     :deep(.n-data-table-td) {
-        padding: 8px 0 !important;
+        padding: 6px 0 !important;
     }
-    
+
     :deep(.n-data-table-th) {
-        padding: 8px 0 !important;
+        padding: 6px 0 !important;
         font-size: 12px;
     }
     
