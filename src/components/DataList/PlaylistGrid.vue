@@ -107,7 +107,7 @@
 import { ref, computed, nextTick, h, onMounted, onUnmounted } from "vue";
 import { Play, Like, More, PlayOne, Voice, Delete } from "@icon-park/vue-next";
 import { useRouter } from "vue-router";
-import { NDropdown, NIcon, NImage, useMessage, useDialog, NPopconfirm } from "naive-ui";
+import { NDropdown, NIcon, NImage, useMessage, useDialog } from "naive-ui";
 import { useUserDataStore } from "@/store/userData";
 import { subscribePlaylist, unsubscribePlaylist, checkIsSubscribed, deletePublicPlaylist } from "@/api/playlist";
 import { resolveCoverUrl } from "@/api/song";
@@ -190,6 +190,7 @@ const handleTouchStart = (e: TouchEvent, item: any) => {
   if (e.touches.length !== 1) return;
   isLongPress.value = false;
   const touch = e.touches[0];
+  if (!touch) return;
   longPressStartPos.value = { x: touch.clientX, y: touch.clientY };
   longPressTimer.value = window.setTimeout(() => {
     longPressTimer.value = null;
@@ -218,6 +219,7 @@ const handleTouchStart = (e: TouchEvent, item: any) => {
 const handleTouchMove = (e: TouchEvent) => {
   if (!longPressStartPos.value || longPressTimer.value === null) return;
   const touch = e.touches[0];
+  if (!touch) return;
   const dx = Math.abs(touch.clientX - longPressStartPos.value.x);
   const dy = Math.abs(touch.clientY - longPressStartPos.value.y);
   if (dx > LONG_PRESS_MOVE_THRESHOLD || dy > LONG_PRESS_MOVE_THRESHOLD) {
@@ -240,11 +242,10 @@ const handleTouchEnd = () => {
   longPressStartPos.value = null;
 };
 
+import { checkLogin } from "@/utils/auth";
+
 const handleLike = async (item: any) => {
-    if (!userStore.userLogin) {
-        message.warning("请先登录");
-        return;
-    }
+    if (!checkLogin()) return;
     
     // 如果是自己的歌单，不能收藏/取消收藏 (或者是其他逻辑)
     if (userStore.userData.userId === item.owner_id) {

@@ -129,7 +129,10 @@
             :playlist-id="playlist.id"
             :is-owner="isOwner"
             :is-public="!!playlist.is_public"
+            :total="playlistSongCount"
+            :all-song-ids="allSongIds"
             @refresh="refreshPlaylist"
+            @select-all="handleSelectAll"
           />
           <div class="pagination-container" v-if="playlist.songs && playlist.songs.length > 0">
             <Pagination
@@ -204,6 +207,7 @@ const isSubscribed = ref(false);
 const playlist = ref<any>({});
 const page = ref(1);
 const limit = ref(30);
+const allSongIds = ref<(string | number)[]>([]);
 
 const playlistSongCount = computed(() => {
   const totalSongs = Number(playlist.value.total_songs);
@@ -432,6 +436,25 @@ const adjustColor = (color: string, amount: number): string => {
 
 const refreshPlaylist = () => {
   fetchPlaylistDetail(route.params.id as string);
+};
+
+// 全选全部歌曲（跨页）
+const handleSelectAll = async () => {
+  const id = route.params.id as string;
+  if (!id) return;
+  try {
+    let res: any;
+    try {
+      res = await getPublicPlaylistDetail(id, 1, 10000);
+    } catch (e) {
+      res = await getPrivatePlaylistDetail(id, 1, 10000);
+    }
+    if (res.code === ResultCode.SUCCESS && res.data.songs) {
+      allSongIds.value = res.data.songs.map((s: any) => s.id);
+    }
+  } catch (error) {
+    message.error("获取全部歌曲失败");
+  }
 };
 
 const playAll = () => {

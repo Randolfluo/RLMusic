@@ -3,6 +3,7 @@ import { getSongTime } from "@/utils/timeTools";
 import { useUserDataStore } from "./userData";
 import { recordHistory, toggleLike, getLikedSongs } from "@/api/song";
 import { ResultCode } from "@/utils/request";
+import { checkLogin } from "@/utils/auth";
 
 export const useMusicDataStore = defineStore("musicData", {
   state: () => {
@@ -308,6 +309,7 @@ export const useMusicDataStore = defineStore("musicData", {
     },
     // 更改喜欢列表
     async changeLikeList(id: number, like: boolean) {
+      if (!checkLogin()) return;
       const list = this.persistData.likeList;
       // 乐观更新
       if (like) {

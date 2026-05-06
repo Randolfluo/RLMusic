@@ -41,6 +41,19 @@
         </n-button-group>
         <span v-if="isMultiSelectMode" style="margin-left: 10px; font-size: 12px; opacity: 0.6;">
           已选择 {{ selectedRowKeys.length }} 项
+          <n-button
+            v-if="!selectAllPages && selectedRowKeys.length === songs.length && total > songs.length"
+            text
+            type="primary"
+            size="tiny"
+            style="margin-left: 8px;"
+            @click="handleSelectAllPages"
+          >
+            全选全部 {{ total }} 首
+          </n-button>
+          <span v-else-if="selectAllPages" style="margin-left: 8px; color: var(--n-color-primary);">
+            (已全选全部 {{ total }} 首)
+          </span>
         </span>
         <slot name="controls"></slot>
       </div>
@@ -92,6 +105,7 @@
       :loading="loading"
       :row-key="(row) => row.id"
       v-model:checked-row-keys="selectedRowKeys"
+      @update:checked-row-keys="handleCheckChange"
     >
       <template #empty>
         <div class="empty">
@@ -122,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, nextTick, onMounted, onUnmounted } from "vue";
+import { ref, computed, h, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { NButton, NButtonGroup, NIcon, NImage, NTooltip, NDataTable, NEmpty, NDropdown, useMessage, useDialog } from "naive-ui";
 import { HamburgerButton, Pic, Like, PlayOne, PlayTwo, PauseOne, Download, FolderPlus, Copy, CheckOne, More, Delete, VolumeNotice } from "@icon-park/vue-next";
@@ -168,10 +182,20 @@ const props = defineProps({
   emptyDescription: {
     type: String,
     default: "暂无歌曲"
+  },
+  // 歌曲总数（跨分页）
+  total: {
+    type: Number,
+    default: 0
+  },
+  // 所有歌曲ID列表（用于跨页全选）
+  allSongIds: {
+    type: Array as () => (string | number)[],
+    default: () => []
   }
 });
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits(['refresh', 'select-all']);
 
 const router = useRouter();
 const music = musicStore();
@@ -187,6 +211,7 @@ const dropdownY = ref(0);
 const currentSong = ref<any>(null);
 const isMultiSelectMode = ref(false);
 const selectedRowKeys = ref<Array<string | number>>([]);
+const selectAllPages = ref(false); // 是否已全选所有页
 const isMobile = ref(window.innerWidth < 640);
 if (isMobile.value) {
     viewMode.value = 'thumbnail';
@@ -206,6 +231,51 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
+
+// 监听 allSongIds 变化，自动全选
+watch(() => props.allSongIds, (newIds) => {
+  if (isMultiSelectMode.value && newIds && newIds.length > 0) {
+    selectedRowKeys.value = [...newIds];
+    selectAllPages.value = true;
+  }
+}, { immediate: true });
+
+// 处理表格选择变化
+const handleCheckChange = (keys: (string | number)[], _rows: any[], meta: any) => {
+  if (meta?.action === 'checkAll') {
+    if (props.allSongIds && props.allSongIds.length > 0) {
+      // 已有全部ID，直接全选
+      selectedRowKeys.value = [...props.allSongIds];
+      selectAllPages.value = true;
+    } else if (props.total > props.songs.length) {
+      // 需要获取全部ID，先保持当前页选中，通知父组件
+      emit('select-all');
+      selectedRowKeys.value = keys;
+      selectAllPages.value = false;
+    } else {
+      // 单页，直接使用
+      selectedRowKeys.value = keys;
+      selectAllPages.value = true;
+    }
+  } else if (meta?.action === 'uncheckAll') {
+    selectedRowKeys.value = [];
+    selectAllPages.value = false;
+  } else {
+    // 单个勾选/取消
+    selectedRowKeys.value = keys;
+    selectAllPages.value = false;
+  }
+};
+
+// 手动触发全选全部
+const handleSelectAllPages = () => {
+  if (props.allSongIds && props.allSongIds.length > 0) {
+    selectedRowKeys.value = [...props.allSongIds];
+    selectAllPages.value = true;
+  } else {
+    emit('select-all');
+  }
+};
 
 // 添加到歌单模态框状态
 const showAddToPlaylistModal = ref(false);

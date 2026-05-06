@@ -265,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMessage } from "naive-ui";
 import {
@@ -275,6 +275,7 @@ import {
 } from "@icon-park/vue-next";
 import { getSongDetail, getSongCover, toggleLike, getMusicLyric } from "@/api/song";
 import { useMusicDataStore } from "@/store/musicData";
+import { checkLogin } from "@/utils/auth";
 
 const route = useRoute();
 const router = useRouter();
@@ -358,6 +359,7 @@ const playMusic = () => {
 }
 
 const handleLike = async () => {
+    if (!checkLogin()) return;
     try {
         await toggleLike(songId);
         message.success("操作成功");

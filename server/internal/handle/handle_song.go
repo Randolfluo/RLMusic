@@ -125,7 +125,21 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 				}
 				trackNum, _ = m.Track()
 				discNum, _ = m.Disc()
-
+			} else if ext == ".wav" {
+				// dhowden/tag does not support WAV — try our custom parser
+				if wm, err := audio.ParseWavMetadata(path); err == nil {
+					m = wm
+					songTitle = m.Title()
+					songArtist = m.Artist()
+					songAlbum = m.Album()
+					if m.Year() > 0 {
+						year = strconv.Itoa(m.Year())
+					}
+					trackNum, _ = m.Track()
+					discNum, _ = m.Disc()
+				} else {
+					slog.Warn("Failed to read WAV metadata", "path", path, "error", err)
+				}
 			} else {
 				slog.Warn("Failed to read metadata tags, using filename", "path", path, "error", err)
 			}
@@ -246,6 +260,9 @@ func (*SongAuth) ScanUserMusic(c *gin.Context) {
 			} else if ext == ".wav" {
 				if props, err := audio.ParseWavProps(path); err == nil {
 					song.Duration = props.Duration
+					song.SampleRate = props.SampleRate
+					song.BitDepth = props.BitDepth
+					song.Channels = props.Channels
 					song.BitRate = props.BitRate
 				} else {
 					slog.Warn("Failed to parse WAV props", "path", path, "error", err)
@@ -429,16 +446,21 @@ func (*SongAuth) GetSongCover(c *gin.Context) {
 			defer f.Close()
 			// 读取标签信息
 			m, err := tag.ReadFrom(f)
-			if err == nil && m != nil {
+			if err != nil {
+				// dhowden/tag does not support WAV — try custom parser
+				if strings.HasSuffix(strings.ToLower(song.FilePath), ".wav") {
+					if wm, err2 := audio.ParseWavMetadata(song.FilePath); err2 == nil {
+						m = wm
+					}
+				}
+			}
+			if m != nil {
 				pic := m.Picture()
 				if pic != nil {
 					// 直接返回原始图片数据
 					c.Data(200, pic.MIMEType, pic.Data)
 					return
 				}
-			} else {
-				// 读取失败日志，仅调试用
-				// slog.Warn("Failed to read tags from file", "path", song.FilePath, "error", err)
 			}
 		}
 	}
@@ -1992,12 +2014,25 @@ func (*SongAuth) GetSongLyric(c *gin.Context) {
 
 	m, err := tag.ReadFrom(f)
 	if err != nil {
-		// 无法读取元数据，返回无歌词
-		ReturnSuccess(c, gin.H{
-			"lrc":    gin.H{"lyric": "[00:00.000] 暂无歌词"},
-			"tlyric": gin.H{"lyric": ""},
-		})
-		return
+		// dhowden/tag does not support WAV — try custom parser
+		if strings.HasSuffix(strings.ToLower(song.FilePath), ".wav") {
+			if wm, err2 := audio.ParseWavMetadata(song.FilePath); err2 == nil {
+				m = wm
+			} else {
+				ReturnSuccess(c, gin.H{
+					"lrc":    gin.H{"lyric": "[00:00.000] 暂无歌词"},
+					"tlyric": gin.H{"lyric": ""},
+				})
+				return
+			}
+		} else {
+			// 无法读取元数据，返回无歌词
+			ReturnSuccess(c, gin.H{
+				"lrc":    gin.H{"lyric": "[00:00.000] 暂无歌词"},
+				"tlyric": gin.H{"lyric": ""},
+			})
+			return
+		}
 	}
 
 	lyric := m.Lyrics()
@@ -2916,8 +2951,7 @@ func (*SongAuth) UploadPlaylistCover(c *gin.Context) {
 	}
 
 	// 准备存储目录
-	conf := g.GetConfig().BasicPath
-	baseDir := filepath.Join(conf.FilePath, conf.FileName, "playlist_covers")
+	baseDir := filepath.Join("data", "playlist_covers")
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		ReturnError(c, g.Err, err)
 		return
@@ -2959,8 +2993,7 @@ func (*SongAuth) GetPlaylistCover(c *gin.Context) {
 		return
 	}
 
-	conf := g.GetConfig().BasicPath
-	filePath := filepath.Join(conf.FilePath, conf.FileName, "playlist_covers", filename)
+	filePath := filepath.Join("data", "playlist_covers", filename)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		c.Status(http.StatusNotFound)
