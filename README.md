@@ -173,7 +173,7 @@ docker compose up -d --build
 
 `.env` 示例：
 ```bash
-MUSIC_BIND_PATH=C:/MyMusic
+MUSIC_BIND_PATH=C:/RLMusic
 ```
 
 应用修改后：
