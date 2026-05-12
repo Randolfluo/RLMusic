@@ -127,6 +127,13 @@ type SimpleSongResponse struct {
 	Artists  []Artist `json:"artists"`
 }
 
+type PlaylistOwner struct {
+	ID        int    `json:"id"`
+	Username  string `json:"username"`
+	Nickname  string `json:"nickname"`
+	AvatarUrl string `json:"avatar_url"`
+}
+
 type PlaylistResponse struct {
 	ID          int                  `json:"id"`
 	Title       string               `json:"title"`
@@ -139,6 +146,7 @@ type PlaylistResponse struct {
 	Total       int64                `json:"total"`       // 歌曲总数 (Legacy)
 	TotalSongs  int                  `json:"total_songs"` // 歌曲总数
 	Songs       []SimpleSongResponse `json:"songs"`       // Deprecated: 列表接口不再返回详情
+	Owner       *PlaylistOwner       `json:"owner"`
 }
 
 // GetPublicPlaylists 获取所有公开歌单(不含歌曲详情)
@@ -274,6 +282,7 @@ func GetPlaylistDetail(db *gorm.DB, playlistIDStr string, page int, limit int) (
 		Total:       total,
 		TotalSongs:  int(total),
 		Songs:       songs,
+		Owner:       getPlaylistOwner(db, playlist.OwnerID),
 	}, nil
 }
 
@@ -361,7 +370,24 @@ func GetPlaylistRandomSongs(db *gorm.DB, playlistIDStr string, limit int) (*Play
 		Total:       total,
 		TotalSongs:  int(total),
 		Songs:       songs,
+		Owner:       getPlaylistOwner(db, playlist.OwnerID),
 	}, nil
+}
+
+func getPlaylistOwner(db *gorm.DB, ownerID int) *PlaylistOwner {
+	if ownerID <= 0 {
+		return nil
+	}
+	var user User
+	if err := db.First(&user, ownerID).Error; err != nil {
+		return nil
+	}
+	return &PlaylistOwner{
+		ID:        user.ID,
+		Username:  user.Username,
+		Nickname:  user.Username,
+		AvatarUrl: user.Avatar,
+	}
 }
 
 func convertToResponse(playlists []Playlist) []PlaylistResponse {

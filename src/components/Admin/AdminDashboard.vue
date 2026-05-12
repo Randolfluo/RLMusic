@@ -253,6 +253,20 @@
                   <template #icon><n-icon :component="Link" /></template>
                 </n-button>
               </div>
+
+              <!-- Service Logs -->
+              <div class="op-card-compact glass-panel white-theme">
+                <div class="compact-icon green">
+                  <n-icon :component="Terminal" />
+                </div>
+                <div class="compact-info">
+                  <h3>服务日志</h3>
+                  <p>查看后端实时日志</p>
+                </div>
+                <n-button class="action-circle-btn" circle secondary type="success" @click="handleViewLogs">
+                  <template #icon><n-icon :component="Play" /></template>
+                </n-button>
+              </div>
             </div>
         </div>
       </div>
@@ -349,7 +363,7 @@ import {
   Permissions, MusicList, People, RecordDisc, 
   Scan, FileExcel, Music, User, CheckOne,
   TrendingUp, Lightning, Play, Download,
-  DocDetail, Link, Cpu, Api, HardDisk, CloudStorage, Connection, Voice
+  DocDetail, Link, Cpu, Api, HardDisk, CloudStorage, Connection, Voice, Terminal
 } from "@icon-park/vue-next";
 import { useMessage, NIcon, NButton, NNumberAnimation, NProgress } from "naive-ui";
 import { 
@@ -491,7 +505,7 @@ const handleGeneratePlaylistDesc = async () => {
   try {
     const res = await generatePublicPlaylistDescriptions();
     if (res.code === ResultCode.SUCCESS) {
-      message.success(res.message || "任务已在后台开始");
+      message.success(res.data?.message || "歌单描述生成任务已启动");
     } else {
       message.error(res.message || "请求失败");
     }
@@ -507,7 +521,7 @@ const handleGenerateArtistDesc = async () => {
   try {
     const res = await generateArtistDescriptions();
     if (res.code === ResultCode.SUCCESS) {
-      message.success(res.message || "任务已在后台开始");
+      message.success(res.data?.message || "艺术家描述生成任务已启动");
     } else {
       message.error(res.message || "请求失败");
     }
@@ -523,7 +537,7 @@ const handleGenerateAlbumDesc = async () => {
   try {
     const res = await generateAlbumDescriptions();
     if (res.code === ResultCode.SUCCESS) {
-      message.success(res.message || "任务已在后台开始");
+      message.success(res.data?.message || "专辑描述生成任务已启动");
     } else {
       message.error(res.message || "请求失败");
     }
@@ -692,6 +706,10 @@ const handleUserManage = () => {
 
 const handlePlaylistManage = () => {
   router.push("/admin/playlists");
+};
+
+const handleViewLogs = () => {
+  router.push("/admin/logs");
 };
 
 // Lifecycle

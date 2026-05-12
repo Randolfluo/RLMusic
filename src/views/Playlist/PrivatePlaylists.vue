@@ -4,8 +4,8 @@
       <div class="cover">
         <n-image
           class="cover-img"
-          :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'"
-          fallback-src="/images/logo/favicon.png"
+          :src="resolveAvatarUrl(userStore.userData.avatarUrl) || fallbackCoverUrl"
+          :fallback-src="fallbackCoverUrl"
           object-fit="cover"
           preview-disabled
         />
@@ -14,10 +14,10 @@
         <div class="tag">私有歌单</div>
         <div class="title">{{ userStore.userData.nickname }} 的歌单</div>
         <div class="creator">
-          <n-avatar 
-            round 
-            size="small" 
-            :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'" 
+          <n-avatar
+            round
+            size="small"
+            :src="resolveAvatarUrl(userStore.userData.avatarUrl) || fallbackCoverUrl"
             style="margin-right: 8px; vertical-align: middle;"
           />
           <span style="vertical-align: middle;">{{ userStore.userData.nickname }}</span>
@@ -87,6 +87,7 @@ import Pagination from "@/components/Pagination/index.vue";
 import { useUserDataStore } from "@/store/userData";
 import { resolveAvatarUrl } from "@/api/user";
 import { Plus } from "@icon-park/vue-next";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const message = useMessage();
 const dialog = useDialog();

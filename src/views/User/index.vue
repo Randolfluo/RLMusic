@@ -9,26 +9,43 @@
     <div class="profile-container">
       <div class="profile-header glass-card">
         <div class="avatar-section">
+          <template v-if="isCapacitor">
+            <div class="avatar-wrapper" @click="handleMobileAvatarUpload">
+              <n-avatar
+                round
+                :size="140"
+                :src="resolveAvatarUrl(user.getUserData.avatarUrl) || defaultAvatar"
+                :fallback-src="defaultAvatar"
+                class="user-avatar"
+                object-fit="cover"
+              />
+              <div class="avatar-overlay">
+                <n-icon size="40" :component="Camera" color="#ffffff" />
+                <span class="upload-text">更换头像</span>
+              </div>
+            </div>
+          </template>
           <n-upload
+            v-else
             :show-file-list="false"
             :custom-request="handleAvatarUpload"
             accept="image/png,image/jpeg,image/gif,image/webp"
             class="avatar-uploader"
           >
-              <div class="avatar-wrapper">
-                  <n-avatar
-                    round
-                    :size="140"
-                    :src="resolveAvatarUrl(user.getUserData.avatarUrl) || defaultAvatar"
-                    :fallback-src="defaultAvatar"
-                    class="user-avatar"
-                    object-fit="cover"
-                  />
-                  <div class="avatar-overlay">
-                      <n-icon size="40" :component="Camera" color="#ffffff" />
-                      <span class="upload-text">更换头像</span>
-                  </div>
+            <div class="avatar-wrapper">
+              <n-avatar
+                round
+                :size="140"
+                :src="resolveAvatarUrl(user.getUserData.avatarUrl) || defaultAvatar"
+                :fallback-src="defaultAvatar"
+                class="user-avatar"
+                object-fit="cover"
+              />
+              <div class="avatar-overlay">
+                <n-icon size="40" :component="Camera" color="#ffffff" />
+                <span class="upload-text">更换头像</span>
               </div>
+            </div>
           </n-upload>
         </div>
 
@@ -113,12 +130,15 @@ import axios from "@/utils/request";
 import { computed, onMounted, ref } from "vue";
 import { getUserInfo, uploadAvatar, resolveAvatarUrl } from "@/api/user";
 import { ResultCode } from "@/utils/request";
+import { Capacitor } from "@capacitor/core";
+import { capacitorPickImage } from "@/utils/camera";
 
 const user = userStore();
 const router = useRouter();
 const message = useMessage();
 const userInfoDetails = ref<any>({});
 const defaultAvatar = computed(() => `${import.meta.env.BASE_URL}images/ico/user-filling.svg`);
+const isCapacitor = typeof window !== "undefined" && Capacitor.isNativePlatform();
 
 const formatDuration = (seconds: number) => {
     if (!seconds) return "0分钟";
@@ -141,6 +161,24 @@ const handleAvatarUpload = ({ file }: UploadCustomRequestOptions) => {
     }).catch(() => {
         message.error("上传出错");
     });
+}
+
+const handleMobileAvatarUpload = async () => {
+    try {
+        const file = await capacitorPickImage();
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await uploadAvatar(formData);
+        if (res.code === ResultCode.SUCCESS) {
+            message.success("头像上传成功");
+            user.userData.avatarUrl = res.data;
+        } else {
+            message.error(res.message || "上传失败");
+        }
+    } catch (err: any) {
+        if (String(err?.message || err).toLowerCase().includes("cancel")) return;
+        message.error("上传失败: " + (err?.message || err));
+    }
 }
 
 onMounted(() => {

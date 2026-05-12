@@ -194,6 +194,7 @@ import { getSearchSongs } from '@/api/search';
 import { getSongCover, resolveCoverUrl } from '@/api/song';
 import { ResultCode } from "@/utils/request";
 import { useMusicDataStore } from '@/store/musicData';
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 interface Song {
   id: number;
@@ -305,7 +306,7 @@ const columns: DataTableColumns<Song> = [
           class: 'table-cover-img',
           onError: (e: Event) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/images/logo/favicon.png';
+            target.src = fallbackCoverUrl;
           }
         })
       ]);

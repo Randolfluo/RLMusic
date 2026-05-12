@@ -132,6 +132,18 @@
             <template #prefix><n-icon :component="Left" /></template>
             我的
           </n-list-item>
+          <n-list-item @click="router.push('/like'); showMobileMenu = false">
+            <template #prefix><n-icon :component="Like" /></template>
+            我喜欢的音乐
+          </n-list-item>
+          <n-list-item @click="router.push('/likeplaylist'); showMobileMenu = false">
+            <template #prefix><n-icon :component="FolderPlus" /></template>
+            收藏的歌单
+          </n-list-item>
+          <n-list-item @click="router.push('/history'); showMobileMenu = false">
+            <template #prefix><n-icon :component="History" /></template>
+            播放历史
+          </n-list-item>
           <n-list-item @click="handleServerConfigClick(); showMobileMenu = false">
             <template #prefix><n-icon :component="Connection" /></template>
             连接服务
@@ -157,6 +169,8 @@ import {
   Permissions,
   Connection,
   HamburgerButton,
+  Like,
+  FolderPlus,
 } from "@icon-park/vue-next";
 import { userStore, settingStore } from "@/store";
 import { useRouter } from "vue-router";

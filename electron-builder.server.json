@@ -16,6 +16,10 @@
     {
       "from": "server/config.yml",
       "to": "config.yml"
+    },
+    {
+      "from": "server/prompts",
+      "to": "prompts"
     }
   ],
   "win": {

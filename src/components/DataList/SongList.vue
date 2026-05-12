@@ -144,6 +144,7 @@ import { musicStore, settingStore, userStore } from "@/store";
 import AddToPlaylistModal from "@/components/DataModel/AddToPlaylistModal.vue";
 import { removeSongsFromPlaylist } from "@/api/playlist";
 import { getSongCover, resolveCoverUrl } from "@/api/song";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 // Props 定义
 const props = defineProps({
@@ -654,8 +655,8 @@ const columns = computed(() => {
     });
   }
 
-  baseColumns.push(
-    {
+  if (!isMobile.value) {
+    baseColumns.push({
       title: "",
       key: "index",
       width: 50,
@@ -663,27 +664,28 @@ const columns = computed(() => {
       render: (row: any, index: number) => {
         const isCurrent = currentPlayingSong.value?.id === row.id;
         const playing = isPlaying.value;
-        
+
         return h('div', { class: 'index-cell' }, [
-            // 播放状态图标 (当歌曲是当前播放歌曲时显示)
-            isCurrent ? h(NIcon, { 
-                size: 18, 
+            isCurrent ? h(NIcon, {
+                size: 18,
                 color: setting.themeColor,
-                component: playing ? VolumeNotice : PauseOne 
+                component: playing ? VolumeNotice : PauseOne
             }) : h('span', { class: 'index-num' }, `${index + 1 + (props.page - 1) * props.pageSize}`),
-            
-            // 悬浮播放图标 (非当前播放歌曲时，悬浮显示播放)
-            !isCurrent ? h(NIcon, { 
+            !isCurrent ? h(NIcon, {
                 class: 'hover-play-icon',
                 size: 18,
                 component: PlayOne
             }) : null
         ]);
       },
-    },
+    });
+  }
+
+  baseColumns.push(
     {
       title: "标题",
       key: "title",
+      minWidth: 200,
       render: (row: any) => {
         const isCurrent = currentPlayingSong.value?.id === row.id;
         return h('div', { class: 'title-cell' }, [
@@ -793,14 +795,17 @@ const columns = computed(() => {
         }, albumName);
       },
     },
-    {
+  );
+
+  if (!isMobile.value) {
+    baseColumns.push({
       title: "时长",
       key: "duration",
       width: 80,
       align: 'right',
       render: (row: any) => h('span', { style: { opacity: 0.5, fontFamily: 'DM Mono, Monaco, monospace', fontSize: '13px', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' } }, formatDuration(row.duration)),
-    },
-  );
+    });
+  }
 
   if (viewMode.value === 'thumbnail') {
     // 缩略图模式下：
@@ -828,7 +833,7 @@ const columns = computed(() => {
     baseColumns.splice(insertPos, 0, {
       title: "歌曲",
       key: "song_info",
-      // width: 'auto', // 自适应宽度
+      ...(isMobile.value ? {} : { minWidth: 300 }),
       render: (row: any) => {
         const isCurrent = currentPlayingSong.value?.id === row.id;
         
@@ -860,7 +865,7 @@ const columns = computed(() => {
         }, [
             h(NImage, {
                 src: getCoverSrc(row.cover_url, row.id, row.album, row.picUrl),
-                fallbackSrc: '/images/logo/favicon.png',
+                fallbackSrc: fallbackCoverUrl,
                 width: isMobile.value ? 48 : 56,
                 height: isMobile.value ? 48 : 56,
                 lazy: true,
@@ -1044,12 +1049,12 @@ const columns = computed(() => {
 
         // 文本容器
         const textContainer = h('div', {
-            style: { display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }
+            style: { display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0, overflow: 'hidden' }
         }, [firstLine, secondLine]);
 
 
         return h('div', {
-            style: { display: 'flex', alignItems: 'center', gap: isMobile.value ? '12px' : '16px', width: '100%' }
+            style: { display: 'flex', alignItems: 'center', gap: isMobile.value ? '12px' : '16px', width: '100%', overflow: 'hidden' }
         }, [coverNode, textContainer, renderActionButtons(row)]);
       }
     });
@@ -1188,7 +1193,13 @@ const isPlaying = computed(() => music.getPlayState);
 
 :deep(.n-data-table) {
   background: transparent !important;
-  
+  width: 100% !important;
+
+  .n-data-table-base-table,
+  .n-data-table-table {
+    width: 100% !important;
+  }
+
   .n-data-table-th {
     background-color: transparent !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -1305,22 +1316,12 @@ const isPlaying = computed(() => music.getPlayState);
     }
 
     :deep(.n-data-table-td) {
-        padding: 6px 0 !important;
+        padding: 8px 4px !important;
     }
 
     :deep(.n-data-table-th) {
-        padding: 6px 0 !important;
+        padding: 8px 4px !important;
         font-size: 12px;
-    }
-    
-    /* 移动端隐藏不重要的列 */
-    :deep(.n-data-table-td[data-col-key="duration"]),
-    :deep(.n-data-table-th[data-col-key="duration"]),
-    :deep(.n-data-table-td[data-col-key="album_title"]),
-    :deep(.n-data-table-th[data-col-key="album_title"]),
-    :deep(.n-data-table-td[data-col-key="index"]),
-    :deep(.n-data-table-th[data-col-key="index"]) {
-        display: none;
     }
 }
 

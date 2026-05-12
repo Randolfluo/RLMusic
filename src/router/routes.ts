@@ -223,6 +223,16 @@ const routes: any = [
     },
     component: () => import("@/views/Admin/SongManage.vue"),
   },
+  // 服务日志
+  {
+    path: "/admin/logs",
+    name: "admin-logs",
+    meta: {
+      title: "服务日志",
+      needLogin: true,
+    },
+    component: () => import("@/views/System/LogViewer.vue"),
+  },
 
   {
     path: "/:pathMatch(.*)",

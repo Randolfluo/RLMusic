@@ -21,8 +21,8 @@
             <n-avatar
               round
               size="small"
-              :src="resolveAvatarUrl(user.userData.avatarUrl) || '/images/logo/favicon.png'"
-              fallback-src="/images/logo/favicon.png"
+              :src="resolveAvatarUrl(user.userData.avatarUrl) || fallbackCoverUrl"
+              :fallback-src="fallbackCoverUrl"
             />
             <span class="user-name">{{ user.userData.nickname || '用户' }}</span>
             <span class="divider">•</span>
@@ -73,6 +73,7 @@ import { useMessage, NPagination, NButton, NIcon, NAvatar } from "naive-ui";
 import { Play, Like } from "@icon-park/vue-next";
 import SongList from "@/components/DataList/SongList.vue";
 import { musicStore, userStore } from "@/store";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const message = useMessage();
 const music = musicStore();

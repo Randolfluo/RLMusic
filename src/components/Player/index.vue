@@ -505,8 +505,28 @@ const togglePodcastMode = () => {
   setting.setPodcastMode(!setting.podcastMode);
   if (setting.podcastMode) {
     $message.success("已开启播客模式");
+    // 立即检查当前歌曲是否有开场白，有则切换到开场白
+    const song = music.getPlaySongData;
+    if (song?.id) {
+      getPlaySongData(song.id);
+    }
   } else {
     $message.info("已关闭播客模式");
+    // 如果正在播放开场白，直接切回歌曲正文
+    if (isPlayingIntro.value) {
+      isPlayingIntro.value = false;
+      const song = music.getPlaySongData;
+      if (song?.id) {
+        getMusicUrl(song.id, setting.songLevel).then((res) => {
+          if (res.data[0].fee == 1) {
+            $message.warning("当前歌曲为 VIP 专享，仅可试听");
+          }
+          const songUrl = res.data[0].url;
+          music.setPlaySongLink(songUrl || "");
+          music.setPlayState(true);
+        });
+      }
+    }
   }
 };
 

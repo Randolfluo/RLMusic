@@ -153,7 +153,9 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useMessage, NAlert, NButton, NForm, NFormItem, NInput, NInputNumber, NIcon, NInputGroup, useDialog } from "naive-ui";
 import { useRouter } from "vue-router";
 import { Capacitor } from "@capacitor/core";
-import { BarcodeScanner, SupportedFormat } from "@capacitor-community/barcode-scanner";
+import { BarcodeScanner, BarcodeFormat } from "@capacitor-mlkit/barcode-scanning";
+import type { BarcodesScannedEvent } from "@capacitor-mlkit/barcode-scanning";
+import "barcode-detector/polyfill";
 import { 
   SettingsOutlined, 
   FolderOpenOutlined, 
@@ -264,14 +266,13 @@ const buildScanErrorMessage = (error: any) => {
 };
 
 const startScannerOverlay = async () => {
-  await BarcodeScanner.hideBackground();
   document.body.classList.add("scanner-active");
   document.documentElement.classList.add("scanner-active");
 };
 
 const stopScannerOverlay = async () => {
   try {
-    await BarcodeScanner.showBackground();
+    await BarcodeScanner.removeAllListeners();
   } catch {}
   try {
     await BarcodeScanner.stopScan();
@@ -288,33 +289,48 @@ const scanQrCode = async () => {
   scanning.value = true;
   scanHint.value = "";
   try {
-    const permission = await BarcodeScanner.checkPermission({ force: true });
-    if (permission.denied) {
-      await BarcodeScanner.openAppSettings();
+    const check = await BarcodeScanner.checkPermissions();
+    if (check.camera === "denied") {
+      await BarcodeScanner.openSettings();
       message.error("相机权限已被永久拒绝，请在系统设置中手动开启");
       return;
     }
-    if (!permission.granted) {
-      message.error("未获得相机权限");
+    if (check.camera !== "granted") {
+      const request = await BarcodeScanner.requestPermissions();
+      if (request.camera !== "granted") {
+        message.error("未获得相机权限");
+        return;
+      }
+    }
+
+    await stopScannerOverlay();
+    await startScannerOverlay();
+
+    const barcode = await new Promise<any>(async (resolve) => {
+      const listener = await BarcodeScanner.addListener(
+        "barcodesScanned",
+        async (result: BarcodesScannedEvent) => {
+          await listener.remove();
+          resolve(result.barcodes[0]);
+        }
+      );
+
+      await BarcodeScanner.startScan({
+        formats: [BarcodeFormat.QrCode],
+      });
+    });
+
+    if (!barcode) {
+      message.warning("未识别到二维码内容");
       return;
     }
 
-    await BarcodeScanner.prepare({
-      targetedFormats: [SupportedFormat.QR_CODE],
-    });
-
-    // 确保之前任何正在进行的扫描都停止
-    await stopScannerOverlay();
-
-    await startScannerOverlay();
-    const result = await BarcodeScanner.startScan({
-      targetedFormats: [SupportedFormat.QR_CODE],
-    });
-    const content = result.hasContent ? String(result.content || "") : "";
+    const content = String(barcode.rawValue || barcode.displayValue || "");
     if (!content) {
       message.warning("未识别到二维码内容");
       return;
     }
+
     const apiValue = parseApiFromQr(content);
     if (!apiValue) {
       message.error("二维码中未识别到 api 地址");
@@ -861,8 +877,14 @@ onMounted(async () => {
   background: transparent !important;
 }
 
+:global(body.scanner-active #app) {
+  background: transparent !important;
+  visibility: hidden;
+}
+
 :global(body.scanner-active .init-page) {
   opacity: 0;
+  visibility: hidden;
 }
 
 @media (max-width: 768px) {

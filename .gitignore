@@ -83,7 +83,8 @@ components.d.ts
 .env
 .env.*.local
 
-android/
+# Android build artifacts are handled by android/.gitignore
+# Do not add 'android/' here or the entire native project will be excluded
 
 .VSCodeCounter/
 .vscode/

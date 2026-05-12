@@ -305,6 +305,8 @@ import { getPublicPlaylists, deletePublicPlaylist, createPrivatePlaylist, update
 import { getPlaylistAIDescription, generatePublicPlaylistDescriptions } from '@/api/ai';
 import { resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
+import { Capacitor } from "@capacitor/core";
+import { capacitorPickImage } from "@/utils/camera";
 
 const SearchEmpty = Search;
 const MusicList = Music;
@@ -432,8 +434,37 @@ const closeModal = () => {
   if (coverInputRef.value) coverInputRef.value.value = '';
 };
 
+const isCapacitor = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+
 const triggerCoverUpload = () => {
-  coverInputRef.value?.click();
+  if (isCapacitor) {
+    handleMobileCoverUpload();
+  } else {
+    coverInputRef.value?.click();
+  }
+};
+
+const handleMobileCoverUpload = async () => {
+  try {
+    const file = await capacitorPickImage();
+    if (!editingId.value) return;
+    coverPreviewUrl.value = URL.createObjectURL(file);
+    coverUploadLoading.value = true;
+    const formData = new FormData();
+    formData.append('file', file);
+    const res: any = await uploadPlaylistCover(editingId.value, formData);
+    if (res.code === ResultCode.SUCCESS) {
+      message.success('封面上传成功');
+      fetchPlaylists();
+    } else {
+      message.error(res.message || '上传失败');
+    }
+  } catch (err: any) {
+    if (String(err?.message || err).toLowerCase().includes('cancel')) return;
+    message.error('上传失败: ' + (err?.message || err));
+  } finally {
+    coverUploadLoading.value = false;
+  }
 };
 
 const handleCoverChange = async (e: Event) => {

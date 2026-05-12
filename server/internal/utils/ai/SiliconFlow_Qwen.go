@@ -51,7 +51,7 @@ func ChatWithQwen(prompt string) (string, error) {
 	// 3. 确定模型
 	modelName := conf.SiliconFlow.Model
 	if modelName == "" {
-		modelName = "Qwen/Qwen3-8B"
+		modelName = "deepseek-ai/DeepSeek-V4-Flash"
 	}
 
 	// 4. 等待限流

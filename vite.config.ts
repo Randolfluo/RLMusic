@@ -15,6 +15,7 @@ export default ({ mode }: ConfigEnv) => {
   const VITE_MUSIC_API = loadEnv(mode, process.cwd()).VITE_MUSIC_API;
   console.log("VITE_MUSIC_API:", VITE_MUSIC_API); // 在终端输出环境变量，方便调试
   return defineConfig({
+    base: "./",
     plugins: [
       vue(),
       electron({

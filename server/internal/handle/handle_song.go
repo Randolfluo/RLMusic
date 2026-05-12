@@ -12,6 +12,7 @@ import (
 	"server/internal/utils/ai"
 	"server/internal/utils/audio"
 	"server/internal/utils/imgtool"
+	"server/internal/utils/prompt"
 	"strconv"
 	"strings"
 	"time"
@@ -1048,7 +1049,7 @@ func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
 	}
 
 	// 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
+	promptBytes, err := prompt.Read("prompt_playlist1.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_playlist1.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
@@ -1141,7 +1142,7 @@ func (h *SongAuth) internalGetAnalysis(c *gin.Context, idStr string) (string, *g
 	}
 
 	// 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
+	promptBytes, err := prompt.Read("prompt_playlist1.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_playlist1.md", "error", err)
 		return "", &g.Err
@@ -1193,7 +1194,7 @@ func (h *SongAuth) GetPlaylistAIDescription(c *gin.Context) {
 	}
 
 	// 2.// 读取 prompt2.md
-	promptBytes, err := os.ReadFile("prompts/prompt_playlist2.md")
+	promptBytes, err := prompt.Read("prompt_playlist2.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_playlist2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
@@ -1294,7 +1295,7 @@ func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *m
 	}
 
 	// 3. 读取 prompt1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_playlist1.md")
+	promptBytes, err := prompt.Read("prompt_playlist1.md")
 	if err != nil {
 		return err
 	}
@@ -1330,7 +1331,7 @@ func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *m
 	}
 
 	// 6. 读取 prompt2.md
-	promptBytes2, err := os.ReadFile("prompts/prompt_playlist2.md")
+	promptBytes2, err := prompt.Read("prompt_playlist2.md")
 	if err != nil {
 		return err
 	}
@@ -1508,7 +1509,7 @@ func (h *SongAuth) internalGetArtistAnalysis(c *gin.Context, idStr string) (stri
 	}
 
 	// 2. 读取 prompt_artist1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_artist1.md")
+	promptBytes, err := prompt.Read("prompt_artist1.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_artist1.md", "error", err)
 		return "", &g.Err
@@ -1567,7 +1568,7 @@ func (h *SongAuth) GetArtistAIDescription(c *gin.Context) {
 	}
 
 	// 3. 读取 prompt_artist2.md
-	promptBytes, err := os.ReadFile("prompts/prompt_artist2.md")
+	promptBytes, err := prompt.Read("prompt_artist2.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_artist2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
@@ -1645,7 +1646,7 @@ func (h *SongAuth) generateAndSaveArtistDescription(db *gorm.DB, idStr string) e
 	}
 
 	// 2. 读取 prompt_artist1.md
-	promptBytes1, err := os.ReadFile("prompts/prompt_artist1.md")
+	promptBytes1, err := prompt.Read("prompt_artist1.md")
 	if err != nil {
 		return err
 	}
@@ -1681,7 +1682,7 @@ func (h *SongAuth) generateAndSaveArtistDescription(db *gorm.DB, idStr string) e
 	}
 
 	// 5. 读取 prompt_artist2.md
-	promptBytes2, err := os.ReadFile("prompts/prompt_artist2.md")
+	promptBytes2, err := prompt.Read("prompt_artist2.md")
 	if err != nil {
 		return err
 	}
@@ -1717,7 +1718,7 @@ func (h *SongAuth) internalGetAlbumAnalysis(c *gin.Context, idStr string) (strin
 	}
 
 	// 2. 读取 prompt_album1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_album1.md")
+	promptBytes, err := prompt.Read("prompt_album1.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_album1.md", "error", err)
 		return "", &g.Err
@@ -1824,7 +1825,7 @@ func (h *SongAuth) GetAlbumAIDescription(c *gin.Context) {
 	}
 
 	// 3. 读取 prompt_album2.md
-	promptBytes, err := os.ReadFile("prompts/prompt_album2.md")
+	promptBytes, err := prompt.Read("prompt_album2.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_album2.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板")
@@ -1902,7 +1903,7 @@ func (h *SongAuth) generateAndSaveAlbumDescription(db *gorm.DB, idStr string) er
 	}
 
 	// 2. 读取 prompt_album1.md
-	promptBytes1, err := os.ReadFile("prompts/prompt_album1.md")
+	promptBytes1, err := prompt.Read("prompt_album1.md")
 	if err != nil {
 		return err
 	}
@@ -1944,7 +1945,7 @@ func (h *SongAuth) generateAndSaveAlbumDescription(db *gorm.DB, idStr string) er
 	}
 
 	// 5. 读取 prompt_album2.md
-	promptBytes2, err := os.ReadFile("prompts/prompt_album2.md")
+	promptBytes2, err := prompt.Read("prompt_album2.md")
 	if err != nil {
 		return err
 	}
@@ -2428,7 +2429,7 @@ func (h *SongAuth) internalGetSongAnalysis(c *gin.Context, idStr string) (string
 	}
 
 	// 2. 读取 prompts/prompt_podcast1.md
-	promptBytes, err := os.ReadFile("prompts/prompt_podcast1.md")
+	promptBytes, err := prompt.Read("prompt_podcast1.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_podcast1.md", "error", err)
 		return "", &g.Err
@@ -2508,7 +2509,7 @@ func (h *SongAuth) internalGetSongDraft(c *gin.Context, idStr string) (string, *
 	}
 
 	// 2. 读取 prompts/prompt_podcast2.md
-	promptBytes2, err := os.ReadFile("prompts/prompt_podcast2.md")
+	promptBytes2, err := prompt.Read("prompt_podcast2.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_podcast2.md", "error", err)
 		return "", &g.Err
@@ -2566,7 +2567,7 @@ func (h *SongAuth) GetSongAIOpeningRemark(c *gin.Context) {
 	}
 
 	// 3. 读取 prompts/prompt_podcast3.md
-	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	promptBytes3, err := prompt.Read("prompt_podcast3.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_podcast3.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板3")
@@ -2608,7 +2609,7 @@ func (h *SongAuth) GetSongAIOpeningRemarkTTS(c *gin.Context) {
 	}
 
 	// 3. 读取 prompts/prompt_podcast3.md
-	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	promptBytes3, err := prompt.Read("prompt_podcast3.md")
 	if err != nil {
 		slog.Error("Failed to read prompts/prompt_podcast3.md", "error", err)
 		ReturnError(c, g.Err, "无法读取提示词模板3")
@@ -2761,6 +2762,56 @@ func (h *SongAuth) BatchGenerateSongIntros(c *gin.Context) {
 	})
 }
 
+// GenerateAllPublicPlaylistIntros 为所有公共歌单批量生成歌曲开场白
+func (h *SongAuth) GenerateAllPublicPlaylistIntros(c *gin.Context) {
+	// 1. 管理员权限检查
+	user := GetCurrentUser(c)
+	if user == nil || user.UserGroup != "admin" {
+		ReturnError(c, g.ErrPermission, "只有管理员可以执行此操作")
+		return
+	}
+
+	db := GetDB(c)
+
+	// 2. 获取所有公共歌单
+	var playlists []model.Playlist
+	if err := db.Where("is_public = ?", true).Find(&playlists).Error; err != nil {
+		ReturnError(c, g.ErrDbOp, "获取公共歌单失败")
+		return
+	}
+
+	// 3. 异步执行：遍历每个公共歌单 → 遍历歌曲 → 逐首生成开场白
+	go func(pls []model.Playlist, userID int) {
+		for _, pl := range pls {
+			var songIDs []int
+			if err := db.Table("playlist_songs").Where("playlist_id = ?", pl.ID).Pluck("song_id", &songIDs).Error; err != nil {
+				slog.Error("获取歌单歌曲失败", "playlist_id", pl.ID, "error", err)
+				continue
+			}
+			if len(songIDs) == 0 {
+				continue
+			}
+
+			slog.Info("开始生成歌单开场白", "playlist_id", pl.ID, "playlist_title", pl.Title, "count", len(songIDs))
+			for _, songID := range songIDs {
+				if err := h.generateAndSaveSongIntro(db, strconv.Itoa(songID)); err != nil {
+					slog.Error("生成歌曲开场白失败", "song_id", songID, "playlist_id", pl.ID, "error", err)
+				}
+			}
+			// 更新歌单 HasIntro 状态
+			if err := db.Model(&model.Playlist{}).Where("id = ?", pl.ID).Update("has_intro", true).Error; err != nil {
+				slog.Error("更新歌单 HasIntro 失败", "playlist_id", pl.ID, "error", err)
+			}
+			slog.Info("歌单开场白生成完成", "playlist_id", pl.ID, "playlist_title", pl.Title)
+		}
+		slog.Info("所有公共歌单开场白生成任务完成")
+	}(playlists, user.ID)
+
+	ReturnSuccess(c, gin.H{
+		"message": fmt.Sprintf("已开始后台生成 %d 个公共歌单的开场白", len(playlists)),
+	})
+}
+
 // generateAndSaveSongIntro 生成并保存单个歌曲开场白 (内部核心逻辑)
 func (h *SongAuth) generateAndSaveSongIntro(db *gorm.DB, idStr string) error {
 	// 1. 获取歌曲信息
@@ -2770,7 +2821,7 @@ func (h *SongAuth) generateAndSaveSongIntro(db *gorm.DB, idStr string) error {
 	}
 
 	// 2. Step 1: 分析
-	promptBytes, err := os.ReadFile("prompts/prompt_podcast1.md")
+	promptBytes, err := prompt.Read("prompt_podcast1.md")
 	if err != nil {
 		return err
 	}
@@ -2799,7 +2850,7 @@ func (h *SongAuth) generateAndSaveSongIntro(db *gorm.DB, idStr string) error {
 	}
 
 	// 3. Step 2: 草稿
-	promptBytes2, err := os.ReadFile("prompts/prompt_podcast2.md")
+	promptBytes2, err := prompt.Read("prompt_podcast2.md")
 	if err != nil {
 		return err
 	}
@@ -2811,7 +2862,7 @@ func (h *SongAuth) generateAndSaveSongIntro(db *gorm.DB, idStr string) error {
 	}
 
 	// 4. Step 3: 最终脚本
-	promptBytes3, err := os.ReadFile("prompts/prompt_podcast3.md")
+	promptBytes3, err := prompt.Read("prompt_podcast3.md")
 	if err != nil {
 		return err
 	}

@@ -12,8 +12,8 @@
         <div class="cover-wrapper">
           <n-image
             class="cover-img"
-            :src="resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png'"
-            fallback-src="/images/logo/favicon.png"
+            :src="resolveCoverUrl(playlist.cover_url) || fallbackCoverUrl"
+            :fallback-src="fallbackCoverUrl"
             object-fit="cover"
             preview-disabled
             @click="music.setBigPlayerState(true)"
@@ -51,8 +51,7 @@
               <n-avatar
                 round
                 size="small"
-                :src="playlist.owner?.avatarUrl || playlist.owner?.avatar_url || '/images/logo/favicon.png'"
-                fallback-src="/images/logo/favicon.png"
+                :src="playlist.owner?.avatar_url ? resolveAvatarUrl(playlist.owner.avatar_url) : fallbackCoverUrl"
               />
               <span>{{ playlist.owner?.nickname || playlist.owner?.username || `User ${playlist.owner_id}` }}</span>
             </div>
@@ -77,8 +76,9 @@
               播放全部
             </n-button>
 
+            <!-- 已登录: 收藏/取消收藏 -->
             <n-button
-              v-if="user.userLogin && playlist.owner_id !== user.userData.userId"
+              v-if="user.userLogin && playlist.id && Number(playlist.owner_id) !== Number(user.userData.userId)"
               round size="large"
               class="action-btn"
               @click="handleSubscribe"
@@ -89,6 +89,19 @@
                 <n-icon :component="Like" v-else />
               </template>
               {{ isSubscribed ? '取消收藏' : '收藏' }}
+            </n-button>
+
+            <!-- 未登录: 提示登录后可收藏 -->
+            <n-button
+              v-else-if="!user.userLogin && playlist.id"
+              round size="large"
+              class="action-btn"
+              @click="router.push('/login')"
+            >
+              <template #icon>
+                <n-icon :component="Like" />
+              </template>
+              登录后收藏
             </n-button>
 
             <n-button
@@ -169,7 +182,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   getPublicPlaylistDetail,
   getPrivatePlaylistDetail,
@@ -189,9 +202,14 @@ import { musicStore, userStore, settingStore } from "@/store";
 import Pagination from "@/components/Pagination/index.vue";
 import SongList from "@/components/DataList/SongList.vue";
 import { resolveCoverUrl } from "@/api/song";
+import { resolveAvatarUrl } from "@/api/user";
 import { uploadPlaylistCover } from "@/api/playlist";
+import { Capacitor } from "@capacitor/core";
+import { capacitorPickImage } from "@/utils/camera";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const route = useRoute();
+const router = useRouter();
 const message = useMessage();
 const dialog = useDialog();
 const music = musicStore();
@@ -286,9 +304,36 @@ const canUploadCover = computed(() => {
 
 const coverInputRef = ref<HTMLInputElement | null>(null);
 const coverUploadLoading = ref(false);
+const isCapacitor = typeof window !== "undefined" && Capacitor.isNativePlatform();
 
 const triggerCoverUpload = () => {
-  coverInputRef.value?.click();
+  if (isCapacitor) {
+    handleMobileCoverUpload();
+  } else {
+    coverInputRef.value?.click();
+  }
+};
+
+const handleMobileCoverUpload = async () => {
+  try {
+    const file = await capacitorPickImage();
+    if (!playlist.value.id) return;
+    coverUploadLoading.value = true;
+    const formData = new FormData();
+    formData.append("file", file);
+    const res: any = await uploadPlaylistCover(playlist.value.id, formData);
+    if (res.code === ResultCode.SUCCESS) {
+      message.success("封面上传成功");
+      refreshPlaylist();
+    } else {
+      message.error(res.message || "上传失败");
+    }
+  } catch (err: any) {
+    if (String(err?.message || err).toLowerCase().includes("cancel")) return;
+    message.error("上传失败: " + (err?.message || err));
+  } finally {
+    coverUploadLoading.value = false;
+  }
 };
 
 const handleCoverChange = async (e: Event) => {

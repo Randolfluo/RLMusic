@@ -13,8 +13,8 @@
           <div class="cover-wrapper">
             <n-image
               class="cover-img"
-              :src="resolveCoverUrl(artistInfo.cover) || '/images/logo/favicon.png'"
-              fallback-src="/images/logo/favicon.png"
+              :src="resolveCoverUrl(artistInfo.cover) || fallbackCoverUrl"
+              :fallback-src="fallbackCoverUrl"
               object-fit="cover"
               preview-disabled
             />
@@ -72,6 +72,7 @@ import { ResultCode } from "@/utils/request";
 import SongList from "@/components/DataList/SongList.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { Microphone, Music } from "@icon-park/vue-next";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const route = useRoute();
 const message = useMessage();

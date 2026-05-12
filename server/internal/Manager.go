@@ -174,7 +174,8 @@ func registerAuthHandler(r *gin.Engine) {
 		song.GET("/podcast/draft/:id", songAuthAPI.GetSongAIDraft)                              // 获取歌曲AI开场白草稿 (Step 2)
 		song.GET("/podcast/opening/:id", songAuthAPI.GetSongAIOpeningRemark)                    // 获取歌曲AI最终开场白 (Step 3)
 		song.GET("/podcast/opening-tts/:id", songAuthAPI.GetSongAIOpeningRemarkTTS)             // 获取歌曲AI开场白并转语音 (Step 4)
-		song.POST("/podcast/generate-playlist-intros/:id", songAuthAPI.BatchGenerateSongIntros) // 批量生成歌单内歌曲开场白
+		song.POST("/podcast/generate-playlist-intros/:id", songAuthAPI.BatchGenerateSongIntros)           // 批量生成歌单内歌曲开场白
+song.POST("/podcast/generate-all-public-playlist-intros", songAuthAPI.GenerateAllPublicPlaylistIntros) // 批量生成所有公共歌单开场白
 
 		song.POST("/like/:id", songAuthAPI.ToggleLike) // 点赞/取消点赞
 		song.GET("/like", songAuthAPI.GetLikedSongs)   // 获取喜欢的歌曲列表
@@ -191,6 +192,8 @@ func registerAuthHandler(r *gin.Engine) {
 		system.GET("/export/excel", systemAuthAPI.ExportDatabaseToExcel)
 		system.DELETE("/reset", systemAuthAPI.ResetSystem)   // 重置系统数据
 		system.GET("/status", systemAuthAPI.GetSystemStatus) // 系统状态 (CPU/Mem/API) (Admin)
+			system.GET("/logs", systemAuthAPI.GetLogs)          // 服务日志
+			system.GET("/logs/stream", systemAuthAPI.StreamLogs) // 服务日志实时流 (SSE)
 	}
 
 }

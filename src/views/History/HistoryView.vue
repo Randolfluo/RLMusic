@@ -21,8 +21,8 @@
             <n-avatar
               round
               size="small"
-              :src="resolveAvatarUrl(userStore.userData.avatarUrl) || '/images/logo/favicon.png'"
-              fallback-src="/images/logo/favicon.png"
+              :src="resolveAvatarUrl(userStore.userData.avatarUrl) || fallbackCoverUrl"
+              :fallback-src="fallbackCoverUrl"
             />
             <span class="user-name">{{ userStore.userData.nickname || '用户' }}</span>
             <span class="divider">•</span>
@@ -89,6 +89,7 @@ import { useMessage, NImage, NTime, NAvatar, NIcon } from "naive-ui";
 import { useMusicDataStore } from "@/store/musicData";
 import { Delete, Play, History, Music } from "@icon-park/vue-next";
 import { useUserDataStore } from "@/store/userData";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const message = useMessage();
 const music = useMusicDataStore();
@@ -114,7 +115,7 @@ const columns = [
     width: 70,
     render: (row: any) => {
       return h(NImage, {
-        src: row.cover_url ? resolveCoverUrl(row.cover_url) : row.song_id || row.id ? getSongCover(row.song_id || row.id) : '/images/logo/favicon.png',
+        src: row.cover_url ? resolveCoverUrl(row.cover_url) : row.song_id || row.id ? getSongCover(row.song_id || row.id) : fallbackCoverUrl,
         width: 44,
         height: 44,
         objectFit: 'cover',

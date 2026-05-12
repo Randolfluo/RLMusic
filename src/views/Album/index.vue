@@ -18,9 +18,9 @@
                 (album.cover_song_id ? getSongCover(album.cover_song_id) : null) ||
                 resolveCoverUrl(album.picUrl) ||
                 resolveCoverUrl(album.cover_url) ||
-                '/images/logo/favicon.png'
+                fallbackCoverUrl
               "
-              fallback-src="/images/logo/favicon.png"
+              :fallback-src="fallbackCoverUrl"
               object-fit="cover"
               preview-disabled
               @click="music.setBigPlayerState(true)"
@@ -82,6 +82,7 @@ import { useMessage, NButton, NIcon, NImage, NSpin } from "naive-ui";
 import { Play, PlayOne, User, Music } from "@icon-park/vue-next";
 import { musicStore } from "@/store";
 import SongList from "@/components/DataList/SongList.vue";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const route = useRoute();
 const message = useMessage();

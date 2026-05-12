@@ -22,8 +22,8 @@
               preview-disabled
               class="cover-img"
               object-fit="cover"
-              :src="resolveCoverUrl(item.cover_url) || '/images/logo/favicon.png'"
-              fallback-src="/images/logo/favicon.png"
+              :src="resolveCoverUrl(item.cover_url) || fallbackCoverUrl"
+              :fallback-src="fallbackCoverUrl"
             />
           </div>
           <div class="item-info">
@@ -33,7 +33,11 @@
               <span class="text">{{ formatCount(item.play_count) }} 播放 · {{ item.total_songs || item.total || item.track_count || 0 }} 首</span>
             </div>
           </div>
-          <div class="item-action" @click.stop="handleLike(item)">
+          <div
+            v-if="userStore.userLogin && Number(userStore.userData.userId) !== Number(item.owner_id)"
+            class="item-action"
+            @click.stop="handleLike(item)"
+          >
              <n-icon :component="isSubscribedMap[item.id] ? Like : Like" :color="isSubscribedMap[item.id] ? '#d03050' : '#999'" size="20" />
           </div>
         </div>
@@ -62,8 +66,8 @@
                 preview-disabled
                 class="cover-img"
                 object-fit="cover"
-                :src="resolveCoverUrl(item.cover_url) || '/images/logo/favicon.png'"
-                fallback-src="/images/logo/favicon.png"
+                :src="resolveCoverUrl(item.cover_url) || fallbackCoverUrl"
+                :fallback-src="fallbackCoverUrl"
               />
               <div class="play-overlay">
                 <n-icon :component="PlayOne" size="48" color="white" />
@@ -104,13 +108,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, h, onMounted, onUnmounted } from "vue";
+import { ref, computed, nextTick, h, onMounted, onUnmounted, watch } from "vue";
 import { Play, Like, More, PlayOne, Voice, Delete } from "@icon-park/vue-next";
 import { useRouter } from "vue-router";
 import { NDropdown, NIcon, NImage, useMessage, useDialog } from "naive-ui";
 import { useUserDataStore } from "@/store/userData";
-import { subscribePlaylist, unsubscribePlaylist, checkIsSubscribed, deletePublicPlaylist } from "@/api/playlist";
+import { subscribePlaylist, unsubscribePlaylist, checkIsSubscribed, deletePublicPlaylist, getSubscribedPlaylists } from "@/api/playlist";
 import { resolveCoverUrl } from "@/api/song";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 import { ResultCode } from "@/utils/request";
 
 const router = useRouter();
@@ -170,6 +175,29 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+});
+
+// 预加载用户收藏状态
+const loadSubscribedStatus = async () => {
+    if (!userStore.userLogin || !props.playlists?.length) return;
+    try {
+        const res = await getSubscribedPlaylists();
+        if (res.code === ResultCode.SUCCESS) {
+            const subscribedIds = new Set((res.data || []).map((p: any) => p.id));
+            for (const item of props.playlists) {
+                if (item.id && Number(userStore.userData.userId) !== Number(item.owner_id)) {
+                    isSubscribedMap.value[item.id] = subscribedIds.has(item.id);
+                }
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+watch(() => props.playlists, loadSubscribedStatus, { deep: true });
+watch(() => userStore.userLogin, (loggedIn) => {
+    if (loggedIn) loadSubscribedStatus();
 });
 
 const showDropdown = ref(false);
@@ -247,10 +275,8 @@ import { checkLogin } from "@/utils/auth";
 const handleLike = async (item: any) => {
     if (!checkLogin()) return;
     
-    // 如果是自己的歌单，不能收藏/取消收藏 (或者是其他逻辑)
-    if (userStore.userData.userId === item.owner_id) {
-        // 或者是自己的歌单，点击无反应或提示
-        return; 
+    if (Number(userStore.userData.userId) === Number(item.owner_id)) {
+        return;
     }
 
     try {
@@ -295,8 +321,8 @@ const renderMenuHeader = (playlist: any) => {
     }
   }, [
     h(NImage, {
-      src: resolveCoverUrl(playlist.cover_url) || '/images/logo/favicon.png',
-      fallbackSrc: '/images/logo/favicon.png',
+      src: resolveCoverUrl(playlist.cover_url) || fallbackCoverUrl,
+      fallbackSrc: fallbackCoverUrl,
       width: 40,
       height: 40,
       previewDisabled: true,
@@ -722,6 +748,13 @@ const formatCount = (count: number) => {
           bottom: 6px;
           width: 28px;
           height: 28px;
+        }
+      }
+
+      @media (hover: none) {
+        .like-btn {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     }

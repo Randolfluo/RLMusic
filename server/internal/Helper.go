@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -9,17 +10,83 @@ import (
 	g "server/internal/global"
 	"server/internal/model"
 	"server/internal/utils/encrypt"
+	"strings"
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 )
 
+// ringBufferHandler 自定义 slog Handler，拦截日志写入环形缓冲区
+type ringBufferHandler struct {
+	inner slog.Handler
+}
+
+func (h *ringBufferHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.inner.Enabled(ctx, level)
+}
+
+func (h *ringBufferHandler) Handle(ctx context.Context, r slog.Record) error {
+	msg := r.Message
+	r.Attrs(func(a slog.Attr) bool {
+		msg += " " + a.Key + "=" + a.Value.String()
+		return true
+	})
+	g.LogBuffer.Append(g.LogEntry{
+		Time:    r.Time.Format(time.DateTime),
+		Level:   r.Level.String(),
+		Message: msg,
+	})
+	return h.inner.Handle(ctx, r)
+}
+
+func (h *ringBufferHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &ringBufferHandler{inner: h.inner.WithAttrs(attrs)}
+}
+
+func (h *ringBufferHandler) WithGroup(name string) slog.Handler {
+	return &ringBufferHandler{inner: h.inner.WithGroup(name)}
+}
+
+// stdLogBridge 将标准库 log 输出桥接到 slog
+type stdLogBridge struct{}
+
+func (stdLogBridge) Write(p []byte) (n int, err error) {
+	msg := strings.TrimSpace(string(p))
+	if msg != "" {
+		slog.Info(msg)
+	}
+	return len(p), nil
+}
+
+// ginLogBridge 双写：原始输出保留 ANSI 颜色，环形缓冲区捕获纯文本
+type ginLogBridge struct {
+	original io.Writer
+}
+
+func (b ginLogBridge) Write(p []byte) (n int, err error) {
+	// 写入原始目标（终端保留 ANSI 彩色）
+	b.original.Write(p)
+	// 直接写入环形缓冲区（绕过 slog，避免 stdout 重复输出）
+	msg := strings.TrimSpace(string(p))
+	if msg != "" {
+		g.LogBuffer.Append(g.LogEntry{
+			Time:    time.Now().Format(time.DateTime),
+			Level:   "INFO",
+			Message: msg,
+		})
+	}
+	return len(p), nil
+}
+
 // 根据配置文件初始化 slog 日志
 func InitLogger(conf *g.Config) *slog.Logger {
+	g.LogBuffer = g.NewLogRingBuffer(5000)
+
 	level := getLogLevel(conf.Log.Level)
 
 	option := &slog.HandlerOptions{
@@ -35,9 +102,15 @@ func InitLogger(conf *g.Config) *slog.Logger {
 		},
 	}
 
-	handler := getLogHandler(conf.Log.Format, option)
+	handler := getLogHandler(conf, option)
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
+
+	// 将标准库 log 输出重定向到 slog，使 log.Printf/Println 也进入环形缓冲区
+	log.SetOutput(&stdLogBridge{})
+	// 将 Gin debug 模式的路由列表等输出也重定向到 slog
+	gin.DefaultWriter = &ginLogBridge{original: gin.DefaultWriter}
+
 	return logger
 }
 
@@ -58,11 +131,27 @@ func getLogLevel(level string) slog.Level {
 }
 
 // 获取日志处理器
-func getLogHandler(format string, option *slog.HandlerOptions) slog.Handler {
-	if format == "json" {
-		return slog.NewJSONHandler(os.Stdout, option)
+func getLogHandler(conf *g.Config, option *slog.HandlerOptions) slog.Handler {
+	var writer io.Writer = os.Stdout
+
+	if conf.Log.Directory != "" {
+		if err := os.MkdirAll(conf.Log.Directory, os.ModePerm); err == nil {
+			logFileName := filepath.Join(conf.Log.Directory, "server-"+time.Now().Format(time.DateOnly)+".log")
+			logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			if err == nil {
+				writer = io.MultiWriter(os.Stdout, logFile)
+			}
+		}
 	}
-	return slog.NewTextHandler(os.Stdout, option)
+
+	var inner slog.Handler
+	if conf.Log.Format == "json" {
+		inner = slog.NewJSONHandler(writer, option)
+	} else {
+		inner = slog.NewTextHandler(writer, option)
+	}
+
+	return &ringBufferHandler{inner: inner}
 }
 
 // 根据配置文件初始化数据库

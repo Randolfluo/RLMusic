@@ -23,8 +23,8 @@
             <n-avatar
               round
               size="small"
-              :src="resolveAvatarUrl(user.userData.avatarUrl) || '/images/logo/favicon.png'"
-              fallback-src="/images/logo/favicon.png"
+              :src="resolveAvatarUrl(user.userData.avatarUrl) || fallbackCoverUrl"
+              :fallback-src="fallbackCoverUrl"
             />
             <span class="name">{{ user.userData.nickname || '用户' }}</span>
           </div>
@@ -54,6 +54,7 @@ import { Star } from "@icon-park/vue-next";
 import PlaylistGrid from "@/components/DataList/PlaylistGrid.vue";
 import { useUserDataStore } from "@/store/userData";
 import { resolveAvatarUrl } from "@/api/user";
+import fallbackCoverUrl from "/images/logo/favicon.png";
 
 const message = useMessage();
 const user = useUserDataStore();
