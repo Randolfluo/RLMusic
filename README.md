@@ -1,14 +1,14 @@
 # RLMusic
 
 基于 Vue 3 + Go 的多端本地音乐播放器，支持 Web、Electron、Android（Capacitor）。  
-提供歌曲管理、播放控制、后台管理、一起听、AI 文案/开场白等能力。
+提供歌曲管理、播放控制、后台管理、一起听、AI 文案/开场白、服务端日志等能力。
 
 ## 功能亮点
 - **多端统一体验**：Web / Electron / Android 一套核心交互。
 - **沉浸式播放**：歌词、封面、播放器动效与多视图歌曲列表。
-- **AI 能力**：歌单文案生成、播客开场白合成。
-- **实时互动**：一起听房间与实时消息同步（WebSocket）。
-- **后台管理**：用户、公共歌单等管理能力。
+- **AI 能力**：歌单文案生成、播客开场白合成，支持 SiliconFlow Qwen 等模型切换。
+- **后台管理**：用户、公共歌单、歌曲管理等管理能力。
+- **服务端日志**：环形缓冲区日志 + SSE 实时推送，内置日志查看页面。
 
 ## 系统架构
 
@@ -36,7 +36,7 @@ graph TD
     end
 
     subgraph Data [数据持久层]
-        SQLite[(SQLite / MySQL)]
+        SQLite[SQLite]
         FS[本地文件系统 Cover/Music/Log]
     end
 
@@ -50,9 +50,8 @@ graph TD
 - **前端**：Vue 3、TypeScript、Vite、Pinia、Naive UI
 - **桌面端**：Electron、Electron Builder
 - **移动端**：Capacitor（Android）
-- **后端**：Go（Gin）、Gorm、SQLite / MySQL
+- **后端**：Go（Gin）、Gorm、SQLite / Sqlite
 
-生成这个项目的概述，用于毕业设计文档的AI参考，尽量详细一些，可以精确到具体的文件和文件夹，生成到一个markdown文件里
 ## 目录结构
 
 项目采用 Monorepo 风格的目录组织，将前端 Web、Electron 主进程、Go 后端以及 Android 原生工程集中在一个仓库中进行管理。
@@ -61,24 +60,25 @@ graph TD
 .
 ├─ src/                  # 前端 Vue 3 源码目录
 │  ├─ api/               # API 接口统一封装，使用 Axios 进行网络请求
-│  ├─ components/        # 可复用的 Vue 组件库 (如 Player、Nav、Admin 等)
-│  ├─ core/              # 核心业务逻辑 (包含 Websocket 通信、Timeline 调度等)
+│  ├─ components/        # 可复用的 Vue 组件库 (Player、Nav、Admin、DataList 等)
+│  ├─ core/              # 核心业务逻辑 (WebSocket 通信、Timeline 调度等)
 │  ├─ router/            # Vue Router 路由配置及导航守卫
 │  ├─ store/             # Pinia 状态管理 (音乐播放状态、用户数据、设置等)
 │  ├─ style/             # 全局样式文件 (SCSS)
-│  ├─ utils/             # 通用工具函数 (时间格式化、加密解密、防抖节流等)
-│  └─ views/             # 页面级视图组件 (首页、歌单、搜索、管理后台等)
+│  ├─ utils/             # 通用工具函数 (时间格式化、加密解密、防抖节流、相机调用等)
+│  └─ views/             # 页面级视图组件 (首页、歌单、搜索、管理后台、日志查看等)
 │
 ├─ server/               # Go (Gin) 后端源码目录
 │  ├─ cmd/               # 服务端入口文件 (main.go)
 │  ├─ internal/          # 内部核心逻辑，按职责划分
-│  │  ├─ global/         # 全局变量、配置结构体、统一返回格式
+│  │  ├─ global/         # 全局变量、配置结构体、统一返回格式、日志环形缓冲区
 │  │  ├─ handle/         # 控制器层，处理 HTTP 请求逻辑
-│  │  ├─ middleware/     # Gin 中间件 (Auth鉴权、统计拦截等)
+│  │  ├─ middleware/     # Gin 中间件 (Auth 鉴权、统计拦截等)
 │  │  ├─ model/          # GORM 数据库模型定义及基础 DB 操作
 │  │  └─ ws/             # WebSocket 服务端实现，处理长连接通信
-│  ├─ utils/             # 后端工具包 (AI调用、音频解析、JWT、加密等)
-│  ├─ prompts/           # LLM (大语言模型) 提示词 Markdown 模板
+│  ├─ utils/             # 后端工具包 (AI 调用、音频解析、JWT、加密等)
+│  │  └─ prompt/         # 跨环境提示词文件加载 (exe目录 → 父目录 → CWD 兜底)
+│  ├─ prompts/           # LLM 提示词 Markdown 模板
 │  ├─ config.yml         # 后端服务主配置文件
 │  └─ Dockerfile         # 后端 Docker 构建文件
 │
@@ -88,6 +88,8 @@ graph TD
 │
 ├─ android/              # Capacitor 生成的 Android 原生工程目录
 │
+├─ docs/                 # 设计文档与架构图 (ER 图、架构图、时序图等)
+├─ reports/              # 代码修改任务执行报告
 ├─ public/               # 静态资源目录 (不经过 Vite 编译直接复制，如 favicon、默认头像)
 │
 ├─ docker-compose.yml    # Docker 容器编排配置文件 (前后端一键部署)
@@ -253,11 +255,20 @@ SiliconFlow:
   ApiKey: "sk-..."
 ```
 
-## AI功能的使用
-需要现在系统环境变量添加 `QwenTTS_API_KEY` 和 `SiliconFlow_API_KEY` 两个变量，值分别为 Qwen 平台和 SiliconFlow 平台的 API 密钥。
+## AI 功能使用
 
+项目集成 AI 模型用于歌单文案生成与播客开场白合成，支持 SiliconFlow Qwen 等模型。需设置以下环境变量：
 
+| 变量名 | 说明 |
+| :--- | :--- |
+| `QwenTTS_API_KEY` | Qwen 平台 TTS 语音合成 API 密钥 |
+| `SiliconFlow_API_KEY` | SiliconFlow 平台 LLM API 密钥 |
 
+提示词文件位于 `server/prompts/`，通过 `prompt.Read()` 工具函数加载，支持可执行文件目录、父目录、CWD 三种查找路径，确保开发与部署场景下均能找到模板文件。
+
+## 执行报告
+
+每次完成代码修改任务后，会在 `reports/` 目录生成 Markdown 报告，记录任务摘要、修改文件、关键变更和验证结果。
 
 ## 致谢
 - [Vue 3](https://vuejs.org/) / [Vite](https://vitejs.dev/)
@@ -270,13 +281,3 @@ SiliconFlow:
 
 ## License
 MIT
-
-# TODO
-生成概述后再提示
-
-支持用户在设置页里自定义模型和api
-
-音频传输的是什么，是如何传输的
-提示词是否打包进了electron服务端里
-
-electron端当歌曲无对应信息时，应该如何处理
