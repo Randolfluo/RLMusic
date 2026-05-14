@@ -708,10 +708,6 @@ const playAll = () => {
       color: var(--n-text-color-3);
       line-height: 1.6;
       margin: 0 0 20px 0;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
 
     .meta-info {
@@ -837,7 +833,6 @@ const playAll = () => {
       .playlist-desc {
         font-size: 13px;
         margin-bottom: 10px;
-        -webkit-line-clamp: 1;
       }
 
       .meta-info {

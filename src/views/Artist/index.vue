@@ -26,9 +26,7 @@
             <div class="tag-badge">Artist</div>
             <h1 class="artist-name">{{ artistInfo.name }}</h1>
             <div class="desc-wrapper" v-if="artistInfo.description && artistInfo.description !== ''">
-              <n-ellipsis :line-clamp="3" :tooltip="false">
                 {{ artistInfo.description }}
-              </n-ellipsis>
             </div>
             <div class="desc-wrapper empty" v-else>
               暂无简介
@@ -66,7 +64,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { useMessage, NImage, NEllipsis, NSpin, NIcon } from "naive-ui";
+import { useMessage, NImage, NSpin, NIcon } from "naive-ui";
 import { getArtistDetail, resolveCoverUrl } from "@/api/song";
 import { ResultCode } from "@/utils/request";
 import SongList from "@/components/DataList/SongList.vue";

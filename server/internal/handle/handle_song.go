@@ -1015,8 +1015,8 @@ func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
 
 	db := GetDB(c)
 
-	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制100首，用于分析
-	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制25首，用于分析
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 25)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			ReturnError(c, g.ErrDbOp, "歌单不存在")
@@ -1112,8 +1112,8 @@ func (*SongAuth) GetPlaylistAIAnalysis(c *gin.Context) {
 func (h *SongAuth) internalGetAnalysis(c *gin.Context, idStr string) (string, *g.Result) {
 	db := GetDB(c)
 
-	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制100首，用于分析
-	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	// 使用 GetPlaylistRandomSongs 获取歌单随机歌曲，限制25首，用于分析
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 25)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", &g.ErrDbOp
@@ -1244,16 +1244,16 @@ func (h *SongAuth) GenerateAllPublicPlaylistsDescription(c *gin.Context) {
 
 	// 3. 异步执行生成任务，避免阻塞 HTTP 请求
 	go func(ids []int) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("批量生成公共歌单描述 goroutine panic", "panic", r)
+			}
+		}()
 		slog.Info("开始批量生成公共歌单描述", "count", len(ids))
 		for _, id := range ids {
 			idStr := strconv.Itoa(id)
-			// 复用 existing logic
-			// 注意：internalGetAnalysis 包含权限检查，但管理员有权访问所有公共歌单，所以没问题
-			// 为了复用，我们需要构造一个假的 context 或者重构 internalGetAnalysis 不依赖 context
-			// 这里简单起见，我们重构 internalGetAnalysis 的逻辑，或者直接在此处调用核心逻辑
-
-			// 为了代码复用，我们提取核心生成逻辑
-			if err := h.generateAndSaveDescription(db, idStr, user); err != nil {
+			sessionDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+			if err := h.generateAndSaveDescription(sessionDB, idStr, user); err != nil {
 				slog.Error("生成歌单描述失败", "id", id, "error", err)
 			} else {
 				slog.Info("生成歌单描述成功", "id", id)
@@ -1270,7 +1270,7 @@ func (h *SongAuth) GenerateAllPublicPlaylistsDescription(c *gin.Context) {
 // generateAndSaveDescription 生成并保存单个歌单描述 (内部核心逻辑)
 func (h *SongAuth) generateAndSaveDescription(db *gorm.DB, idStr string, user *model.User) error {
 	// 1. 获取歌单详情 (Limit 100)
-	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 100)
+	playlistDetail, err := model.GetPlaylistRandomSongs(db, idStr, 25)
 	if err != nil {
 		return err
 	}
@@ -1617,10 +1617,16 @@ func (h *SongAuth) GenerateAllArtistDescriptions(c *gin.Context) {
 
 	// 3. 异步执行
 	go func(ids []int) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("批量生成艺术家描述 goroutine panic", "panic", r)
+			}
+		}()
 		slog.Info("开始批量生成艺术家描述", "count", len(ids))
 		for _, id := range ids {
 			idStr := strconv.Itoa(id)
-			if err := h.generateAndSaveArtistDescription(db, idStr); err != nil {
+			sessionDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+			if err := h.generateAndSaveArtistDescription(sessionDB, idStr); err != nil {
 				slog.Error("生成艺术家描述失败", "id", id, "error", err)
 			} else {
 				slog.Info("生成艺术家描述成功", "id", id)
@@ -1874,10 +1880,16 @@ func (h *SongAuth) GenerateAllAlbumDescriptions(c *gin.Context) {
 
 	// 3. 异步执行
 	go func(ids []int) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("批量生成专辑描述 goroutine panic", "panic", r)
+			}
+		}()
 		slog.Info("开始批量生成专辑描述", "count", len(ids))
 		for _, id := range ids {
 			idStr := strconv.Itoa(id)
-			if err := h.generateAndSaveAlbumDescription(db, idStr); err != nil {
+			sessionDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+			if err := h.generateAndSaveAlbumDescription(sessionDB, idStr); err != nil {
 				slog.Error("生成专辑描述失败", "id", id, "error", err)
 			} else {
 				slog.Info("生成专辑描述成功", "id", id)
@@ -2733,17 +2745,15 @@ func (h *SongAuth) BatchGenerateSongIntros(c *gin.Context) {
 
 	// 3. 异步执行批量生成任务
 	go func(ids []int, userID int) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("批量生成歌曲开场白 goroutine panic", "panic", r)
+			}
+		}()
 		slog.Info("开始批量生成歌曲开场白", "playlist_id", idStr, "count", len(ids))
 		for _, songID := range ids {
-			// 检查是否已经生成过（可选，这里强制重新生成或者跳过已存在的）
-			// 这里假设全部生成
-
-			// 调用内部逻辑生成单个歌曲的开场白
-			// 由于 internalGetSongDraft 等方法依赖 gin.Context，我们需要重构或者模拟
-			// 或者提取核心逻辑为独立函数。
-			// 这里我们直接调用核心生成逻辑
-
-			if err := h.generateAndSaveSongIntro(db, strconv.Itoa(songID)); err != nil {
+			sessionDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+			if err := h.generateAndSaveSongIntro(sessionDB, strconv.Itoa(songID)); err != nil {
 				slog.Error("生成歌曲开场白失败", "song_id", songID, "error", err)
 			} else {
 				slog.Info("生成歌曲开场白成功", "song_id", songID)
@@ -2782,9 +2792,15 @@ func (h *SongAuth) GenerateAllPublicPlaylistIntros(c *gin.Context) {
 
 	// 3. 异步执行：遍历每个公共歌单 → 遍历歌曲 → 逐首生成开场白
 	go func(pls []model.Playlist, userID int) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("批量生成所有公共歌单开场白 goroutine panic", "panic", r)
+			}
+		}()
 		for _, pl := range pls {
+			sessionDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
 			var songIDs []int
-			if err := db.Table("playlist_songs").Where("playlist_id = ?", pl.ID).Pluck("song_id", &songIDs).Error; err != nil {
+			if err := sessionDB.Table("playlist_songs").Where("playlist_id = ?", pl.ID).Pluck("song_id", &songIDs).Error; err != nil {
 				slog.Error("获取歌单歌曲失败", "playlist_id", pl.ID, "error", err)
 				continue
 			}
@@ -2794,12 +2810,13 @@ func (h *SongAuth) GenerateAllPublicPlaylistIntros(c *gin.Context) {
 
 			slog.Info("开始生成歌单开场白", "playlist_id", pl.ID, "playlist_title", pl.Title, "count", len(songIDs))
 			for _, songID := range songIDs {
-				if err := h.generateAndSaveSongIntro(db, strconv.Itoa(songID)); err != nil {
+				innerDB := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+				if err := h.generateAndSaveSongIntro(innerDB, strconv.Itoa(songID)); err != nil {
 					slog.Error("生成歌曲开场白失败", "song_id", songID, "playlist_id", pl.ID, "error", err)
 				}
 			}
 			// 更新歌单 HasIntro 状态
-			if err := db.Model(&model.Playlist{}).Where("id = ?", pl.ID).Update("has_intro", true).Error; err != nil {
+			if err := sessionDB.Model(&model.Playlist{}).Where("id = ?", pl.ID).Update("has_intro", true).Error; err != nil {
 				slog.Error("更新歌单 HasIntro 失败", "playlist_id", pl.ID, "error", err)
 			}
 			slog.Info("歌单开场白生成完成", "playlist_id", pl.ID, "playlist_title", pl.Title)

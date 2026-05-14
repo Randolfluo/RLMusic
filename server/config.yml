@@ -44,5 +44,5 @@ QwenTTS:
 
 SiliconFlow:
   ApiKey: "" # 硅基流动 API Key，若为空则从环境变量中获取
-  Model: "deepseek-ai/DeepSeek-V4-Flash"  # 模型名称
+  Model: "Pro/deepseek-ai/DeepSeek-V3.2"  # 模型名称
 
