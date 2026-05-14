@@ -166,7 +166,7 @@ func SynthesizeAudio(text string, params *Params) (string, error) {
 
 	// 下载音频文件
 	audioUrl := ttsResp.Output.Audio.Url
-	audioResp, err := http.Get(audioUrl)
+	audioResp, err := (&http.Client{Timeout: 30 * time.Second}).Get(audioUrl)
 	if err != nil {
 		return "", fmt.Errorf("failed to download audio: %v", err)
 	}
