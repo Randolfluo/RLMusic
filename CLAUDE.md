@@ -1,67 +1,178 @@
-## 项目指令
+# CLAUDE.md
 
-### 执行报告
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-每次完成代码修改任务后，在 `reports/` 文件夹内生成一份 Markdown 报告，文件命名格式：`YYYY-MM-DD_<任务简述>.md`。
+## Project Overview
 
-报告需包含：
-1. **任务摘要** — 做了什么、为什么做
-2. **修改文件清单** — 每个文件的操作（新增/修改/删除）
-3. **关键变更说明** — 涉及的函数、组件、接口及逻辑
-4. **验证结果** — 测试/构建是否通过，功能验证情况
-5. **遗留问题** — 如有未解决的 bug 或待优化点，列出
+RLMusic is a multi-platform local music player built with Vue 3 (frontend) and Go (backend). It targets Web, Electron desktop, and Android (Capacitor) from a single codebase. Key features include local music library management, playlist management, AI-generated playlist descriptions (SiliconFlow LLM), TTS podcast intros (Qwen TTS), real-time "Listen Together" via WebSocket, and an admin dashboard with server log streaming.
 
-### 计划模式
+## Common Commands
 
-以下操作需先获得用户批准再执行：
+### Development
 
-**需批准的操作：**
-- 修改任何文件（创建、编辑、删除）
-- 数据库 Schema 变更
-- API 接口变更（前后端契约）
-- 引入新依赖包
-- 重构核心模块（store、router、api 层）
-- 影响用户数据或登录状态的变更
+```bash
+# Install dependencies (uses pnpm)
+pnpm install
 
-**无需批准的操作：**
-- 纯信息查询（代码解释、文件查找、日志查看）
-- 运行已有测试/构建命令
-- 查看或读取文件内容
+# Start frontend dev server (port 23456, proxies /api to backend)
+pnpm dev:web
 
-### 计划内容
+# Start Electron dev (uses VITE_DEV_SERVER_URL)
+pnpm dev
 
-计划必须包含：
-1. **修改的文件清单** — 每个文件的修改/创建/删除操作
-2. **关键代码变更** — 涉及的具体函数、组件、接口
-3. **回滚方案** — 变更失败时的恢复步骤
-4. **测试验证项** — 需要验证的功能点
+# Start backend with hot reload (requires `air` installed)
+cd server && air
 
-### 批准后执行
+# Or start backend directly
+cd server && go run cmd/main.go
 
-- 按步骤逐一实施
-- 遇到未预见的问题立即暂停，请求重新指导
-
-## 技术栈
-
-- 前端：Vue 3 + TypeScript + Pinia + Naive UI + Vite
-- 后端：Go + Gin + GORM 
-- 构建：Electron（桌面端），capacitor(移动端)
-
-## 代码规范
-
-- 所有新代码使用 TypeScript，避免 `any` 类型
-- 后端 API 返回统一格式：`{ code, message, data }`
-- 错误码定义在 `src/utils/request.ts`（前端）和对应常量文件（后端）
-- 图片/封面 URL 使用 `resolveCoverUrl()` 统一处理
-
-
-
-## 提交规范
-
-遵循 Conventional Commits：
+# Build Go backend binary
+npm run build:go
 ```
-feat(scope): 描述
-fix(scope): 描述
-docs(scope): 描述
-refactor(scope): 描述
+
+### Building
+
+```bash
+# Web only (output: dist/)
+pnpm build:web
+
+# Electron client-only (connects to remote server)
+pnpm build:client
+
+# Electron server-bundled (includes Go backend binary)
+pnpm build:server
+
+# Android APK
+pnpm build:android
+
+# Build all targets
+pnpm build:all
 ```
+
+### Go Backend
+
+```bash
+cd server
+
+# Run tests
+go test ./...
+
+# Run a specific test
+go test ./internal/handle -run TestFunctionName -v
+
+# Build binary
+go build -o ../resources/server.exe cmd/main.go
+
+# Tidy dependencies
+go mod tidy
+```
+
+### Docker
+
+```bash
+# Build and run both frontend (Nginx) and backend (Go)
+docker compose up -d --build
+
+# Restart backend after music file changes
+docker compose restart backend
+```
+
+## Architecture
+
+### Frontend (`src/`)
+
+- **Framework**: Vue 3 + TypeScript + Vite
+- **UI Library**: Naive UI (auto-imported via `unplugin-vue-components` + `NaiveUiResolver`)
+- **State**: Pinia (`src/store/`) — `musicData.ts` (playback state), `userData.ts`, `chatData.ts` (WebSocket), `settingData.ts`
+- **Router**: Vue Router with `createWebHashHistory`, navigation guards for login (`meta.needLogin`) and Electron/Capacitor init flow (`/init` page)
+- **API Layer**: `src/api/` — Axios wrappers organized by domain (`song.ts`, `playlist.ts`, `search.ts`, `user.ts`, `system.ts`, `ai.ts`)
+- **Auto-imports**: `unplugin-auto-import` handles Vue APIs (`ref`, `reactive`, etc.) and Naive UI composables (`useDialog`, `useMessage`, `useNotification`, `useLoadingBar`). No need to import these manually.
+- **Path Alias**: `@` maps to `src/`
+- **SCSS**: Global styles imported automatically via `vite.config.ts` (`@use "@/style/index.scss" as *;`)
+- **Request Utility**: `src/utils/request.ts` — Axios instance with interceptors for auth tokens and error handling
+
+### Backend (`server/`)
+
+- **Framework**: Go 1.25 + Gin
+- **ORM**: GORM with SQLite (`github.com/glebarez/sqlite` — pure Go, no CGO)
+- **Entry**: `cmd/main.go` — parses `-c config.yml`, initializes logger, DB, registers handlers
+- **Layer Structure**:
+  - `internal/handle/` — HTTP handlers (controllers), grouped by domain (`handle_song.go`, `handle_auth.go`, etc.)
+  - `internal/model/` — GORM models and DB operations (`Song.go`, `Playlist.go`, `User.go`, etc.)
+  - `internal/middleware/` — Gin middleware (`auth.go` for JWT, `base.go` for DB injection, `stats.go`)
+  - `internal/global/` — Config structs, logger ring buffer (`logger.go`), unified response format (`result.go`)
+  - `internal/utils/` — Utility packages (`jwt/`, `encrypt/`, `audio/`, `imgtool/`, `ai/`, `prompt/`)
+- **Routing**: `internal/Manager.go` registers all routes. API base path is `/api`.
+- **Swagger**: Available at `/swagger/index.html` in development
+
+### Electron (`electron/`)
+
+- **Main Process**: `main.ts` — window management, system tray, IPC handlers, Go server spawning
+- **Preload**: `preload.ts` — exposes safe Node.js APIs to renderer
+- **Dual Mode**:
+  - `client`: Renderer connects to external backend (like web mode)
+  - `server`: Bundles `server.exe`/`server` binary in `resources/`, spawns it on launch, starts an internal HTTP server for the frontend
+- **First-run Flow**: Uninitialized Electron/Capacitor apps redirect to `/init` for base folder and port configuration
+- **IPC Channels**: `app-config-get`, `app-clear-data`, `select-directory`, `show-save-dialog`, `save-file`, `get-local-ips`, `check-ports`, `apply-initial-config`
+
+### Docker
+
+- **Frontend**: `Dockerfile.web` — multi-stage build (Node → Nginx), serves on port 23456, proxies `/api/` and `/covers/` to backend container
+- **Backend**: `server/Dockerfile` — multi-stage Go build (Alpine), serves on port 12345
+- **Compose**: `docker-compose.yml` with bind mounts for `./data`, `./log`, and `${MUSIC_BIND_PATH:-C:/RLMusic}:/music`
+
+## Key Conventions & Patterns
+
+### Prompt Loading (AI Features)
+
+Prompt files live in `server/prompts/` as Markdown. The `prompt.Read(name)` function (`server/internal/utils/prompt/Prompt.go`) loads them via a three-tier fallback:
+
+1. `embed.FS` (compiled into binary at build time — see `server/prompts/embed.go`)
+2. Filesystem relative to executable (`exeDir/prompts/` → `exeDir/../prompts/`)
+3. Current working directory (`./prompts/`)
+
+**Important**: When adding new prompt files, update the `//go:embed` pattern in `server/prompts/embed.go` if the filename doesn't match existing patterns.
+
+### Log System
+
+The backend uses a custom `slog` handler (`server/internal/Helper.go`) that writes to both stdout and an in-memory ring buffer (`server/internal/global/logger.go`). The frontend admin page consumes logs via an SSE endpoint (`/api/system/logs/stream`) for real-time display.
+
+### Music Streaming
+
+Song playback uses `/api/song/stream/:id` which streams audio files directly from disk with proper `Content-Type`, `Content-Length`, and `Accept-Ranges` headers for seek support.
+
+### Cover Image Resolution
+
+Cover URLs are resolved through `resolveCoverUrl()` in the frontend, handling both local `/covers/` paths and remote URLs.
+
+### TypeScript Strictness
+
+`tsconfig.app.json` enables `strict`, `noUnusedLocals`, `noUnusedParameters`, and `erasableSyntaxOnly`. The build will fail on unused variables or implicit `any`.
+
+## Environment Configuration
+
+### Frontend (`.env`)
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_MUSIC_API` | Backend API base URL (default: `http://localhost:12345`) |
+| `VITE_APP_MODE` | `web` / `client` / `server` |
+| `VITE_ANN_TITLE` / `VITE_ANN_CONTENT` | Home page announcement |
+
+### Backend (`server/config.yml`)
+
+| Key | Purpose |
+|-----|---------|
+| `Server.Port` | Listen address (default `:12345`) |
+| `BasicPath.FilePath` / `FileName` | Base directory for music files |
+| `SiliconFlow.ApiKey` / `Model` | LLM for AI descriptions |
+| `QwenTTS.ApiKey` / `Model` / `Voice` | TTS for podcast intros |
+| `JWT.Secret` / `Expire` | Auth token config |
+
+AI API keys can also be provided via environment variables: `SiliconFlow_API_KEY`, `QwenTTS_API_KEY`.
+
+## Testing
+
+- **Go**: `go test ./...` from `server/`. Test files follow `*_test.go` convention.
+- **Frontend**: No test runner configured in this project.
+- **Load Testing**: `api_test_scan.py` at repo root provides staged pressure tests for API endpoints and streaming playback.

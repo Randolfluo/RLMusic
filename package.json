@@ -11,7 +11,7 @@
     "dev:web": "vite --host",
     "dev:server": "cd server && air",
     "build": "vue-tsc -b && vite build && electron-builder",
-    "build:go": "cd server && go mod tidy && go build -o ../resources/server.exe cmd/main.go && node -e \"const{cpSync}=require('fs');cpSync('prompts','../resources/prompts',{recursive:true})\"",
+    "build:go": "cd server && go mod tidy && go build -o ../resources/server.exe cmd/main.go",
     "build:server": "npm run build:go && cross-env VITE_APP_MODE=server vue-tsc -b && cross-env VITE_APP_MODE=server vite build && electron-builder --config electron-builder.server.json",
     "build:client": "cross-env VITE_APP_MODE=client vue-tsc -b && cross-env VITE_APP_MODE=client vite build && electron-builder --config electron-builder.client.json",
     "build:web": "vue-tsc -b && vite build",
@@ -119,7 +119,10 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js",
       "electron",
+      "electron-winstaller",
       "esbuild",
       "vue-tsc"
     ]

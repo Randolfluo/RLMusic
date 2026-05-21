@@ -1,11 +1,11 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.2.9 Chrome/140.0.7339.249 Electron/38.7.2 Safari/537.36" version="29.2.9">
   <diagram id="m51ll4Sr5C9XlumHTEp-" name="第 1 页">
-    <mxGraphModel dx="1554" dy="914" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+    <mxGraphModel dx="1295" dy="761" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#333;" value="&lt;b&gt;RLMusic 项目架构图&lt;/b&gt;" vertex="1">
-          <mxGeometry height="30" width="400" x="400" y="20" as="geometry" />
+          <mxGeometry height="30" width="400" x="265" y="15" as="geometry" />
         </mxCell>
         <mxCell id="layer1-bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;arcSize=0;" value="" vertex="1">
           <mxGeometry height="80" width="900" x="40" y="70" as="geometry" />
@@ -21,15 +21,6 @@
         </mxCell>
         <mxCell id="mobile" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=11;" value="移动端(Capacitor)" vertex="1">
           <mxGeometry height="40" width="130" x="420" y="90" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-ui" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;" value="" vertex="1">
-          <mxGeometry height="80" width="160" x="960" y="70" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-ui-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333;fontStyle=1" value="前端框架" vertex="1">
-          <mxGeometry height="20" width="140" x="970" y="75" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-ui-content" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#333;" value="Vue 3 + TypeScript&lt;br&gt;Vite 构建工具&lt;br&gt;Naive UI 组件库" vertex="1">
-          <mxGeometry height="50" width="140" x="970" y="95" as="geometry" />
         </mxCell>
         <mxCell id="layer2-bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;arcSize=0;" value="" vertex="1">
           <mxGeometry height="120" width="900" x="40" y="170" as="geometry" />
@@ -57,15 +48,6 @@
         </mxCell>
         <mxCell id="interceptor" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" value="请求拦截器&lt;br&gt;(Token注入/错误处理)" vertex="1">
           <mxGeometry height="50" width="120" x="620" y="210" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-view" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;" value="" vertex="1">
-          <mxGeometry height="120" width="160" x="960" y="170" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-view-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333;fontStyle=1" value="表现层技术" vertex="1">
-          <mxGeometry height="20" width="140" x="970" y="175" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-view-content" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#333;" value="Composition API&lt;br&gt;Vue Router&lt;br&gt;Pinia Store&lt;br&gt;Axios Interceptor&lt;br&gt;AES 加密(CryptoJS)" vertex="1">
-          <mxGeometry height="90" width="140" x="970" y="195" as="geometry" />
         </mxCell>
         <mxCell id="layer3-bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;arcSize=0;" value="" vertex="1">
           <mxGeometry height="140" width="900" x="40" y="310" as="geometry" />
@@ -105,15 +87,6 @@
         <mxCell id="jwt-service" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" value="JWT Service&lt;br&gt;(Token生成/验证)" vertex="1">
           <mxGeometry height="55" width="100" x="780" y="360" as="geometry" />
         </mxCell>
-        <mxCell id="tech-service" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;" value="" vertex="1">
-          <mxGeometry height="140" width="160" x="960" y="310" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-service-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333;fontStyle=1" value="后端技术栈" vertex="1">
-          <mxGeometry height="20" width="140" x="970" y="315" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-service-content" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#333;" value="Go 1.22&lt;br&gt;Gin Web框架&lt;br&gt;JWT-go 认证&lt;br&gt;Bcrypt 加密&lt;br&gt;Zap 日志&lt;br&gt;Viper 配置" vertex="1">
-          <mxGeometry height="110" width="140" x="970" y="335" as="geometry" />
-        </mxCell>
         <mxCell id="layer4-bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;arcSize=0;" value="" vertex="1">
           <mxGeometry height="100" width="900" x="40" y="470" as="geometry" />
         </mxCell>
@@ -141,15 +114,6 @@
         <mxCell id="local-file" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" value="本地文件存储&lt;br&gt;(音乐/图片上传)" vertex="1">
           <mxGeometry height="40" width="100" x="640" y="515" as="geometry" />
         </mxCell>
-        <mxCell id="tech-dal" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;" value="" vertex="1">
-          <mxGeometry height="100" width="160" x="960" y="470" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-dal-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333;fontStyle=1" value="持久层技术" vertex="1">
-          <mxGeometry height="20" width="140" x="970" y="475" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-dal-content" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#333;" value="GORM v2&lt;br&gt;SQLite Driver&lt;br&gt;本地文件存储&lt;br&gt;连接池管理" vertex="1">
-          <mxGeometry height="70" width="140" x="970" y="495" as="geometry" />
-        </mxCell>
         <mxCell id="layer5-bg" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;arcSize=0;" value="" vertex="1">
           <mxGeometry height="70" width="900" x="40" y="590" as="geometry" />
         </mxCell>
@@ -167,15 +131,6 @@
         </mxCell>
         <mxCell id="file-storage" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;fontSize=10;" value="文件系统&lt;br&gt;(音乐/图片资源)" vertex="1">
           <mxGeometry height="40" width="120" x="690" y="610" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-db" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#333333;" value="" vertex="1">
-          <mxGeometry height="70" width="160" x="960" y="590" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-db-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333;fontStyle=1" value="存储技术" vertex="1">
-          <mxGeometry height="20" width="140" x="970" y="595" as="geometry" />
-        </mxCell>
-        <mxCell id="tech-db-content" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#333;" value="SQLite 3&lt;br&gt;浏览器本地存储&lt;br&gt;本地文件系统" vertex="1">
-          <mxGeometry height="40" width="140" x="970" y="615" as="geometry" />
         </mxCell>
         <mxCell id="dashed-line1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#666;" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
